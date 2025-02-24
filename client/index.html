@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="./src/assets/pandas1.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, maximum-scale=0.6, user-scalable=yes">
+  <title>Pandas</title>
+</head>
+
+<body class="bg-gray-100 overflow-hidden">
+  <div id="root"></div>
+  <script>
+    // Corrected event listener for keyboard zoom prevention
+    // document.addEventListener('keydown', function (event) {
+    //   if ((event.ctrlKey || event.metaKey) && (event.key === '+' || event.key === '-' || event.key === '=')) {
+    //     event.preventDefault(); // Prevents Ctrl/Cmd + +/-/= zoom
+    //   }
+    // });
+
+    // Corrected event listener for mouse wheel zoom prevention
+    // document.addEventListener('wheel', function (event) {
+    //   if (event.ctrlKey || event.metaKey) {
+    //     event.preventDefault(); // Prevents Ctrl/Cmd + Scroll zoom
+    //   }
+    // }, { passive: false });
+  </script>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>

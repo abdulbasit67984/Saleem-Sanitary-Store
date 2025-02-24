@@ -1,0 +1,29 @@
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    /* Ensures colors are printed as in the browser */
+  }
+
+  .no-print {
+    display: none;
+  }
+
+  .view-bill {
+    font-size: 12px;
+    /* Adjust the font size */
+    /* width: 100%; */
+    /* Ensure content fits page width */
+  }
+
+  .thermal-bill {
+    /* font-size: 10px; Smaller font size for thermal paper */
+    width: auto; /* Allow content to adjust dynamically */
+    page-break-inside: auto !important;
+    page-break-before: auto !important;
+    page-break-after: auto !important;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+}
