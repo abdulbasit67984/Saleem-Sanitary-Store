@@ -193,6 +193,7 @@ function WelcomePage() {
 
     return (
         <>
+        <div className="bg-red-500 text-white">Test pull request</div>
             <MagicUiAnimation />
             {loading && <Loader message="Loading Data Please Wait...." mt="mt-28" h_w="h-10 w-10 border-t-2 border-b-2"/>}
             
