@@ -124,7 +124,6 @@ function Login() {
                     <button onClick={() => setIsPasswordForgot(true)}>Forgot password</button>
                 </p>
             </div>
-            <button onClick={() => navigate("/signup")}>register</button>
         </div>
     ) :
         <ForgotPassword data={setIsPasswordForgot} />
