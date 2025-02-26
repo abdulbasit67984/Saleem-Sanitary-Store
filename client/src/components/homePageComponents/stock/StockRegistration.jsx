@@ -229,7 +229,11 @@ const StockRegistrationForm = () => {
 
               <div className="mb-2">
 
-                <label className="block text-gray-700 text-xs"><input type="radio" name="supplier" defaultChecked id="" onClick={() => setVendor('supplier')} /> Vendor Supplier: </label>
+                <label className="block text-gray-700 text-xs"><input type="radio" name="supplier" defaultChecked id="" 
+                onClick={() => {
+                  setVendor('supplier')
+                  setValue('vendorCompanyId', '');
+                }} /> Vendor Supplier: </label>
                 <select
 
                   disabled={vendor !== 'supplier'}
@@ -246,7 +250,11 @@ const StockRegistrationForm = () => {
 
               <div className=" items-center">
 
-                <label className="block text-gray-700 text-xs"><input type="radio" name="supplier" id="" onClick={() => setVendor('company')} /> Vendor Company: </label>
+                <label className="block text-gray-700 text-xs"><input type="radio" name="supplier" id="" 
+                onClick={() => {
+                  setVendor('company')
+                  setValue('vendorSupplierId', '');
+                }} /> Vendor Company: </label>
                 <select
                   disabled={vendor !== 'company'}
                   {...register('vendorCompanyId')}
