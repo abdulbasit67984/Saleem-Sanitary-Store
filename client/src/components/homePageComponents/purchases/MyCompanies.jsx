@@ -157,7 +157,7 @@ function MyCompanies() {
               <label className="w-40">Company Name: </label>
               <input
                 type="text"
-                {...register('CompanyName')}
+                {...register('companyName')}
                 className="border p-1 rounded w-full"
               />
             </div>
@@ -183,7 +183,7 @@ function MyCompanies() {
               <label className="w-40">Company Discount:</label>
               <input
                 type="number"
-                {...register('companyDicount')}
+                {...register('companyDiscount')}
                 className="border p-1 rounded w-full"
               />
             </div>
