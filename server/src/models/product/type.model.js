@@ -11,7 +11,8 @@ const TypeSchema = new Schema({
         required: true,
     },
     typeDescription: {
-        type: String
+        type: String,
+        default: ""
     }
 }, {
     timestamps: true

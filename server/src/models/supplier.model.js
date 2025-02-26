@@ -15,22 +15,27 @@ const SupplierSchema = new Schema({
         required: true
     },
     mobileNo: {
-        type: String
+        type: String,
+        default: ''
     },
     phoneNo: {
         type: String,
+        default: ''
     },
     faxNo: {
         type: String,
     },
     email: {
-        type: String
+        type: String,
+        default: ''
     },
     cnic: {
-        type: String
+        type: String,
+        default: ''
     },
     supplierRegion: {
-        type: String
+        type: String,
+        default: ''
     }
 }, {
     timestamps: true

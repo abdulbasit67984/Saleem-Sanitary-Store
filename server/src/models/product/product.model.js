@@ -41,10 +41,12 @@ const ProductSchema = new Schema({
         ref: 'Company'
     },
     productDiscountPercentage: {
-        type: Number
+        type: Number,
+        default: 0
     },
     productPack: {
-        type: Number
+        type: Number,
+        default: 1
     },
     productUnit: {
         type: Number

@@ -44,7 +44,8 @@ const BillSchema = new Schema({
         required: true
     },
     description: {
-        type: String
+        type: String,
+        default: ""
     },
     billType: {
         type: String,
@@ -71,8 +72,9 @@ const BillSchema = new Schema({
         type: Number,
         default: 0
     },
-    dueDate: { // date for the payment of the invoice
-        type: Date
+    dueDate: { 
+        type: Date,
+        default: Date.now
     },
     isPosted: {
         type: Boolean,

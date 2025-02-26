@@ -19,22 +19,27 @@ const CustomerSchema = new Schema({
         type: String,
     },
     mobileNo: {
-        type: String
+        type: String,
+        default: ''
     },
     phoneNo: {
         type: String,
+        default: ''
     },
     faxNo: {
         type: String,
     },
     email: {
-        type: String
+        type: String,
+        default: ''
     },
     cnic: {
-        type: String
+        type: String,
+        default: ''
     },
     customerRegion: {
-        type: String
+        type: String,
+        default: ''
     },
     customerFlag: {
         type: String,

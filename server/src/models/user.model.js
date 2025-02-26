@@ -41,7 +41,8 @@ const UserSchema = new Schema({
     },
     cnic: {
         type: String,
-        unique: true
+        unique: true,
+        default: ""
     },
     BusinessId: {
         type: Schema.Types.ObjectId,

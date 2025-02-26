@@ -6,13 +6,16 @@ const SalePriceSchema = new Schema({
         required: true,
     },
     salePrice2: {
-        type: Number
+        type: Number,
+        default: 0
     },
     salePrice3: {
-        type: Number
+        type: Number,
+        default: 0
     },
     salePrice4: {
-        type: Number
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true

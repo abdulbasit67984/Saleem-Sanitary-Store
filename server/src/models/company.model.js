@@ -15,22 +15,27 @@ const CompanySchema = new Schema({
         required: true
     },
     mobileNo: {
-        type: String
+        type: String,
+        default: ''
     },
     phoneNo: {
         type: String,
+        default: ''
     },
     companyDiscount: {
-        type: Number
+        type: Number,
+        default: 0
     },
     faxNo: {
         type: String,
     },
     email: {
-        type: String
+        type: String,
+        default: ''
     },
     companyRegion: {
-        type: String
+        type: String,
+        default: ''
     }
 }, {
     timestamps: true

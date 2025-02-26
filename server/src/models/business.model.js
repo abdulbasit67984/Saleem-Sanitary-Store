@@ -26,6 +26,7 @@ const businessSchema = new Schema({
     },
     exemptedParagraph: {
         type: String,
+        default: ""
 
     },
     owner: {
