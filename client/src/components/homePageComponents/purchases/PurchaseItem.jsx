@@ -71,6 +71,8 @@ const PurchaseItem = () => {
   const { allProducts } = useSelector((state) => state.saleItems);
   const companyData = useSelector((state) => state.companies.companyData);
   const supplierData = useSelector((state) => state.suppliers.supplierData);
+  const categoryData = useSelector((state) => state.categories.categoryData);
+  const typeData = useSelector((state) => state.types.typeData);
 
   useEffect(() => {
     if (searchQuery) {
@@ -92,11 +94,11 @@ const PurchaseItem = () => {
       alert("Please fill all the required fields.");
       return;
     }
-    
+
     const userConfirmed = window.confirm(
       "Are you sure you want to Generate the purchase invoice? This action cannot be undone."
     );
-    
+
     if (userConfirmed) {
       setIsLoading(true)
       try {
@@ -285,6 +287,13 @@ const PurchaseItem = () => {
     dispatch(setTotalAmount(totals.totalAmount));
   };
 
+  const handleDeleteItem = (index) => {
+    const updatedItems = selectedItems.filter((_, i) => i !== index);
+    const totals = calculateTotals(updatedItems);
+    dispatch(setSelectedItems(updatedItems));
+    dispatch(setTotalAmount(totals.totalAmount));
+  };
+
   const calculateTotals = (items) => {
     let totalAmount = 0;
     let totalDiscount = 0;
@@ -419,6 +428,7 @@ const PurchaseItem = () => {
             <div className="grid grid-cols-3 gap-2 text-xs mt-2">
               <Input
                 label="Product Name: (Required)"
+                placeholder="Enter Product Name"
                 name="productName"
                 value={newProduct.productName}
                 onChange={handleNewProductChange}
@@ -426,33 +436,52 @@ const PurchaseItem = () => {
                 divClass="flex gap-2 text-xs items-center"
                 className="p-1"
               />
-              <Input
-                label="Category ID:"
-                name="categoryId"
-                value={newProduct.categoryId}
-                onChange={handleNewProductChange}
-                labelClass="w-28"
-                divClass="flex gap-2 text-xs items-center"
-                className="p-1"
-              />
-              <Input
-                label="Type ID:"
-                name="typeId"
-                value={newProduct.typeId}
-                onChange={handleNewProductChange}
-                labelClass="w-28"
-                divClass="flex gap-2 text-xs items-center"
-                className="p-1"
-              />
-              <Input
-                label="Company ID:"
-                name="companyId"
-                value={newProduct.companyId}
-                onChange={handleNewProductChange}
-                labelClass="w-28"
-                divClass="flex gap-2 text-xs items-center"
-                className="p-1"
-              />
+
+              <div className="flex items-center">
+                <label className="w-28" htmlFor="companyId">Select Category:</label>
+                <select
+                  className={`border p-1 text-xs rounded w-44`}
+                  name="categoryId"
+                  value={newProduct.categoryId}
+                  onChange={handleNewProductChange}
+                >
+                  <option value="">Select Category</option>
+                  {categoryData && categoryData.map((category, index) => (
+                    <option key={index} value={category._id}>{category.categoryName}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center">
+                <label className="w-28" htmlFor="companyId">Select Type:</label>
+                <select
+                  className={`border p-1 text-xs rounded w-44`}
+                  name="typeId"
+                  value={newProduct.typeId}
+                  onChange={handleNewProductChange}
+                >
+                  <option value="">Select Type</option>
+                  {typeData && typeData.map((type, index) => (
+                    <option key={index} value={type._id}>{type.typeName}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center">
+                <label className="w-28" htmlFor="companyId">Select Company:</label>
+                <select
+                  className={`border p-1 text-xs rounded w-44`}
+                  name="companyId"
+                  value={newProduct.companyId}
+                  onChange={handleNewProductChange}
+                >
+                  <option value="">Select Company</option>
+                  {companyData && companyData.map((company, index) => (
+                    <option key={index} value={company._id}>{company.companyName}</option>
+                  ))}
+                </select>
+              </div>
+
               <Input
                 label="Expiry Date:"
                 name="productExpiryDate"
@@ -491,7 +520,7 @@ const PurchaseItem = () => {
                 divClass="flex gap-2 text-xs items-center"
                 className="p-1"
               />
-              <Input
+              {/* <Input
                 label="Total Quantity:"
                 name="productTotalQuantity"
                 value={newProduct.productTotalQuantity}
@@ -499,7 +528,7 @@ const PurchaseItem = () => {
                 labelClass="w-28"
                 divClass="flex gap-2 text-xs items-center"
                 className="p-1"
-              />
+              /> */}
               <Input
                 label="Sale Price 1: (Required)"
                 name="salePrice1"
@@ -624,6 +653,7 @@ const PurchaseItem = () => {
               <th className="py-2 px-1 text-left">Rate</th>
               <th className="py-2 px-1 text-left">Discount %</th>
               <th className="py-2 px-1 text-left">Net</th>
+              <th className="py-2 px-1 text-left">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -658,6 +688,11 @@ const PurchaseItem = () => {
                   />
                 </td>
                 <td className="py-2 px-1 text-left">{(item.quantity * item.pricePerUnit).toFixed(2)}</td>
+                <td className="py-2 px-1 text-left">
+                  <button
+                    className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded-lg"
+                    onClick={() => handleDeleteItem(index)}>Delete</button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -668,8 +703,8 @@ const PurchaseItem = () => {
       <div className="flex justify-end">
         <div className="mt-4 border-t p-2 text-sm">
           <Input label="Total Amount:" labelClass="w-24 text-sm" className="p-1" value={totalAmount || 0} readOnly />
-          <Input label="Total Discount:" labelClass="w-24 text-sm" className="p-1" value={flatDiscount || 0}  onChange={(e) => dispatch(setFlatDiscount(e.target.value))} />
-          <Input label="Paid Amount:" labelClass="w-24 text-sm" className="p-1" value={paidAmount ||0 } onChange={(e) => dispatch(setPaidAmount(e.target.value))}/>
+          <Input label="Total Discount:" labelClass="w-24 text-sm" className="p-1" value={flatDiscount || 0} onChange={(e) => dispatch(setFlatDiscount(e.target.value))} />
+          <Input label="Paid Amount:" labelClass="w-24 text-sm" className="p-1" value={paidAmount || 0} onChange={(e) => dispatch(setPaidAmount(e.target.value))} />
           <Input label="Bill Balance:" labelClass="w-24 text-sm" className="p-1" value={totalAmount - paidAmount - flatDiscount || 0} readOnly />
         </div>
       </div>

@@ -31,9 +31,15 @@ const Dashboard = () => {
           topProduct,
         } = response.data;
 
+        const topStockData = stockData
+          .sort((a, b) => b.value - a.value) // Sort in descending order by stock value
+          .slice(0, 6);
+
+        console.log('salesData', salesData)
+
         // Update state with fetched data
         setSalesData(salesData);
-        setStockData(stockData);
+        setStockData(topStockData);
         setBarData(categoryData);
         setTotalSales(totalSales);
         setTotalRevenue(totalRevenue);
@@ -49,117 +55,119 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#B771E5", "#D84040"];
 
-  return loading ? 
-  <Loader message="Loading Dashboard Data Please Wait...." mt="" h_w="h-10 w-10 border-t-2 border-b-2" />
-  : (
-    <div className="container mx-auto px-4 py-8">
+  return loading ?
+    <Loader message="Loading Dashboard Data Please Wait...." mt="" h_w="h-10 w-10 border-t-2 border-b-2" />
+    : (
+      <div className="container mx-auto px-4 py-8">
 
-      {/* KPI Cards - Modern Design */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Total Sales */}
-        <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-blue-100 rounded-full">
-              <FaChartLine className="text-blue-500 text-2xl" />
+        {/* KPI Cards - Modern Design */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Total Sales */}
+          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <FaChartLine className="text-blue-500 text-2xl" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-gray-600">Total Sales</h2>
+                <p className="text-2xl font-bold text-gray-800">{totalSales}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-sm font-semibold text-gray-600">Total Sales</h2>
-              <p className="text-2xl font-bold text-gray-800">{totalSales}</p>
+          </div>
+
+          {/* Total Revenue */}
+          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-green-100 rounded-full">
+                <FaDollarSign className="text-green-500 text-2xl" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-gray-600">Total Revenue</h2>
+                <p className="text-2xl font-bold text-gray-800">{totalRevenue}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Avg Sales */}
+          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-yellow-100 rounded-full">
+                <FaChartLine className="text-yellow-500 text-2xl" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-gray-600">Avg Sales / Month</h2>
+                <p className="text-2xl font-bold text-gray-800">{avgSales}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Product */}
+          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-purple-100 rounded-full">
+                <FaStar className="text-purple-500 text-2xl" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-gray-600">Top Product</h2>
+                <p className="text-2xl font-bold text-gray-800">{topProduct}</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Total Revenue */}
-        <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-green-100 rounded-full">
-              <FaDollarSign className="text-green-500 text-2xl" />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-gray-600">Total Revenue</h2>
-              <p className="text-2xl font-bold text-gray-800">{totalRevenue}</p>
-            </div>
+        {/* Charts Section - Responsive and Modern */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Sales Report */}
+          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Sales Report</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={salesData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="sales" stroke="#A0C878" strokeWidth={2} />
+                <Line type="monotone" dataKey="purchases" stroke="#D84040" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-        </div>
 
-        {/* Avg Sales */}
-        <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-yellow-100 rounded-full">
-              <FaChartLine className="text-yellow-500 text-2xl" />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-gray-600">Avg Sales / Month</h2>
-              <p className="text-2xl font-bold text-gray-800">{avgSales}</p>
-            </div>
+          {/* Stock Report */}
+          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Stock Report</h2>
+            <ResponsiveContainer width="100%" height={400}>
+              <PieChart>
+                <Tooltip />
+                <Legend />
+                <Pie data={stockData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
+                  {stockData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-        </div>
 
-        {/* Top Product */}
-        <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-purple-100 rounded-full">
-              <FaStar className="text-purple-500 text-2xl" />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-gray-600">Top Product</h2>
-              <p className="text-2xl font-bold text-gray-800">{topProduct}</p>
-            </div>
+          {/* Category Report */}
+          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Category Report</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={barData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="category" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="quantity" fill="#82ca9d" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
-
-      {/* Charts Section - Responsive and Modern */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Sales Report */}
-        <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Sales Report</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={salesData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="sales" stroke="#8884d8" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Stock Report */}
-        <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Stock Report</h2>
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Tooltip />
-              <Pie data={stockData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
-                {stockData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Category Report */}
-        <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Category Report</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="category" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="quantity" fill="#82ca9d" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Dashboard;

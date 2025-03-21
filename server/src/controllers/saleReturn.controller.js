@@ -153,7 +153,13 @@ const registerSaleReturn = asyncHandler(async (req, res) => {
 
             //Update customer account
             const originalCustomerBalance = customerIndividualAccount.accountBalance;
-            customerIndividualAccount.accountBalance += totalReturnAmount;
+            customerIndividualAccount.accountBalance -= totalReturnAmount;
+
+            if(customerIndividualAccount.mergedInto !== null){
+                const mergedIntoAccount = await IndividualAccount.findById(customerIndividualAccount.mergedInto);
+                mergedIntoAccount.accountBalance -= totalReturnAmount
+                await mergedIntoAccount.save();
+            }
 
             transaction.addOperation(
                 async () => await customerIndividualAccount.save(),
@@ -167,10 +173,10 @@ const registerSaleReturn = asyncHandler(async (req, res) => {
             if (returnType === 'againstBill' || customer) {
                 await GeneralLedger.create({
                     BusinessId,
-                    individualAccountId: customerIndividualAccount._id,
+                    individualAccountId: customerIndividualAccount.mergedInto !== null ? customerIndividualAccount.mergedInto : customerIndividualAccount._id,
                     details: `Sale Return for ${returnType === 'againstBill' ? `Bill ${billId}` : 'Direct Return'}`,
                     credit: totalReturnAmount,
-                    reference: customerIndividualAccount._id,
+                    reference: customerIndividualAccount.mergedInto !== null ? customerIndividualAccount.mergedInto : customerIndividualAccount._id,
                 });
             }
             res.status(201).json(new ApiResponse(201, saleReturn, "Sale return created successfully!"));

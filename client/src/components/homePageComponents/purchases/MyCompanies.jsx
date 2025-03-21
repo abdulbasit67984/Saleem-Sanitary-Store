@@ -87,7 +87,7 @@ function MyCompanies() {
 
   return !isEdit ? (!isLoading ? (
     <div className='bg-white rounded-lg'>
-      <h2 className="text-lg text-center font-semibold py-4">All Suppliers</h2>
+      <h2 className="text-lg text-center font-semibold py-4">All Companies</h2>
       {error && <p className="text-red-600 mt-2 mb-1 text-center text-sm">{error}</p>}
       <div className="overflow-auto max-h-72 mb-4 scrollbar-thin rounded">
         <table className="min-w-full bg-white border text-xs">

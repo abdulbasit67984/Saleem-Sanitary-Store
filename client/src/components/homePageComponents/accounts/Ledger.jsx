@@ -55,18 +55,29 @@ const Ledger = () => {
   // Handle selecting an account
   const handleSelectAccount = (account) => {
     setSelectedAccount(account);
-    console.log(userData)
-    console.log("account", account)
-    //filter the ledger entries based on the selected account
+  
+    // Filter ledger entries for the selected account
     const filteredEntries = ledgerData.filter(
-      (entry) => (
+      (entry) =>
         entry.referenceAccount._id === account._id &&
         entry.individualAccount.name !== "Sales Revenue"
-      )
     );
-    console.log('filteredEntries', filteredEntries)
-    setSelectedLedgerData(filteredEntries);
+  
+    // Find the last "Opening Balance" entry
+    const lastOpeningIndex = filteredEntries
+      .map((entry) => entry.details)
+      .lastIndexOf("Opening Balance");
+  
+    // Keep only entries up to (and including) the last "Opening Balance"
+    const finalFilteredEntries =
+      lastOpeningIndex !== -1
+        ? filteredEntries.slice(lastOpeningIndex)
+        : filteredEntries;
+  
+    console.log("Filtered Entries:", finalFilteredEntries);
+    setSelectedLedgerData(finalFilteredEntries);
   };
+  
 
   // Handle closing the General Ledger view
   const handleCloseLedger = () => {
@@ -108,7 +119,7 @@ const Ledger = () => {
               sub.individualAccounts.map(individual => (
                 <div
                   key={individual._id}
-                  className={` ${individual.customerId && 'bg-green-200'} ${(individual.supplierId || individual.companyId )&& 'bg-red-200'} bg-white p-4 rounded shadow-md cursor-pointer hover:shadow-lg transition`}
+                  className={` ${individual.customerId && 'bg-green-200'} ${(individual.supplierId || individual.companyId ) && 'bg-red-200'} p-4 rounded shadow-md cursor-pointer hover:shadow-lg transition`}
                   onClick={() => handleSelectAccount(individual)}
                 >
                   <h2 className="text-lg font-semibold">{individual.individualAccountName}</h2>
@@ -157,6 +168,7 @@ const Ledger = () => {
                   <tr className="bg-gray-200 text-left">
                     <th className="border p-2">Date</th>
                     <th className="border p-2">Detail</th>
+                    <th className="border p-2">Description</th>
                     <th className="border p-2">Debit</th>
                     <th className="border p-2">Credit</th>
                     <th className="border p-2">balance</th>
@@ -176,6 +188,7 @@ const Ledger = () => {
                     <tr key={entry._id} className="border">
                       <td className="p-2">{entry.createdAt.slice(0, 10)}</td>
                       <td className="p-2">{entry.details}</td>
+                      <td className="p-2">{entry.description}</td>
                       <td className="p-2">{entry.debit}</td>
                       <td className="p-2">{entry.credit}</td>
                       <td className="p-2">{entryBalance}</td>

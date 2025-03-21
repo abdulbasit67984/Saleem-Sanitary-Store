@@ -44,12 +44,15 @@ const registerPurchase = asyncHandler(async (req, res) => {
             let totalPurchaseCost = 0;
             let purchaseItemList = [];
             let productCount = 0;
+            let productName = "";
 
             for (const item of purchaseItems) {
                 const product = await Product.findById(item.productId);
                 if (!product) {
                     throw new ApiError(404, `Product not found: Product ${productCount + 1}`);
                 }
+
+                productName = product.productName;
 
                 productCount += 1;
                 const productTotalQuantity = item.quantity * item.productPack;
@@ -198,6 +201,14 @@ const registerPurchase = asyncHandler(async (req, res) => {
             const originalVendorBalance = vendorIndividualAccount.accountBalance;
             vendorIndividualAccount.accountBalance += totalAmount;
 
+            if(vendorIndividualAccount.mergedInto !== null){
+                const mergedIndividualAccount = await IndividualAccount.findById(
+                    vendorIndividualAccount.mergedInto
+                );
+                mergedIndividualAccount.accountBalance += totalAmount;
+                await mergedIndividualAccount.save();
+            }
+
             transaction.addOperation(
                 async () => await vendorIndividualAccount.save(),
                 async () => {
@@ -225,20 +236,20 @@ const registerPurchase = asyncHandler(async (req, res) => {
             const generalLedgerEntries = [
                 {
                     BusinessId,
-                    individualAccountId: vendorIndividualAccount._id,
-                    details: `Purchase Invoice ${billNo}`,
-                    debit: totalPurchaseCost,
-                    reference: vendorIndividualAccount._id,
+                    individualAccountId: vendorIndividualAccount.mergedInto !== null ? vendorIndividualAccount.mergedInto : vendorIndividualAccount._id,
+                    details: purchaseItems.length === 1 ? ` ${productName}` : `Purchase Invoice ${billNo}`,
+                    credit: totalPurchaseCost,
+                    reference: vendorIndividualAccount.mergedInto !== null ? vendorIndividualAccount.mergedInto : vendorIndividualAccount._id,
                 },
             ];
 
             if (paidAmount > 0) {
                 generalLedgerEntries.push({
                     BusinessId,
-                    individualAccountId: vendorIndividualAccount._id,
-                    details: `Cash given`,
-                    credit: paidAmount,
-                    reference: vendorIndividualAccount._id,
+                    individualAccountId: vendorIndividualAccount.mergedInto !== null ? vendorIndividualAccount.mergedInto : vendorIndividualAccount._id,
+                    details: `Payment of ${billNo}`,
+                    debit: paidAmount,
+                    reference: vendorIndividualAccount.mergedInto !== null ? vendorIndividualAccount.mergedInto : vendorIndividualAccount._id,
                 });
             }
 
@@ -326,6 +337,14 @@ const registerPurchaseReturn = asyncHandler(async (req, res) => {
             const originalVendorBalance = vendorIndividualAccount.accountBalance;
             vendorIndividualAccount.accountBalance -= totalPurchasePrice;
 
+            if(vendorIndividualAccount.mergedInto !== null){
+                const mergedIndividualAccount = await IndividualAccount.findById(
+                    vendorIndividualAccount.mergedInto
+                );
+                mergedIndividualAccount.accountBalance -= totalPurchasePrice;
+                await mergedIndividualAccount.save();
+            }
+
             transaction.addOperation(
                 async () => await vendorIndividualAccount.save(),
                 async () => {
@@ -379,11 +398,11 @@ const registerPurchaseReturn = asyncHandler(async (req, res) => {
             // Record transaction in General Ledger
             await GeneralLedger.create({
                 BusinessId,
-                individualAccountId: vendorIndividualAccount._id,
+                individualAccountId: vendorIndividualAccount.mergedInto !== null ? vendorIndividualAccount.mergedInto : vendorIndividualAccount._id,
                 details: returnItems.length === 1 ?  `Purchase Return of ${productName}` : `Purchase Return of ${returnItems.length} items`,
-                credit: totalPurchasePrice,
+                debit: totalPurchasePrice,
                 description: returnReason,
-                reference: vendorIndividualAccount._id,
+                reference: vendorIndividualAccount.mergedInto !== null ? vendorIndividualAccount.mergedInto : vendorIndividualAccount._id,
             });
 
             res.status(201).json(new ApiResponse(201, { processedReturnItems, returnReason }, "Purchase return recorded successfully!"));

@@ -42,7 +42,8 @@ import {
   Ledger,
   VendorJournalEntry,
   CustomerJournalEntry,
-  IncomeStatement
+  IncomeStatement,
+  MergeAccounts
 }
   from '../components/index.js';
 import MagicUiAnimation from '../components/magicUI/magicUiAnimation.jsx';
@@ -134,7 +135,7 @@ function Home() {
         switch (pathParts[3]) {
           case 'posting':
             return <Posting />;
-          case 'opening-and-adjustment-balance':
+          case 'opening-&-adjustment-balance':
             return <OpeningAndAdjustmentBalance />;
           case 'expense-entry':
             return <ExpenseEntry />;
@@ -150,6 +151,8 @@ function Home() {
             return <Journal />;
           case 'income-statement':
             return <IncomeStatement />;
+          case 'merge-accounts':
+            return <MergeAccounts />;
           default:
             return <MagicUiAnimation text='Accounts Management' />;
         }

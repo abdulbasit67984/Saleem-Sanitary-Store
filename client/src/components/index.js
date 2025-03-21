@@ -56,6 +56,7 @@ import CustomerJournalEntry from "./homePageComponents/accounts/CustomerJournalE
 import NewAccount from "./homePageComponents/accounts/NewAccount";
 import Ledger from "./homePageComponents/accounts/Ledger";
 import IncomeStatement from "./homePageComponents/accounts/IncomeStatement";
+import MergeAccounts from "./homePageComponents/accounts/MergeAccounts";
 
 export {
     Header,
@@ -110,7 +111,8 @@ export {
     CustomerJournalEntry,
     NewAccount,
     Ledger,
-    IncomeStatement
+    IncomeStatement,
+    MergeAccounts
 
 
 

@@ -273,7 +273,7 @@ const registerIndividualAccount = asyncHandler(async (req, res) => {
     }
 
     const user = req.user;
-    
+
     if (!user) {
         throw new ApiError(401, "Authorization Failed!");
     }
@@ -296,7 +296,8 @@ const registerIndividualAccount = asyncHandler(async (req, res) => {
         parentAccount: parentSubCategory,
         customerId: customerId || null,
         supplierId: supplierId || null,
-        companyId: companyId || null
+        companyId: companyId || null,
+        mergedInto: null
     });
 
     if (!individualAccount) {
@@ -309,7 +310,7 @@ const registerIndividualAccount = asyncHandler(async (req, res) => {
         .populate('customerId', 'customerName')
         .populate('supplierId', 'supplierName')
         .populate('companyId', 'companyName');
-        
+
     return res.status(201).json(
         new ApiResponse(201, createdAccount, "Individual Account created successfully")
     );
@@ -344,7 +345,7 @@ const updateIndividualAccount = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Only one of customer, supplier or company should be provided!");
     }
 
-    
+
     // Validate the account ID
     const account = await IndividualAccount.findOne({ _id: individualAccountId, BusinessId });
 
@@ -371,19 +372,19 @@ const updateIndividualAccount = asyncHandler(async (req, res) => {
     account.supplierId = supplierId || account.supplierId;
     account.companyId = companyId || account.companyId;
     account.accountBalance = accountBalance !== undefined ? accountBalance : account.accountBalance;
-    
+
     // Save the updated account
     const updatedAccount = await account.save();
-    
+
     // Fetch the updated account with populated details
     const populatedAccount = await IndividualAccount.findById(updatedAccount._id)
-    .populate('BusinessId', 'businessName')
-    .populate('parentAccount', 'accountName')
-    .populate('customerId', 'customerName')
-    .populate('supplierId', 'supplierName')
+        .populate('BusinessId', 'businessName')
+        .populate('parentAccount', 'accountName')
+        .populate('customerId', 'customerName')
+        .populate('supplierId', 'supplierName')
         .populate('companyId', 'companyName');
 
-        return res.status(200).json(
+    return res.status(200).json(
         new ApiResponse(200, populatedAccount, "Account updated successfully")
     );
 });
@@ -397,7 +398,7 @@ const getAccountReceivables = asyncHandler(async (req, res) => {
         }
 
         const BusinessId = user.BusinessId;
-        
+
         if (!BusinessId) {
             throw new ApiError(400, 'BusinessId is missing in the request.');
         }
@@ -482,8 +483,8 @@ const getAccountReceivables = asyncHandler(async (req, res) => {
         }
 
         return res
-        .status(200)
-        .json(new ApiResponse(200, accountReceivables, 'Active account receivables fetched successfully.'));
+            .status(200)
+            .json(new ApiResponse(200, accountReceivables, 'Active account receivables fetched successfully.'));
     } catch (error) {
         console.error('Error fetching active account receivables:', error);
         throw new ApiError(500, error);
@@ -506,7 +507,7 @@ const getIndividualAccounts = asyncHandler(async (req, res) => {
 
         console.log(`BusinessId: ${BusinessId}`)
         // Aggregation pipeline
-        const accounts = await IndividualAccount.find({BusinessId})
+        const accounts = await IndividualAccount.find({ BusinessId })
 
         return res
             .status(200)
@@ -630,9 +631,9 @@ const postVendorJournalEntry = asyncHandler(async (req, res) => {
             const originalPayablesBalance = accountPayables.accountBalance;
 
             // Update balances
-            vendorAccount.accountBalance -= parseInt(amount); 
-            cashAccount.accountBalance -= parseInt(amount); 
-            accountPayables.accountBalance -= parseInt(amount); 
+            vendorAccount.accountBalance -= parseInt(amount);
+            cashAccount.accountBalance -= parseInt(amount);
+            accountPayables.accountBalance -= parseInt(amount);
 
             transaction.addOperation(
                 async () => {
@@ -654,10 +655,10 @@ const postVendorJournalEntry = asyncHandler(async (req, res) => {
             await GeneralLedger.create([
                 {
                     BusinessId,
-                    individualAccountId: vendorAccount._id,
+                    individualAccountId: vendorAccount.mergedInto !== null ? vendorAccount.mergedInto : vendorAccount._id,
                     details: details || "Cash Given",
-                    credit: amount,
-                    reference: vendorAccount._id,
+                    debit: amount,
+                    reference: vendorAccount.mergedInto !== null ? vendorAccount.mergedInto : vendorAccount._id,
                     description
                 }
             ]);
@@ -728,9 +729,9 @@ const postCustomerJournalEntry = asyncHandler(async (req, res) => {
             const originalPayablesBalance = accountPayables.accountBalance;
 
             // Update balances
-            customerAccount.accountBalance -= parseInt(amount); 
-            cashAccount.accountBalance -= parseInt(amount); 
-            accountPayables.accountBalance -= parseInt(amount); 
+            customerAccount.accountBalance -= parseInt(amount);
+            cashAccount.accountBalance -= parseInt(amount);
+            accountPayables.accountBalance -= parseInt(amount);
 
             transaction.addOperation(
                 async () => {
@@ -752,10 +753,10 @@ const postCustomerJournalEntry = asyncHandler(async (req, res) => {
             await GeneralLedger.create([
                 {
                     BusinessId,
-                    individualAccountId: customerAccount._id,
+                    individualAccountId: customerAccount.mergedInto !== null ? customerAccount.mergedInto : customerAccount._id,
                     details: details || "Cash Received",
                     credit: amount,
-                    reference: customerAccount._id,
+                    reference: customerAccount.mergedInto !== null ? customerAccount.mergedInto : customerAccount._id,
                     description
                 }
             ]);
@@ -775,6 +776,7 @@ const getGeneralLedger = asyncHandler(async (req, res) => {
     if (!user) {
         throw new ApiError(401, "Authorization Failed!");
     }
+    
 
     const generalLedgers = await GeneralLedger.aggregate([
         {
@@ -877,6 +879,304 @@ const getGeneralLedger = asyncHandler(async (req, res) => {
 });
 
 
+const mergeAccounts = asyncHandler(async (req, res) => {
+    const transactionManager = new TransactionManager();
+
+    try {
+        await transactionManager.run(async (transaction) => {
+            const { parentAccountName, childAccountIds } = req.body;
+
+            if ( !childAccountIds || !Array.isArray(childAccountIds)) {
+                throw new ApiError(400, "Account Id's are required.");
+            }
+
+
+            if (!parentAccountName) {
+                throw new ApiError(400, "Account Name is Required!");
+            }
+
+            const user = req.user;
+            if (!user) {
+                throw new ApiError(401, "Unauthorized request!");
+            }
+
+            const BusinessId = user.BusinessId;
+
+            // console.log('parentAccountName', parentAccountName)
+            // console.log('childAccountIds', childAccountIds)
+
+            const childAccount = await IndividualAccount.findById(childAccountIds[0])
+
+            // Fetch Vendor Account
+            const parentAccount = await AccountSubCategory.findById(childAccount.parentAccount)
+
+            // console.log('childAccount', childAccount)
+            if (!parentAccount) {
+                throw new ApiError(404, "Parent account not found!");
+            }
+
+            let accountBalance = 0
+            for (let i = 0; i < childAccountIds.length; i++) {
+                const account = await IndividualAccount.findById(childAccountIds[i])
+                accountBalance += account.accountBalance
+            }
+            // console.log('accountBalance', accountBalance)
+
+            const individualAccount = await IndividualAccount.create({
+                BusinessId,
+                individualAccountName: parentAccountName,
+                accountBalance: accountBalance || 0,
+                parentAccount: parentAccount._id,
+                companyId: childAccount.companyId,
+                supplierId: childAccount.supplierId,
+                customerId: childAccount.customerId,
+                mergedInto: null
+            });
+
+            // console.log('individualAccount', individualAccount)
+
+            for (let i = 0; i < childAccountIds.length; i++) {
+                const account = await IndividualAccount.findById(childAccountIds[i])
+                account.mergedInto = individualAccount._id
+                await account.save()
+                // console.log('account', account)
+            }
+            
+
+            res.status(201).json(new ApiResponse(201, null, "Accounts Merged successfully!"));
+        });
+    } catch (error) {
+        throw new ApiError(500, `${error.message}`);
+    }
+});
+
+const openAccountBalance = asyncHandler(async (req, res) => {
+    const transactionManager = new TransactionManager();
+
+    try {
+        await transactionManager.run(async (transaction) => {
+            const { accountId, amount } = req.body;
+
+            if (!accountId || !amount) {
+                throw new ApiError(400, "Invalid input! Account and amount are required.");
+            }
+
+            const user = req.user;
+            if (!user) {
+                throw new ApiError(401, "Authorization failed!");
+            }
+
+            const BusinessId = user.BusinessId;
+
+            // Validate Individual Account
+            const account = await IndividualAccount.findOne({ _id: accountId, BusinessId });
+            if (!account) {
+                throw new ApiError(404, "Individual account not found!");
+            }
+
+            const originalBalance = account.accountBalance;
+            account.accountBalance += parseInt(amount);
+
+            transaction.addOperation(
+                async () => await account.save(),
+                async () => {
+                    account.accountBalance = originalBalance;
+                    await account.save();
+                }
+            );
+
+            let positiveAmount;
+            let isNegative = false;
+            if (amount < 0) {
+                isNegative = true;
+                positiveAmount = Math.abs(amount);
+            }
+
+            console.log('amount', amount)
+            console.log('positiveAmount', positiveAmount)
+            console.log('isNegative', isNegative)
+
+            // Create General Ledger Entry
+            const glEntry = await GeneralLedger.create([
+                {
+                    BusinessId,
+                    individualAccountId: accountId,
+                    details: "Opening Balance",
+                    debit: isNegative ? null : parseInt(amount),
+                    credit: isNegative ? positiveAmount : null,
+                    description: "Opening Balance for the Account",
+                    reference: accountId
+                }
+            ]);
+
+    
+            res.status(201).json(new ApiResponse(201, { glEntry }, "Account Balance Opened successfully!"));
+        });
+
+    } catch (error) {
+        throw new ApiError(500, `Transaction failed: ${error.message}`);
+    }
+});
+
+const closeAccountBalance = asyncHandler(async (req, res) => {
+    const { accountId } = req.body;
+    const user = req.user;
+
+    if (!user) {
+        throw new ApiError(401, "Authorization Failed!");
+    }
+
+    if (!accountId) {
+        throw new ApiError(400, "Account ID is required.");
+    }
+
+    const BusinessId = user.BusinessId;
+    const transactionManager = new TransactionManager();
+
+    try {
+        await transactionManager.run(async (transaction) => {
+            
+            const lastOpeningEntry = await GeneralLedger.findOne({
+                BusinessId,
+                individualAccountId: accountId,
+                details: "Opening Balance"
+            }).sort({ createdAt: -1 }); // Get the latest "Opening Balance" entry
+
+            if (!lastOpeningEntry) {
+                throw new ApiError(404, "No Opening Balance found for this account.");
+            }
+
+            
+            const ledgerEntries = await GeneralLedger.find({
+                BusinessId,
+                individualAccountId: accountId,
+                createdAt: { $gte: lastOpeningEntry.createdAt }
+            }).sort({ createdAt: 1 }); // Sort from oldest to newest
+            
+            let totalDebit = 0;
+            let totalCredit = 0;
+
+            ledgerEntries.forEach(entry => {
+                if (entry.debit) {
+                    totalDebit += entry.debit;
+                }
+                if (entry.credit) {
+                    totalCredit += entry.credit;
+                }
+            });
+
+            let closingBalance = totalDebit - totalCredit;
+            let isDebit = closingBalance > 0; 
+
+            if (closingBalance < 0) {
+                closingBalance = Math.abs(closingBalance);
+            }
+
+
+            const closingEntry = new GeneralLedger({
+                BusinessId,
+                individualAccountId: accountId,
+                details: "Closing Balance",
+                debit: isDebit ? null : closingBalance,
+                credit: isDebit ? closingBalance : null,
+                reference: accountId,
+            });
+
+            transaction.addOperation(
+                async () => await closingEntry.save(),
+                async () => await GeneralLedger.deleteOne({ _id: closingEntry._id })
+            );
+
+            // Get current month and year
+            const now = new Date();
+            const month = now.toLocaleString('default', { month: 'long' }); // e.g., "March"
+            const year = now.getFullYear(); // e.g., "2025"
+            
+            const openingEntry = new GeneralLedger({
+                BusinessId,
+                individualAccountId: accountId,
+                details: "Opening Balance",
+                debit: isDebit ? closingBalance : null,
+                credit: isDebit ? null : closingBalance,
+                description: `Opening Balance for ${month} ${year}`,
+                reference: accountId
+            });
+
+            transaction.addOperation(
+                async () => await openingEntry.save(),
+                async () => await GeneralLedger.deleteOne({ _id: openingEntry._id })
+            );
+
+
+            res.status(200).json(new ApiResponse(200, { closingEntry, openingEntry }, "Account balance closed successfully!"));
+        });
+    } catch (error) {
+        throw new ApiError(500, `Transaction failed: ${error.message}`);
+    }
+});
+
+const adjustAccountBalance = asyncHandler(async (req, res) => {
+    const { accountId, debit, credit, reason } = req.body;
+    const user = req.user;
+
+    if (!user) {
+        throw new ApiError(401, "Authorization Failed!");
+    }
+
+    if (!accountId) {
+        throw new ApiError(400, "Account is required.");
+    }
+
+    const BusinessId = user.BusinessId;
+    const transactionManager = new TransactionManager();
+
+    try {
+        await transactionManager.run(async (transaction) => {
+            
+            const individualAccount = await IndividualAccount.findOne({
+                _id: accountId,
+                BusinessId,
+            });
+
+            if (!individualAccount) {
+                throw new ApiError(404, "Individual account not found.");
+            }
+
+
+            const originalBalance = individualAccount.accountBalance;
+            individualAccount.accountBalance += parseInt(debit) - parseInt(credit);
+
+            transaction.addOperation(
+                async () => await individualAccount.save(),
+                async () => {
+                    individualAccount.accountBalance = originalBalance;
+                    await individualAccount.save();
+                }
+            );
+
+            const adjustmentEntry = new GeneralLedger({
+                BusinessId,
+                individualAccountId: accountId,
+                details: "Account Balance Adjustment",
+                debit,
+                credit,
+                description: reason,
+                reference: accountId,
+            });
+
+            transaction.addOperation(
+                async () => await adjustmentEntry.save(),
+                async () => await GeneralLedger.deleteOne({ _id: adjustmentEntry._id })
+            );
+
+
+            res.status(200).json(new ApiResponse(200, { adjustmentEntry }, "Account balance adjusted successfully!"));
+        });
+    } catch (error) {
+        throw new ApiError(500, `${error.message}`);
+    }
+});
+
 
 export {
     registerAccount,
@@ -890,6 +1190,10 @@ export {
     getIndividualAccounts,
     postExpense,
     postVendorJournalEntry,
-    getGeneralLedger, 
-    postCustomerJournalEntry
+    getGeneralLedger,
+    postCustomerJournalEntry,
+    mergeAccounts,
+    openAccountBalance,
+    closeAccountBalance,
+    adjustAccountBalance
 }

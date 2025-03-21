@@ -348,6 +348,11 @@ function Header() {
           active: false
         },
         {
+          name: "Merge Accounts",
+          slug: `/${primaryPath}/accounts/merge-accounts`,
+          active: true
+        },
+        {
           name: "Income Statement",
           slug: `/${primaryPath}/accounts/income-statement`,
           active: true

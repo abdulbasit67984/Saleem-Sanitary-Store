@@ -241,6 +241,13 @@ const InvoiceComponent = () => {
     dispatch(setSelectedItems(updatedItems))
   };
 
+  const handleRemoveItem = (index) => {
+    const updatedItems = [...selectedItems];
+    updatedItems.splice(index, 1);
+    dispatch(setSelectedItems(updatedItems));
+    updateTotals();
+  }
+
   const updateTotals = () => {
     const totalQty = selectedItems.reduce((sum, item) => sum + Number((item.quantity || 0)), 0);
     const totalDiscount = selectedItems.reduce((sum, item) => sum + (item.salePrice1 * item.quantity * (item.discount || 0) / 100), 0);
@@ -720,6 +727,7 @@ const InvoiceComponent = () => {
                 <th className="py-2 px-1 text-left">G Amount</th>
                 <th className="py-2 px-1 text-left">Extra Discount %</th>
                 <th className="py-2 px-1 text-left">Net Amount</th>
+                <th className="py-2 px-1 text-left">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -769,6 +777,14 @@ const InvoiceComponent = () => {
                       />
                     </td>
                     <td className=" px-1">{netAmount}</td>
+                    <td className=" px-1">
+                      <button
+                        className={`px-2 py-1 text-xs text-white bg-red-500 hover:bg-red-700 rounded-lg`}
+                        onClick={() => handleRemoveItem(index)}
+                      >
+                        <span>Remove</span>
+                        </button>
+                    </td>
                   </tr>
                 );
               })}

@@ -79,6 +79,8 @@ const registerBill = asyncHandler(async (req, res) => {
             }
 
             let totalPurchaseAmount = 0;
+            let productName = "";
+
             for (const item of billItems) {
                 const { productId, quantity, billItemUnit } = item;
 
@@ -96,6 +98,8 @@ const registerBill = asyncHandler(async (req, res) => {
                 if (!product) {
                     throw new ApiError(404, `Product not found for ID: ${productId}`);
                 }
+
+                productName = product.productName;
 
                 const originalProductQuantity = product.productTotalQuantity; // Capture original value for rollback
                 product.productTotalQuantity -= (quantity * billItemUnit);
@@ -178,6 +182,14 @@ const registerBill = asyncHandler(async (req, res) => {
             const originalCustomerBalance = customerIndividualAccount.accountBalance;
             customerIndividualAccount.accountBalance += outstandingAmount;
 
+            if (customerIndividualAccount.mergedInto !== null) {
+                const mergedAccount = await IndividualAccount.findById(
+                    customerIndividualAccount.mergedInto
+                );
+                mergedAccount.accountBalance += outstandingAmount;
+                await mergedAccount.save();
+            }
+
             transaction.addOperation(
                 async () => {
                     await inventoryAccount.save();
@@ -237,10 +249,10 @@ const registerBill = asyncHandler(async (req, res) => {
                     [
                         {
                             BusinessId,
-                            individualAccountId: customerIndividualAccount._id,
-                            details: `Bill ${billNo}`,
+                            individualAccountId: customerIndividualAccount.mergedInto !== null ? customerIndividualAccount.mergedInto : customerIndividualAccount._id,
+                            details: billItems.length === 1 ? ` ${productName}` : `Bill ${billNo}`,
                             debit: totalAmount - flatDiscount,
-                            reference: customerIndividualAccount._id,
+                            reference: customerIndividualAccount.mergedInto !== null ? customerIndividualAccount.mergedInto : customerIndividualAccount._id,
                         },
                         paidAmount
                             ? {
@@ -248,7 +260,7 @@ const registerBill = asyncHandler(async (req, res) => {
                                 individualAccountId: cashAccount._id,
                                 details: `Cash received`,
                                 credit: paidAmount,
-                                reference: customerIndividualAccount._id,
+                                reference: customerIndividualAccount.mergedInto !== null ? customerIndividualAccount.mergedInto : customerIndividualAccount._id,
                             }
                             : null,
                         {
@@ -256,7 +268,7 @@ const registerBill = asyncHandler(async (req, res) => {
                             individualAccountId: salesRevenueAccount._id,
                             details: `Revenue for Bill ${billNo}`,
                             credit: salesRevenue,
-                            reference: customerIndividualAccount._id,
+                            reference: customerIndividualAccount.mergedInto !== null ? customerIndividualAccount.mergedInto : customerIndividualAccount._id,
                         },
                     ].filter(Boolean)
                 );
@@ -335,7 +347,7 @@ const updateBill = asyncHandler(async (req, res) => {
             const processInventoryChanges = async (oldItems, newItems) => {
                 const oldItemsMap = new Map(oldItems.map((item) => [item.productId._id.toString(), item]));
                 const newItemsMap = new Map(newItems.map((item) => [item.productId._id.toString(), item]));
-                console.log("1")
+                // console.log("1")
 
                 for (const [productId, newItem] of newItemsMap) {
                     const oldItem = oldItemsMap.get(productId);
@@ -365,7 +377,7 @@ const updateBill = asyncHandler(async (req, res) => {
                         );
                     }
                 }
-                console.log("2")
+                // console.log("2")
             };
 
             await processInventoryChanges(oldBillData.billItems, newBill.billItems);
@@ -400,7 +412,7 @@ const updateBill = asyncHandler(async (req, res) => {
                     }
                 );
             }
-            console.log("3")
+            // console.log("3")
 
             if (cashAccount && paidAmountDifference !== 0) {
                 const originalCashBalance = cashAccount.accountBalance;
@@ -427,12 +439,18 @@ const updateBill = asyncHandler(async (req, res) => {
                     }
                 );
             }
-            console.log("4")
+            // console.log("4")
             // console.log("oldbill", oldBill.customer, "newbill", newBill.customer)
             if (oldBill?.customer?._id.toString() !== newBill?.customer?.toString()) {
                 if (oldCustomerAccount && oldOutstandingAmount !== 0) {
                     const originalOldCustomerBalance = oldCustomerAccount.accountBalance;
                     oldCustomerAccount.accountBalance -= oldOutstandingAmount;
+
+                    if (oldCustomerAccount.mergedInto !== null) {
+                        const mergedIntoAccount = await IndividualAccount.findById(oldCustomerAccount.mergedInto);
+                        mergedIntoAccount.accountBalance -= oldOutstandingAmount;
+                        await mergedIntoAccount.save();
+                    }
 
                     transaction.addOperation(
                         async () => await oldCustomerAccount.save(),
@@ -447,6 +465,12 @@ const updateBill = asyncHandler(async (req, res) => {
                     const originalNewCustomerBalance = newCustomerAccount.accountBalance;
                     newCustomerAccount.accountBalance += outstandingDifference;
 
+                    if (newCustomerAccount.mergedInto !== null) {
+                        const mergedIntoAccount = await IndividualAccount.findById(newCustomerAccount.mergedInto);
+                        mergedIntoAccount.accountBalance += oldOutstandingAmount;
+                        await mergedIntoAccount.save();
+                    }
+
                     transaction.addOperation(
                         async () => await newCustomerAccount.save(),
                         async () => {
@@ -455,13 +479,18 @@ const updateBill = asyncHandler(async (req, res) => {
                         }
                     );
                 }
-                console.log("5")
+                // console.log("5")
             } else if (newCustomerAccount && outstandingDifference !== 0) {
                 newCustomerAccount.accountBalance += outstandingDifference;
+                if (newCustomerAccount.mergedInto !== null) {
+                    const mergedIntoAccount = await IndividualAccount.findById(newCustomerAccount.mergedInto);
+                    mergedIntoAccount.accountBalance += oldOutstandingAmount;
+                    await mergedIntoAccount.save();
+                }
                 await newCustomerAccount.save();
             }
 
-            console.log("6")
+            // console.log("6")
             if (salesRevenueAccount && salesRevenueDifference !== 0) {
                 salesRevenueAccount.accountBalance += salesRevenueDifference;
                 await salesRevenueAccount.save();
@@ -706,7 +735,15 @@ const billPayment = asyncHandler(async (req, res) => {
 
             // Deduct payment from accounts
             accountsReceivableAccount.accountBalance -= amountPaid;
+
             customerIndividualAccount.accountBalance -= (amountPaid + flatDiscount);
+
+            if(customerIndividualAccount.mergedInto !== null){
+                const mergedIntoAccount = await IndividualAccount.findById(customerIndividualAccount.mergedInto);
+                mergedIntoAccount.accountBalance -= (amountPaid + flatDiscount);
+                await mergedIntoAccount.save();
+            }
+
             salesRevenueAccount.accountBalance -= flatDiscount;
 
             transaction.addOperation(
@@ -739,10 +776,10 @@ const billPayment = asyncHandler(async (req, res) => {
             await GeneralLedger.create([
                 {
                     BusinessId,
-                    individualAccountId: customerIndividualAccount._id,
+                    individualAccountId: customerIndividualAccount.mergedInto !== null ? customerIndividualAccount.mergedInto : customerIndividualAccount._id,
                     details: `Bill Payment for Bill ${bill.billNo}`,
                     credit: amountPaid,
-                    reference: customerIndividualAccount._id,
+                    reference: customerIndividualAccount.mergedInto !== null ? customerIndividualAccount.mergedInto : customerIndividualAccount._id,
                 },
             ]);
 
@@ -785,7 +822,7 @@ const billPosting = asyncHandler(async (req, res) => {
 
             transaction.addOperation(
                 async () => await bill.save(),
-                async () => await Bill.findByIdAndUpdate(bill._id, { isPosted: false})
+                async () => await Bill.findByIdAndUpdate(bill._id, { isPosted: false })
             );
 
             return res.status(200).json(

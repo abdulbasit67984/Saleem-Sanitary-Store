@@ -31,7 +31,12 @@ const IndividualAccountSchema = new Schema({
     companyId: {
         type: Schema.Types.ObjectId,
         ref: 'Company'
-    }
+    },
+    mergedInto: {
+        type: Schema.Types.ObjectId,
+        ref: "IndividualAccount",
+        default: null,
+    },
 }, {
     timestamps: true
 })

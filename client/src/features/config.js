@@ -1114,6 +1114,58 @@ export class Config {
         }
     }
 
+    async mergeAccounts({...data}) {
+        try {
+            const response = await this.client.post(`/account/merge-accounts`,
+                JSON.stringify(
+                    data
+                ),
+                    {
+                        headers: {
+                            Authorization: `Bearer ${authService.getAccessToken()}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                )
+            if (response.data) {
+                return response.data;
+            } else {
+                return null;
+            }
+
+        } catch (error) {
+            console.error("Error in merging account:", error);
+            throw error;
+        }
+    }
+    
+
+    async openCloseAccountBalance({endpoint: endpoint, formData}) {
+        console.log('opening account balance called')
+        console.log('endpoint', endpoint)
+        try {
+            const response = await this.client.post(`/account/${endpoint}`,
+                JSON.stringify(
+                    formData
+                ),
+                    {
+                        headers: {
+                            Authorization: `Bearer ${authService.getAccessToken()}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                )
+            if (response.data) {
+                return response.data;
+            } else {
+                return null;
+            }
+    
+        } catch (error) {
+            console.error("Error in opening account balance:", error);
+            throw error;
+        }
+    }
 }
 const config = new Config();
 
