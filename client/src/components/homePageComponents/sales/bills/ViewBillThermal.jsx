@@ -10,7 +10,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
     // console.log(exemptedParagraph)
 
     return bill && (
-        <div className="thermal-bill w-[80mm] min-h-[28rem] shadow-lg overflow-y-auto scrollbar-thin mx-auto">
+        <div className="thermal-bill w-[80mm] min-h-[28rem] max-h-72 shadow-lg overflow-y-auto scrollbar-thin mx-auto">
             <div ref={ref} className="view-bill p-2 bg-white">
                 
                 {/* Business Information */}
@@ -18,6 +18,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
 
                     <h2 className="text-sm mt-6 font-bold">{bill.BusinessId.businessName}</h2>
                     <p className="text-[10px]">{bill.BusinessId.businessRegion}</p>
+                    <p className="text-[10px]">{bill.BusinessId.owner?.mobileno}</p>
                     <h3 className="text-[10px] font-semibold mt-2">Sale Receipt</h3>
                 </div>
 
@@ -47,7 +48,6 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                             <tr>
                                 <th className="p-1 text-left">Item</th>
                                 <th className="p-1 text-left">company</th>
-                                <th className="p-1 text-right">Type</th>
                                 <th className="p-1 text-right">Qty</th>
                                 {!quotation && <th className="p-1 text-right">Price</th>}
                                 {!quotation && <th className="p-1 text-right">Total</th>}
@@ -58,7 +58,6 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                                 <tr key={index} className="border border-gray-600">
                                     <td className="p-1">{item.productId.productName}</td>
                                     <td className="p-1">{item.productId.companyId?.companyName}</td>
-                                    <td className="p-1 text-right">{item.productId.typeId?.typeName}</td>
                                     <td className="p-1 text-right">{item.quantity}</td>
                                     {!quotation && <td className="p-1 text-right">{item.billItemPrice.toFixed(2)}</td>}
                                     {!quotation && <td className="p-1 text-right">
