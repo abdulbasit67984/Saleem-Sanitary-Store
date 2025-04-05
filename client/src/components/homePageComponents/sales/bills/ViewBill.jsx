@@ -33,7 +33,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                     <div className="text-left">
                         <p><strong>Customer Name:</strong> {bill.customer?.customerName}</p>
                         <p><strong>NTN:</strong> {bill.customer?.ntnNumber}</p>
-                        <p><strong>Phone Number:</strong> {bill.customer?.cnic}</p>
+                        <p><strong>Mobile Number:</strong> {bill.customer?.mobileno}</p>
                         <p><strong>Address:</strong> {bill.customer?.customerRegion}</p>
                     </div>
                     {/* Invoice Info */}
