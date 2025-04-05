@@ -126,16 +126,17 @@ ProductSchema.statics.calculatePurchasePriceForReturn = async function (productI
     const StatusOfPrice = mongoose.model('StatusOfPrice'); // Reference the StatusOfPrice model
 
     // Fetch the first relevant StatusOfPrice record with remainingQuantity > 0
-    const statusRecord = await StatusOfPrice.findOne({
+    let statusRecord;
+    statusRecord = await StatusOfPrice.findOne({
         productId: productId,
         remainingQuantity: { $gt: 0 }
     }).sort({ createdAt: 1 });
 
-    // if (!statusRecord) {
-    //     const product = await this.findById(productId, 'productName');
-    //     const productName = product ? product.productName : 'Unknown Product';
-    //     throw new Error(`No valid stock record found for product ${productName}.`);
-    // }
+    if (!statusRecord) {
+        statusRecord = await StatusOfPrice.findOne({
+            productId: productId
+        }).sort({ createdAt: -1 });
+    }
 
     // Increment the remaining quantity of the first record
     statusRecord.remainingQuantity += returnedQuantity;
