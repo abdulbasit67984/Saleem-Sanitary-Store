@@ -355,7 +355,7 @@ const UpdateBill = ({ billId, setIsEditing }) => {
 
         <div className="mt-2">
           <h3 className="text-sm font-semibold mb-2">Purchase Items</h3>
-          <table className="w-full text-xs border">
+          <table className="w-full text-xs border max-h-72 overflow-y-auto">
             <thead>
               <tr className="bg-gray-100">
                 <th className="border p-2">Product Name</th>
@@ -366,7 +366,7 @@ const UpdateBill = ({ billId, setIsEditing }) => {
               </tr>
             </thead>
             <tbody>
-              {billData?.billItems.map((item, index) => (
+              {billData?.billItems?.map((item, index) => (
                 <tr key={index} className="border">
                   <td className="border p-2">{item.productId.productName}</td>
                   <td className="border p-2">
