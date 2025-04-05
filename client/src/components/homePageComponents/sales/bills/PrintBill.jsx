@@ -53,7 +53,7 @@ const PrintBill = () => {
     const A4_HEIGHT = 295; // A4 height in mm
 
     html2canvas(invoiceElement, {
-      scale: (billId.at(0) === 'A') ? 1 : 2, // Higher scale for better quality
+      scale: (billId.at(0) === 'A') ? 1 : 1, // Higher scale for better quality
       useCORS: true, // Allow external images
       logging: true,
     }).then((canvas) => {
