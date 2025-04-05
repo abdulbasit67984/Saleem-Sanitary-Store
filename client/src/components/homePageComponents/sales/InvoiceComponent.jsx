@@ -263,7 +263,7 @@ const InvoiceComponent = () => {
     // dispatch(setFlatDiscount(totalDiscount));
     dispatch(setTotalAmount(totalAmount));
     dispatch(setTotalGst(totalGst));
-    dispatch(setIsPaid(balance === 0 ? 'paid' : 'unpaid'));
+    dispatch(setIsPaid((totalAmount - flatDiscount - paidAmount === 0)? 'paid' : 'unpaid'));
   };
 
 
