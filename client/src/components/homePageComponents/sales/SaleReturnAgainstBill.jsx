@@ -32,7 +32,7 @@ const SaleReturnAgainstBill = () => {
     const [submitSuccess, setSubmitSuccess] = useState(false);
 
   useEffect(() => {
-    if (billId && billId.length >= 10) {
+    if (billId && billId.length >= 5) {
       fetchBill(billId);
     }
   }, [billId]);
