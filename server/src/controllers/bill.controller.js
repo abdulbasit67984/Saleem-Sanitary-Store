@@ -71,9 +71,11 @@ const registerBill = asyncHandler(async (req, res) => {
 
             let billNo = "";
             if (billType === "A4") {
-                billNo = `A4${businessInitials}${nextSequence.toString().padStart(5, "0")}`;
+                // billNo = `A4${businessInitials}${nextSequence.toString().padStart(5, "0")}`;
+                billNo = `A4${nextSequence.toString().padStart(5, "0")}`;
             } else if (billType === "thermal") {
-                billNo = `TH${businessInitials}${nextSequence.toString().padStart(7, "0")}`;
+                // billNo = `TH${businessInitials}${nextSequence.toString().padStart(7, "0")}`;
+                billNo = `TH${nextSequence.toString().padStart(7, "0")}`;
             } else {
                 throw new ApiError(400, "Invalid bill type!");
             }
