@@ -244,7 +244,7 @@ const UpdateBill = ({ billId, setIsEditing }) => {
   const handleDeleteItem = (index) => {
     const updatedItems = billData.billItems.filter((_, i) => i !== index);
     setBillData({ ...billData, billItems: updatedItems });
-    setPopupOpen(false); 
+    setPopupOpen(false);
   };
 
 
@@ -277,151 +277,153 @@ const UpdateBill = ({ billId, setIsEditing }) => {
       onCancel={() => setPopupOpen(false)}
       isOpen={isPopupOpen}
     />
-    : ( isSavePopupOpen ? 
+    : (isSavePopupOpen ?
       <UpdateConfirmation
-      message="Are you sure you want to update the bill?"
-      onConfirm={() => handleSaveChanges()}
-      onCancel={() => setSavePopupOpen(false)}
-      isOpen={isSavePopupOpen}
-    />
+        message="Are you sure you want to update the bill?"
+        onConfirm={() => handleSaveChanges()}
+        onCancel={() => setSavePopupOpen(false)}
+        isOpen={isSavePopupOpen}
+      />
       : (
-      <div className="p-4 bg-white shadow-md rounded">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold mb-3">Edit Bill</h2>
-          <button className='hover:text-red-700 mb-3' onClick={() => setIsEditing(false)}>
-            <span>&#10008;</span>
-          </button>
+        <div className="p-4 bg-white shadow-md rounded">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold mb-3">Edit Bill</h2>
+            <button className='hover:text-red-700 mb-3' onClick={() => setIsEditing(false)}>
+              <span>&#10008;</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <Input
+              className="p-1"
+              label="Bill No:"
+              labelClass="w-28"
+              value={billData.billNo}
+              readOnly
+            />
+            <Input
+              className="p-1"
+              label="Payment Due Date:"
+              labelClass="w-28"
+              type="date"
+              value={billData.dueDate}
+              onChange={(e) => setBillData({ ...billData, dueDate: e.target.value })}
+            />
+            <Input
+              className="p-1"
+              label="Flat Discount:"
+              labelClass="w-28"
+              type="number"
+              value={billData.flatDiscount}
+              onChange={(e) => setBillData({ ...billData, flatDiscount: e.target.value })}
+            />
+            <Input
+              className="p-1"
+              label="Paid Amount:"
+              labelClass="w-28"
+              type="number"
+              value={billData.paidAmount}
+              onChange={(e) => setBillData({ ...billData, paidAmount: e.target.value })}
+            />
+            <Input
+              className="p-1"
+              label="Description:"
+              placeholder="Enter description"
+              labelClass="w-28"
+              value={billData.description}
+              onChange={(e) => setBillData({ ...billData, description: e.target.value })}
+            />
+            <label className="ml-1 flex items-center">
+              <span className="w-28">Change Customer:</span>
+              <select
+                className="border p-1 rounded text-xs w-44"
+                onChange={(e) => setBillData({ ...billData, customer: e.target.value })}
+                value={billData.customer || ""}
+              >
+                <option value="">{billData.customer?.customerName}</option>
+                {customerData?.map((customer, index) => (
+                  <option key={index} value={customer._id}>
+                    {customer.customerName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="border-b my-3"></div>
+
+
+          <div className="mt-2">
+            <h3 className="text-sm font-semibold mb-2">Purchase Items</h3>
+            <div className="max-h-72 overflow-y-auto">
+              <table className="w-full text-xs border">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border p-2">Product Name</th>
+                    <th className="border p-2">Quantity</th>
+                    <th className="border p-2">Price/Unit</th>
+                    <th className="border p-2">Discount %</th>
+                    <th className="border p-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {billData?.billItems?.map((item, index) => (
+                    <tr key={index} className="border">
+                      <td className="border p-2">{item.productId.productName}</td>
+                      <td className="border p-2">
+                        <Input
+                          type="number"
+                          className="p-1 text-right "
+                          value={item.quantity}
+                          onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+                        />
+                      </td>
+                      <td className="border p-2">
+                        <Input
+                          type="number"
+                          className="p-1 text-right "
+                          value={item.billItemPrice}
+                          onChange={(e) => handleItemChange(index, "billItemPrice", e.target.value)}
+                        />
+                      </td>
+                      <td className="border p-2">
+                        <Input
+                          type="number"
+                          className="p-1 text-right "
+                          value={item.billItemDiscount}
+                          onChange={(e) => handleItemChange(index, "discount", e.target.value)}
+                        />
+                      </td>
+                      <td className="border p-2 text-center">
+                        <button
+                          className="text-red-500 text-xs px-2 py-1 border border-red-500 rounded hover:bg-red-500 hover:text-white"
+                          onClick={() => {
+                            setPopupOpen(true)
+                            setItemIndex(index)
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <p>Total Amount: {calculateTotals(billData.billItems).totalAmount}</p>
+            <p>Total Discount: {calculateTotals(billData.billItems).totalDiscount}</p>
+            <p>Outstanding Amount: {calculateTotals(billData.billItems).outstandingAmount}</p>
+          </div>
+
+          <div className="mt-4 flex justify-end text-xs gap-2">
+            <Button className="p-1 px-2" onClick={() => setSavePopupOpen(true)}>Save Changes</Button>
+            <Button className="p-1 px-2" onClick={() => setIsEditing(false)}>close</Button>
+          </div>
         </div>
-
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <Input
-            className="p-1"
-            label="Bill No:"
-            labelClass="w-28"
-            value={billData.billNo}
-            readOnly
-          />
-          <Input
-            className="p-1"
-            label="Payment Due Date:"
-            labelClass="w-28"
-            type="date"
-            value={billData.dueDate}
-            onChange={(e) => setBillData({ ...billData, dueDate: e.target.value })}
-          />
-          <Input
-            className="p-1"
-            label="Flat Discount:"
-            labelClass="w-28"
-            type="number"
-            value={billData.flatDiscount}
-            onChange={(e) => setBillData({ ...billData, flatDiscount: e.target.value })}
-          />
-          <Input
-            className="p-1"
-            label="Paid Amount:"
-            labelClass="w-28"
-            type="number"
-            value={billData.paidAmount}
-            onChange={(e) => setBillData({ ...billData, paidAmount: e.target.value })}
-          />
-          <Input
-            className="p-1"
-            label="Description:"
-            placeholder="Enter description"
-            labelClass="w-28"
-            value={billData.description}
-            onChange={(e) => setBillData({ ...billData, description: e.target.value })}
-          />
-          <label className="ml-1 flex items-center">
-            <span className="w-28">Change Customer:</span>
-            <select
-              className="border p-1 rounded text-xs w-44"
-              onChange={(e) => setBillData({ ...billData, customer: e.target.value })}
-              value={billData.customer || ""}
-            >
-              <option value="">{billData.customer?.customerName}</option>
-              {customerData?.map((customer, index) => (
-                <option key={index} value={customer._id}>
-                  {customer.customerName}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="border-b my-3"></div>
-
-
-        <div className="mt-2">
-          <h3 className="text-sm font-semibold mb-2">Purchase Items</h3>
-          <table className="w-full text-xs border max-h-72 overflow-y-auto">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2">Product Name</th>
-                <th className="border p-2">Quantity</th>
-                <th className="border p-2">Price/Unit</th>
-                <th className="border p-2">Discount %</th>
-                <th className="border p-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {billData?.billItems?.map((item, index) => (
-                <tr key={index} className="border">
-                  <td className="border p-2">{item.productId.productName}</td>
-                  <td className="border p-2">
-                    <Input
-                      type="number"
-                      className="p-1 text-right "
-                      value={item.quantity}
-                      onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-                    />
-                  </td>
-                  <td className="border p-2">
-                    <Input
-                      type="number"
-                      className="p-1 text-right "
-                      value={item.billItemPrice}
-                      onChange={(e) => handleItemChange(index, "billItemPrice", e.target.value)}
-                    />
-                  </td>
-                  <td className="border p-2">
-                    <Input
-                      type="number"
-                      className="p-1 text-right "
-                      value={item.billItemDiscount}
-                      onChange={(e) => handleItemChange(index, "discount", e.target.value)}
-                    />
-                  </td>
-                  <td className="border p-2 text-center">
-                    <button
-                      className="text-red-500 text-xs px-2 py-1 border border-red-500 rounded hover:bg-red-500 hover:text-white"
-                      onClick={() => {
-                        setPopupOpen(true)
-                        setItemIndex(index)
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-4">
-          <p>Total Amount: {calculateTotals(billData.billItems).totalAmount}</p>
-          <p>Total Discount: {calculateTotals(billData.billItems).totalDiscount}</p>
-          <p>Outstanding Amount: {calculateTotals(billData.billItems).outstandingAmount}</p>
-        </div>
-
-        <div className="mt-4 flex justify-end text-xs gap-2">
-          <Button className="p-1 px-2" onClick={() => setSavePopupOpen(true)}>Save Changes</Button>
-          <Button className="p-1 px-2" onClick={() => setIsEditing(false)}>close</Button>
-        </div>
-      </div>
-    ))
+      ))
 };
 
 export default UpdateBill;
