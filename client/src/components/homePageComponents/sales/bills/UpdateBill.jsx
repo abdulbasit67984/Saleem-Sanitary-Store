@@ -285,10 +285,10 @@ const UpdateBill = ({ billId, setIsEditing }) => {
         isOpen={isSavePopupOpen}
       />
       : (
-        <div className="p-4 bg-white shadow-md rounded">
+        <div className="px-4 py-2 bg-white shadow-md rounded">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold mb-3">Edit Bill</h2>
-            <button className='hover:text-red-700 mb-3' onClick={() => setIsEditing(false)}>
+            <h2 className="text-lg font-semibold mb-1">Edit Bill</h2>
+            <button className='hover:text-red-700 mb-1' onClick={() => setIsEditing(false)}>
               <span>&#10008;</span>
             </button>
           </div>
@@ -353,7 +353,7 @@ const UpdateBill = ({ billId, setIsEditing }) => {
           <div className="border-b my-3"></div>
 
 
-          <div className="">
+          <div className="mt-2">
             <h3 className="text-sm font-semibold mb-2">Purchase Items</h3>
             <div className="max-h-72 overflow-y-auto scrollbar-thin">
               <table className="w-full text-xs border">
