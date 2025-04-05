@@ -353,9 +353,9 @@ const UpdateBill = ({ billId, setIsEditing }) => {
           <div className="border-b my-3"></div>
 
 
-          <div className="mt-2">
+          <div className="">
             <h3 className="text-sm font-semibold mb-2">Purchase Items</h3>
-            <div className="max-h-72 overflow-y-auto">
+            <div className="max-h-72 overflow-y-auto scrollbar-thin">
               <table className="w-full text-xs border">
                 <thead>
                   <tr className="bg-gray-100">
