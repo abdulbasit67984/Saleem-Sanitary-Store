@@ -16,9 +16,9 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                 {/* Business Information */}
                 <div className="text-center mb-2">
 
-                    <h2 className="text-sm mt-6 font-bold">{bill.BusinessId.businessName}</h2>
-                    <p className="text-[10px]">{bill.BusinessId.businessRegion}</p>
-                    <p className="text-[10px]">{bill.BusinessId.owner?.mobileno}</p>
+                    <h2 className="text-sm mt-6 font-bold">{bill.BusinessId?.businessName}</h2>
+                    <p className="text-[10px]">{bill.BusinessId?.businessRegion}</p>
+                    <p className="text-[10px]">{bill.BusinessId?.owner?.mobileno}</p>
                     <h3 className="text-[10px] font-semibold mt-2">Sale Receipt</h3>
                 </div>
 

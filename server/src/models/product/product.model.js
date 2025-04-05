@@ -131,11 +131,11 @@ ProductSchema.statics.calculatePurchasePriceForReturn = async function (productI
         remainingQuantity: { $gt: 0 }
     }).sort({ createdAt: 1 });
 
-    if (!statusRecord) {
-        const product = await this.findById(productId, 'productName');
-        const productName = product ? product.productName : 'Unknown Product';
-        throw new Error(`No valid stock record found for product ${productName}.`);
-    }
+    // if (!statusRecord) {
+    //     const product = await this.findById(productId, 'productName');
+    //     const productName = product ? product.productName : 'Unknown Product';
+    //     throw new Error(`No valid stock record found for product ${productName}.`);
+    // }
 
     // Increment the remaining quantity of the first record
     statusRecord.remainingQuantity += returnedQuantity;

@@ -17,9 +17,9 @@ const ViewBill = React.forwardRef((props, ref) => {
                 <div className="flex justify-center">
 
                     <div className='text-center'>
-                        <h2 className="text-2xl font-bold pb-2">{bill.BusinessId.businessName}</h2>
+                        <h2 className="text-2xl font-bold pb-2">{bill.BusinessId?.businessName}</h2>
                         <p className="text-sm">{bill.storeAddress}</p>
-                        <p className="text-sm">Phone &#128382;: {bill.BusinessId.owner.mobileno} | Email &#128231;: {bill.BusinessId.owner.email}</p>
+                        <p className="text-sm">Phone &#128382;: {bill.BusinessId?.owner?.mobileno} | Email &#128231;: {bill.BusinessId?.owner?.email}</p>
                         <h3 className="text-xl font-bold mt-4">Sale Invoice</h3>
                     </div>
                     <div></div>
