@@ -113,17 +113,19 @@ const InvoiceComponent = () => {
     dispatch(setProductQuantity(1));
     dispatch(setProductDiscount(0));
     dispatch(setProductUnits(product.productPack));
-    {customerFlag === "red" ? (
+    {
+      customerFlag === "red" ? (
+        dispatch(setProductPrice(product.salePriceDetails[0].salePrice1))
+      ) : customerFlag === "green" ? (
+        dispatch(setProductPrice(product.salePriceDetails[0].salePrice2))
+      ) : customerFlag === "yellow" ? (
+        dispatch(setProductPrice(product.salePriceDetails[0].salePrice3))
+      ) : customerFlag === "white" ? (
+        dispatch(setProductPrice(product.salePriceDetails[0].salePrice4))
+      ) : (
       dispatch(setProductPrice(product.salePriceDetails[0].salePrice1))
-    ) : customerFlag === "green" ? (
-      dispatch(setProductPrice(product.salePriceDetails[0].salePrice2))
-    ) : customerFlag === "yellow" ? (
-      dispatch(setProductPrice(product.salePriceDetails[0].salePrice3))
-    ) : customerFlag === "white" ? (
-      dispatch(setProductPrice(product.salePriceDetails[0].salePrice4))
-    ) : (
-      dispatch(setProductPrice(product.salePriceDetails[0].salePrice1))
-    )}
+    )
+    }
     dispatch(setProduct(product));
   };
 
@@ -263,7 +265,7 @@ const InvoiceComponent = () => {
     // dispatch(setFlatDiscount(totalDiscount));
     dispatch(setTotalAmount(totalAmount));
     dispatch(setTotalGst(totalGst));
-    dispatch(setIsPaid((totalAmount - flatDiscount - paidAmount === 0)? 'paid' : 'unpaid'));
+    dispatch(setIsPaid((totalAmount - flatDiscount - paidAmount === 0) ? 'paid' : 'unpaid'));
   };
 
 
@@ -507,7 +509,11 @@ const InvoiceComponent = () => {
           {/* <div className='grid grid-cols-2'> */}
           <label className="ml-1 flex items-center">
             <span className="w-28">Bill Type: <span className='text-red-600'>*</span></span>
-            <select onChange={(e) => setBillType(e.target.value)} className={`${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} border p-1 rounded text-xs w-44`}>
+            <select
+              onChange={(e) => setBillType(e.target.value)}
+              className={`${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} border p-1 rounded text-xs w-44`}
+              value={billType}
+            >
               <option value="thermal">Thermal</option>
               <option value="A4">A4</option>
             </select>
@@ -783,7 +789,7 @@ const InvoiceComponent = () => {
                         onClick={() => handleRemoveItem(index)}
                       >
                         <span>Remove</span>
-                        </button>
+                      </button>
                     </td>
                   </tr>
                 );

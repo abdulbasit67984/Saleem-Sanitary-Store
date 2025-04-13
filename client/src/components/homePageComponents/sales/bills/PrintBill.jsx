@@ -118,10 +118,10 @@ const PrintBill = () => {
       </div>
 
       {/* Render the bill content */}
-      {billId.at(0) === 'A' ?
-        <ViewBill bill={bill} ref={componentRef} exemptedParagraph={exemptedParagraph} quotation={quotation}/>
-        :
+      {billId.at(0) === 'T' ?
         <ViewBillThermal bill={bill} ref={componentRef} exemptedParagraph={exemptedParagraph} quotation={quotation}/>
+        :
+        <ViewBill bill={bill} ref={componentRef} exemptedParagraph={exemptedParagraph} quotation={quotation}/>
       }
     </div>
   ) :
