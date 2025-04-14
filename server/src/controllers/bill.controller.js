@@ -72,8 +72,7 @@ const registerBill = asyncHandler(async (req, res) => {
             let billNo = "";
             if (billType === "A4") {
                 // billNo = `A4${businessInitials}${nextSequence.toString().padStart(5, "0")}`;
-                // billNo = `${nextSequence.toString().padStart(5, "0")}`;
-                billNo = `00006`;
+                billNo = `${nextSequence.toString().padStart(5, "0")}`;
             } else if (billType === "thermal") {
                 // billNo = `TH${businessInitials}${nextSequence.toString().padStart(7, "0")}`;
                 billNo = `TH${nextSequence.toString().padStart(5, "0")}`;
@@ -603,7 +602,7 @@ const getLastBillNo = asyncHandler(async (req, res) => {
         // nextBillNo = `A4${businessInitials}${nextSequence.toString().padStart(5, "0")}`;
         nextBillNo = `${nextSequence.toString().padStart(5, "0")}`;
     } else if (billType === "thermal") {
-        nextBillNo = `TH${businessInitials}${nextSequence.toString().padStart(5, "0")}`;
+        nextBillNo = `TH${nextSequence.toString().padStart(5, "0")}`;
     }
 
     // Respond with the next bill number
