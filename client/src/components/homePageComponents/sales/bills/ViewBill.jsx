@@ -8,7 +8,7 @@ const ViewBill = React.forwardRef((props, ref) => {
 
     const bill = props.bill;
 
-    const exemptedParagraph = bill.BusinessId?.exemptedParagraph?.split('۔')
+    const exemptedParagraph = bill?.BusinessId?.exemptedParagraph?.split('۔')
 
     return bill && (
         <div className=' h-[28rem] shadow-lg overflow-y-auto scrollbar-thin'>
@@ -17,9 +17,9 @@ const ViewBill = React.forwardRef((props, ref) => {
                 <div className="flex justify-center">
 
                     <div className='text-center'>
-                        <h2 className="text-2xl font-bold pb-2">{bill.BusinessId?.businessName}</h2>
-                        <p className="text-sm">{bill.storeAddress}</p>
-                        <p className="text-sm">Phone &#128382;: {bill.BusinessId?.owner?.mobileno} | Email &#128231;: {bill.BusinessId?.owner?.email}</p>
+                        <h2 className="text-2xl font-bold pb-2">{bill?.BusinessId?.businessName}</h2>
+                        <p className="text-sm">{bill?.storeAddress}</p>
+                        <p className="text-sm">Phone &#128382;: {bill?.BusinessId?.owner?.mobileno} | Email &#128231;: {bill?.BusinessId?.owner?.email}</p>
                         <h3 className="text-xl font-bold mt-4">Sale Invoice</h3>
                     </div>
                     <div></div>
@@ -31,18 +31,18 @@ const ViewBill = React.forwardRef((props, ref) => {
                 <div className="flex justify-between mb-4">
                     {/* Customer Info */}
                     <div className="text-left">
-                        <p><strong>Customer Name:</strong> {bill.customer?.customerName}</p>
-                        <p><strong>NTN:</strong> {bill.customer?.ntnNumber}</p>
-                        <p><strong>Mobile Number:</strong> {bill.customer?.mobileNo}</p>
-                        <p><strong>Address:</strong> {bill.customer?.customerRegion}</p>
+                        <p><strong>Customer Name:</strong> {bill?.customer?.customerName}</p>
+                        <p><strong>NTN:</strong> {bill?.customer?.ntnNumber}</p>
+                        <p><strong>Mobile Number:</strong> {bill?.customer?.mobileNo}</p>
+                        <p><strong>Address:</strong> {bill?.customer?.customerRegion}</p>
                     </div>
                     {/* Invoice Info */}
                     <div className=''>
                         <div className="text-left">
-                            <p><strong className='pr-1'>Invoice No:</strong> {bill.billNo}</p>
+                            <p><strong className='pr-1'>Invoice No:</strong> {bill?.billNo}</p>
                             <p><strong className='pr-1'>Date:</strong>{
-                                bill.createdAt &&
-                                new Date(bill.createdAt).toLocaleString("en-PK", {
+                                bill?.createdAt &&
+                                new Date(bill?.createdAt).toLocaleString("en-PK", {
                                     timeZone: "Asia/Karachi",
                                     year: "numeric",
                                     month: "2-digit",
@@ -73,7 +73,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                         </thead>
                         <tbody>
                             {/* Render rows dynamically based on data */}
-                            {bill.billItems && bill.billItems.map((item, index) => (
+                            {bill?.billItems && bill?.billItems.map((item, index) => (
                                 <tr key={index} className="break-inside-avoid">
                                     <td className="text-xs p-2">{index + 1}</td>
                                     <td className="text-xs p-2">{item.productId.productName}</td>
@@ -90,11 +90,11 @@ const ViewBill = React.forwardRef((props, ref) => {
                 </div>
                 {/* Totals Section */}
                 <div className='flex  justify-end'>
-                    <div className=" mb-4  w-72">
-                        <p><span className='inline-block font-semibold w-44'>Total Gross Amount:</span> {(bill.totalAmount).toFixed(2)}</p>
-                        <p><span className='inline-block font-semibold w-44'>Discount Amount:</span> {(bill.flatDiscount).toFixed(2)}</p>
-                        <p><span className='inline-block font-semibold w-44'>Paid Amount:</span> {(bill.paidAmount).toFixed(2)}</p>
-                        <p><span className='inline-block font-semibold w-44'>Net Total:</span> {(bill.totalAmount - bill.flatDiscount - bill.paidAmount).toFixed(2)}</p>
+                    <div className=" mb-4 text-xl w-4/12">
+                        <p className='font-semibold'><span className='inline-block font-bold w-52'>Total Gross Amount:</span> {bill && (bill.totalAmount).toFixed(2)}</p>
+                        <p className='font-semibold'><span className='inline-block font-bold w-52'>Discount Amount:</span> {bill && (bill.flatDiscount).toFixed(2)}</p>
+                        <p className='font-semibold'><span className='inline-block font-bold w-52'>Paid Amount:</span> {bill && (bill.paidAmount).toFixed(2)}</p>
+                        <p className='font-semibold'><span className='inline-block font-bold w-52'>Bill Balance:</span> {bill && (bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount).toFixed(2)}</p>
                     </div>
                 </div>
                 {/* Signature Section */}
