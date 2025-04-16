@@ -53,16 +53,16 @@ const PrintBill = () => {
     const A4_HEIGHT = 295; // A4 height in mm
 
     html2canvas(invoiceElement, {
-      scale: (billId.at(0) === 'A') ? 1 : 1, // Higher scale for better quality
+      scale: (billId.at(0) === 'T') ? 1 : 1, // Higher scale for better quality
       useCORS: true, // Allow external images
       logging: true,
     }).then((canvas) => {
       const imgData = canvas.toDataURL("image/png");
       let pdf;
 
-      if (!(billId.at(0) === 'A')) {
+      if (billId.at(0) === 'T') {
         // Thermal Bill - No Pagination
-        const imgWidth = THERMAL_WIDTH; // Thermal bill width
+        const imgWidth = THERMAL_WIDTH;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
         pdf = new jsPDF("p", "mm", [THERMAL_WIDTH, imgHeight]); // Custom size for thermal
@@ -87,6 +87,7 @@ const PrintBill = () => {
         }
       }
 
+
       // Save the generated PDF
       pdf.save(`${billId}.pdf`);
     });
@@ -108,20 +109,20 @@ const PrintBill = () => {
         </Button>
         <div className='text-xs mb-2 flex gap-2'>
           <label htmlFor="exempted" className=''>Add Exempted Paragraph</label>
-          <input type='checkbox' id='exempted' className='' checked={exemptedParagraph==true} onChange={() => setExemptedParagraph((prev) => !prev)}/>
+          <input type='checkbox' id='exempted' className='' checked={exemptedParagraph == true} onChange={() => setExemptedParagraph((prev) => !prev)} />
         </div>
         <div className='text-xs mb-2 flex gap-2'>
           <label htmlFor="quotation" className=''>Quotation</label>
-          <input type='checkbox' id='quotation' className='' checked={quotation==true} onChange={() => setquotation((prev) => !prev)}/>
+          <input type='checkbox' id='quotation' className='' checked={quotation == true} onChange={() => setquotation((prev) => !prev)} />
         </div>
 
       </div>
 
       {/* Render the bill content */}
       {billId.at(0) === 'T' ?
-        <ViewBillThermal bill={bill} ref={componentRef} exemptedParagraph={exemptedParagraph} quotation={quotation}/>
+        <ViewBillThermal bill={bill} ref={componentRef} exemptedParagraph={exemptedParagraph} quotation={quotation} />
         :
-        <ViewBill bill={bill} ref={componentRef} exemptedParagraph={exemptedParagraph} quotation={quotation}/>
+        <ViewBill bill={bill} ref={componentRef} exemptedParagraph={exemptedParagraph} quotation={quotation} />
       }
     </div>
   ) :
