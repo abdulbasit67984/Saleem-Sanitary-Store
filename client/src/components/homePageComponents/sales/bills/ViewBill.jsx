@@ -31,15 +31,15 @@ const ViewBill = React.forwardRef((props, ref) => {
                 <div className="flex justify-between mb-4">
                     {/* Customer Info */}
                     <div className="text-left">
-                        <p><strong>Customer Name:</strong> {bill?.customer?.customerName}</p>
-                        <p><strong>NTN:</strong> {bill?.customer?.ntnNumber}</p>
-                        <p><strong>Mobile Number:</strong> {bill?.customer?.mobileNo}</p>
-                        <p><strong>Address:</strong> {bill?.customer?.customerRegion}</p>
+                        <p className='font-semibold'><strong className='font-bold'>Customer Name:</strong> {bill?.customer?.customerName}</p>
+                        <p className='font-semibold'><strong className='font-bold'>NTN:</strong> {bill?.customer?.ntnNumber}</p>
+                        <p className='font-semibold'><strong className='font-bold'>Mobile Number:</strong> {bill?.customer?.mobileNo}</p>
+                        <p className='font-semibold'><strong className='font-bold'>Address:</strong> {bill?.customer?.customerRegion}</p>
                     </div>
                     {/* Invoice Info */}
                     <div className=''>
                         <div className="text-left">
-                            <p><strong className='pr-1'>Invoice No:</strong> {bill?.billNo}</p>
+                            <p className='font-semibold'>Invoice No: <strong className='pr-1 font-bold'>{bill?.billNo}</strong> </p>
                             <p><strong className='pr-1'>Date:</strong>{
                                 bill?.createdAt &&
                                 new Date(bill?.createdAt).toLocaleString("en-PK", {
@@ -61,20 +61,20 @@ const ViewBill = React.forwardRef((props, ref) => {
                     <table className="w-full border">
                         <thead className="border-2">
                             <tr>
-                                <th className="text-xs text-left p-2">Sr No.</th>
+                                <th className="text-xs text-left p-2">No.</th>
                                 <th className="text-xs text-left p-2">Item Name</th>
                                 <th className="text-xs text-left p-2">Company</th>
                                 <th className="text-xs text-left p-2">Qty</th>
                                 <th className="text-xs text-left p-2">Rate</th>
-                                <th className="text-xs text-left p-2">Gross Amount</th>
-                                <th className="text-xs text-left p-2">Extra Discount</th>
-                                <th className="text-xs text-left p-2">Net Amount</th>
+                                <th className="text-xs text-left p-2">Gross Am.</th>
+                                <th className="text-xs text-left p-2">Extra Disc.</th>
+                                <th className="text-xs text-left p-2">Net Am.</th>
                             </tr>
                         </thead>
                         <tbody>
                             {/* Render rows dynamically based on data */}
                             {bill?.billItems && bill?.billItems.map((item, index) => (
-                                <tr key={index} className="break-inside-avoid">
+                                <tr key={index} className="break-inside-avoid border-2">
                                     <td className="text-xs p-2">{index + 1}</td>
                                     <td className="text-xs p-2">{item.productId.productName}</td>
                                     <td className="text-xs p-2">{item.productId?.companyId?.companyName}</td>
@@ -90,11 +90,11 @@ const ViewBill = React.forwardRef((props, ref) => {
                 </div>
                 {/* Totals Section */}
                 <div className='flex  justify-end'>
-                    <div className=" mb-4 text-xl w-4/12">
-                        <p className='font-semibold'><span className='inline-block font-bold w-52'>Total Gross Amount:</span> {bill && (bill.totalAmount).toFixed(2)}</p>
-                        <p className='font-semibold'><span className='inline-block font-bold w-52'>Discount Amount:</span> {bill && (bill.flatDiscount).toFixed(2)}</p>
-                        <p className='font-semibold'><span className='inline-block font-bold w-52'>Paid Amount:</span> {bill && (bill.paidAmount).toFixed(2)}</p>
-                        <p className='font-semibold'><span className='inline-block font-bold w-52'>Bill Balance:</span> {bill && (bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount).toFixed(2)}</p>
+                    <div className=" mb-4 text-l w-5/12">
+                        <p className='font-semibold'><span className='inline-block font-medium w-44'>Total Gross Amount:</span> {bill && (bill.totalAmount).toFixed(2)}</p>
+                        <p className='font-semibold'><span className='inline-block font-medium w-44'>Discount Amount:</span> {bill && (bill.flatDiscount).toFixed(2)}</p>
+                        <p className='font-semibold'><span className='inline-block font-medium w-44'>Paid Amount:</span> {bill && (bill.paidAmount).toFixed(2)}</p>
+                        <p className='font-bold'><span className='inline-block font-medium w-44'>Bill Balance:</span> {bill && (bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount).toFixed(2)}</p>
                     </div>
                 </div>
                 {/* Signature Section */}
@@ -116,6 +116,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                         <p className='mr-4'>Signature & Stamp</p>
                     </div>
                 </div>
+                <p className='text-center text-[10px] mt-4'>Software by Pandas. 📞 03103480229 🌐 www.pandas.com.pk</p>
             </div>
         </div>
     );

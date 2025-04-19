@@ -56,6 +56,8 @@ const InvoiceComponent = () => {
   const [dueDate, setDueDate] = useState('');
   const [editingIndex, setEditingIndex] = useState(null);
 
+  const [searchTerm, setSearchTerm] = useState('');
+
   const thermalColor = {
     th100: "bg-blue-100",
     th200: "bg-blue-200",
@@ -265,7 +267,7 @@ const InvoiceComponent = () => {
     // dispatch(setFlatDiscount(totalDiscount));
     dispatch(setTotalAmount(totalAmount));
     dispatch(setTotalGst(totalGst));
-    dispatch(setIsPaid((totalAmount - flatDiscount - paidAmount === 0) ? 'paid' : 'unpaid'));
+    dispatch(setIsPaid(balance === 0 ? 'paid' : 'unpaid'));
   };
 
 
@@ -370,6 +372,14 @@ const InvoiceComponent = () => {
   const handleViewBill = (billNo) => {
     navigate(`/${primaryPath}/sales/view-bill/${billNo}`);
   }
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const filteredCustomers = customerData?.filter((customer) =>
+    customer.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
 
   useEffect(() => {
@@ -528,20 +538,34 @@ const InvoiceComponent = () => {
           </label>
           {/* </div> */}
 
-          <label className="ml-1 flex items-center">
-            <span className="w-28">Customer Name:</span>
-            <select onChange={(e) => {
-              const customerId = e.target.value
-              dispatch(setCustomer(customerId))
-              const customer = customerData.find((c) => c._id === customerId)
-              setCustomerFlag(customer.customerFlag)
-              console.log('customerFlag', customerFlag)
-            }
-            } className={`${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} border p-1 rounded text-xs w-44`}>
-              <option value=''>Select Customer</option>
-              {customerData && customerData?.map((customer, index) => (
-                <option key={index} onClick={() => setCustomerIndex(index)} value={customer._id}>{customer.customerName}</option>
-
+          <label className="ml-1 flex gap-2 items-start"> {/* Changed to flex-col and items-start */}
+            <span className="w-28 mb-1">Customer Name:</span> {/* Added margin-bottom for spacing */}
+            <input
+              type="text"
+              placeholder="Search Customers..."
+              className={`${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} border p-1 rounded text-xs mb-1 w-20`} 
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+            <select
+              onChange={(e) => {
+                const customerId = e.target.value;
+                dispatch(setCustomer(customerId));
+                const customer = customerData.find((c) => c._id === customerId);
+                setCustomerFlag(customer?.customerFlag); // Added optional chaining
+                console.log('customerFlag', customer?.customerFlag); // Added optional chaining
+              }}
+              className={`${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} border p-1 rounded text-xs w-full`} 
+            >
+              <option value="">Select Customer</option>
+              {filteredCustomers?.map((customer, index) => (
+                <option
+                  key={index}
+                  onClick={() => setCustomerIndex(index)}
+                  value={customer._id}
+                >
+                  {customer.customerName}
+                </option>
               ))}
             </select>
           </label>

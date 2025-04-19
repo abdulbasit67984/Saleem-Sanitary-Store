@@ -13,6 +13,8 @@ const Ledger = () => {
   const [selectedLedgerData, setSelectedLedgerData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
   const printRef = useRef();
 
   let balance = 0;
@@ -51,6 +53,18 @@ const Ledger = () => {
 
     fetchAccountsAndLedger();
   }, []);
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const filteredAccounts = accounts.flatMap(account =>
+    account.subCategories.flatMap(sub =>
+      sub.individualAccounts.filter(individual =>
+        individual.individualAccountName.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    )
+  );
 
   // Handle selecting an account
   const handleSelectAccount = (account) => {
@@ -93,7 +107,7 @@ const Ledger = () => {
   const handleSaveAsPDF = () => {
     if (!selectedAccount) return;
 
-    html2canvas(printRef.current, { scale: 4 }).then((canvas) => {
+    html2canvas(printRef.current, { scale: 2 }).then((canvas) => {
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
       const imgWidth = 200;
@@ -113,22 +127,25 @@ const Ledger = () => {
       {/* Account List */}
       {!selectedAccount && (
         <div className="bg-gray-50 p-3 max-h-96 overflow-auto scrollbar-track-gray-700 scrollbar-thin ">
+          <input
+            type="text"
+            placeholder="Search Accounts..."
+            className="border p-2 rounded text-sm w-full mb-4"
+            value={searchTerm}
+            onChange={handleSearch}
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {accounts.flatMap(account =>
-            account.subCategories.flatMap(sub =>
-              sub.individualAccounts.map(individual => (
-                <div
-                  key={individual._id}
-                  className={` ${individual.customerId && 'bg-green-200'} ${(individual.supplierId || individual.companyId ) && 'bg-red-200'} p-4 rounded shadow-md cursor-pointer hover:shadow-lg transition`}
-                  onClick={() => handleSelectAccount(individual)}
-                >
-                  <h2 className="text-lg font-semibold">{individual.individualAccountName}</h2>
-                  <p className="text-gray-600">Balance: {individual.accountBalance}</p>
-                </div>
-              ))
-            )
-          )}
-        </div>
+            {filteredAccounts.map(individual => (
+              <div
+                key={individual._id}
+                className={` ${individual.customerId && 'bg-green-200'} ${(individual.supplierId || individual.companyId) && 'bg-red-200'} p-4 rounded shadow-md cursor-pointer hover:shadow-lg transition`}
+                onClick={() => handleSelectAccount(individual)}
+              >
+                <h2 className="text-lg font-semibold">{individual.individualAccountName}</h2>
+                <p className="text-gray-600">Balance: {individual.accountBalance}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -203,6 +220,7 @@ const Ledger = () => {
               
               </div>
             </div>
+            <p className='text-center text-[10px] mt-4'>Software by Pandas. 📞 03103480229 🌐 www.pandas.com.pk</p>
           </div>
 
           {/* Print & Save as PDF Buttons */}
