@@ -1196,20 +1196,27 @@ const getTotalInventory = asyncHandler(async (req, res) => {
             // Aggregate all products and calculate the sum of (productPurchasePrice * productTotalQuantity)
             const inventoryValueResult = await Product.aggregate([
                 {
-                    $group: {
-                        _id: null,
-                        totalValue: {
-                            $sum: {
-                                $multiply: ['$productPurchasePrice', '$productTotalQuantity'],
-                            },
-                        },
+                  $project: {
+                    _id: 1,
+                    purchaseValueOfPacks: {
+                      $multiply: [
+                        '$productPurchasePrice',
+                        { $divide: ['$productTotalQuantity', '$productPack'] },
+                      ],
                     },
+                  },
                 },
-            ]);
+                {
+                  $group: {
+                    _id: null,
+                    totalInventoryValueOfPacks: { $sum: '$purchaseValueOfPacks' },
+                  },
+                },
+              ]);
 
             let totalInventoryValue = 0;
             if (inventoryValueResult.length > 0) {
-                totalInventoryValue = inventoryValueResult[0].totalValue;
+                totalInventoryValue = inventoryValueResult[0].totalInventoryValueOfPacks;
             }
 
             res.status(200).json(new ApiResponse(200, { totalInventoryValue }, "Inventory details fetched successfully!"));
