@@ -66,7 +66,7 @@ function StockReport() {
 const SummaryCard = ({ label, value, highlight }) => (
   <div className={`p-4 rounded border shadow-sm ${highlight ? "bg-red-100 text-red-600 font-semibold" : "bg-gray-100"}`}>
     <p className="text-gray-700">{label}</p>
-    <h3 className="text-xl font-bold">{value}</h3>
+    <h3 className="text-xl font-bold">{parseFloat(value).toFixed(2)}</h3>
   </div>
 );
 

@@ -1199,10 +1199,16 @@ const getTotalInventory = asyncHandler(async (req, res) => {
                   $project: {
                     _id: 1,
                     purchaseValueOfPacks: {
-                      $multiply: [
-                        '$productPurchasePrice',
-                        { $divide: ['$productTotalQuantity', '$productPack'] },
-                      ],
+                      $cond: {
+                        if: { $eq: ['$productPack', 0] },
+                        then: 0, // If productPack is 0, the value contribution is 0
+                        else: {
+                          $multiply: [
+                            '$productPurchasePrice',
+                            { $divide: ['$productTotalQuantity', '$productPack'] },
+                          ],
+                        },
+                      },
                     },
                   },
                 },
