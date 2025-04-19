@@ -4,9 +4,11 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import config from "../../../features/config";
 import Loader from "../../../pages/Loader";
+import Button from "../../Button";
 
 function StockReport() {
 
+  const [inventoryDetails, setInventoryDetails] = useState(0)
 
   const allProducts = useSelector((state) => state.saleItems.allProducts);
   const companyData = useSelector((state) => state.companies.companyData);
@@ -26,6 +28,18 @@ function StockReport() {
     (product) => product.productTotalQuantity <= 0
   ).length || 0;
 
+  const fetchInventoryDetails = async () => {
+    try {
+      const response = await config.getInventoryDetails()
+      const { totalInventoryValue } = response
+      setInventoryDetails(totalInventoryValue)
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+
 
   return(
     <div className="p-4 bg-white border rounded shadow-md text-sm">
@@ -37,7 +51,14 @@ function StockReport() {
         <SummaryCard label="Total Companies" value={totalCompanies} />
         <SummaryCard label="Total Stock Quantity" value={Math.ceil(totalStockQuantity)} />
         <SummaryCard label="Out of Stock Products" value={outOfStockProducts} highlight />
+        { inventoryDetails > 0 && 
+          <SummaryCard label={"Inventory Details"} value={inventoryDetails} />
+        }
       </div>
+      <Button
+      className="px-4 m-4"
+      onClick={fetchInventoryDetails}
+      >Get Inventory Details</Button>
     </div>
   );
 }

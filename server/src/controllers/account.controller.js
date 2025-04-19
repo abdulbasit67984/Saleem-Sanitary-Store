@@ -8,6 +8,8 @@ import { IndividualAccount } from "../models/accounts/individualAccount.model.js
 import { AccountReceivable } from "../models/accounts/accountsReceivables.model.js";
 import { GeneralLedger } from "../models/accounts/generalLedger.model.js";
 import { TransactionManager } from "../utils/TransactionManager.js";
+import { Product } from "../models/product/product.model.js"
+
 
 const registerAccount = asyncHandler(async (req, res) => {
 
@@ -1177,6 +1179,46 @@ const adjustAccountBalance = asyncHandler(async (req, res) => {
     }
 });
 
+const getTotalInventory = asyncHandler(async (req, res) => {
+    const user = req.user;
+
+    if (!user) {
+        throw new ApiError(401, "Authorization Failed!");
+    }
+
+
+    const BusinessId = user.BusinessId;
+    const transactionManager = new TransactionManager();
+
+    try {
+        await transactionManager.run(async (transaction) => {
+
+            // Aggregate all products and calculate the sum of (productPurchasePrice * productTotalQuantity)
+            const inventoryValueResult = await Product.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalValue: {
+                            $sum: {
+                                $multiply: ['$productPurchasePrice', '$productTotalQuantity'],
+                            },
+                        },
+                    },
+                },
+            ]);
+
+            let totalInventoryValue = 0;
+            if (inventoryValueResult.length > 0) {
+                totalInventoryValue = inventoryValueResult[0].totalValue;
+            }
+
+            res.status(200).json(new ApiResponse(200, { totalInventoryValue }, "Inventory details fetched successfully!"));
+        });
+    } catch (error) {
+        throw new ApiError(500, `${error.message}`);
+    }
+});
+
 
 export {
     registerAccount,
@@ -1195,5 +1237,6 @@ export {
     mergeAccounts,
     openAccountBalance,
     closeAccountBalance,
-    adjustAccountBalance
+    adjustAccountBalance,
+    getTotalInventory
 }

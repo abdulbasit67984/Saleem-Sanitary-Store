@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerAccount, updateAccount, getAccounts,registerSubAccount, updateSubAccount, registerIndividualAccount, updateIndividualAccount, getAccountReceivables, getIndividualAccounts, postExpense, postVendorJournalEntry, getGeneralLedger, postCustomerJournalEntry, mergeAccounts, openAccountBalance, closeAccountBalance, adjustAccountBalance } from "../controllers/account.controller.js";
+import { registerAccount, updateAccount, getAccounts,registerSubAccount, updateSubAccount, registerIndividualAccount, updateIndividualAccount, getAccountReceivables, getIndividualAccounts, postExpense, postVendorJournalEntry, getGeneralLedger, postCustomerJournalEntry, mergeAccounts, openAccountBalance, closeAccountBalance, adjustAccountBalance, getTotalInventory } from "../controllers/account.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 
 const router = Router();
@@ -29,5 +29,6 @@ router.route("/merge-accounts").post(verifyJWT, mergeAccounts)
 router.route("/open-account-balance").post(verifyJWT, openAccountBalance)
 router.route("/close-account-balance").post(verifyJWT, closeAccountBalance)
 router.route("/adjust-account-balance").post(verifyJWT, adjustAccountBalance)
+router.route("/get-inventory-data").get(verifyJWT, getTotalInventory)
 
 export  { router as accountRoutes};

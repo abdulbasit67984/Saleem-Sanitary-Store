@@ -1138,6 +1138,30 @@ export class Config {
             throw error;
         }
     }
+
+    async getInventoryDetails() {
+        try {
+            const response = await this.client.get(`/account/get-inventory-data`,
+                
+                    {
+                        headers: {
+                            Authorization: `Bearer ${authService.getAccessToken()}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                )
+            if (response.data) {
+                console.log(response.data.data)
+                return response.data.data;
+            } else {
+                return null;
+            }
+
+        } catch (error) {
+            console.error("Error in fetching inventory details:", error);
+            throw error;
+        }
+    }
     
 
     async openCloseAccountBalance({endpoint: endpoint, formData}) {
