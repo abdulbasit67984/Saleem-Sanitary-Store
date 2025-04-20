@@ -193,14 +193,14 @@ const Ledger = () => {
                 </thead>
                 <tbody>
                   {selectedLedgerData.map(entry => {
-                    let entryBalance = 0;
-                    if (entry.debit){
-                      entryBalance = parseInt(balance) + parseInt(entry.debit)
-                      balance += (parseInt(entry.debit)) 
-                    } else if (entry.credit){
-                      entryBalance = parseInt(balance) - parseInt(entry.credit)
-                      balance -= ( parseInt(entry.credit))
+                    if (entry.debit) {
+                      balance += parseInt(entry.debit || 0);
+                    } else if (entry.credit) {
+                      balance -= parseInt(entry.credit || 0);
                     }
+                  
+                    // Now assign the updated balance to this row
+                    const entryBalance = balance;
                    return (
                     <tr key={entry._id} className="border">
                       <td className="p-2">{entry.createdAt.slice(0, 10)}</td>

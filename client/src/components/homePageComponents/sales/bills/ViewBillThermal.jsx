@@ -52,7 +52,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                         <thead className='bg-gray-200'>
                             <tr>
                                 <th className="p-1 text-left">Item</th>
-                                <th className="p-1 text-left">company</th>
+                                <th className="p-1 text-left">Company</th>
                                 <th className="p-1 text-right">Qty</th>
                                 {!quotation && <th className="p-1 text-right">Price</th>}
                                 {!quotation && <th className="p-1 text-right">Total</th>}
@@ -101,7 +101,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                     <Logo width='w-10 h-10' className='rounded-full opacity-90 hue-rotate-180' />
 
                 </div>
-                <div className='text-center text-xs'>PANDAS</div>
+                <div className='text-center text-[8px]'>Software by Pandas. 📞 03103480229 🌐 www.pandas.com.pk</div>
             </div>
         </div>
     );

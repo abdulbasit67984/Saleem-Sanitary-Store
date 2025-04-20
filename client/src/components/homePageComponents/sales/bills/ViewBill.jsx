@@ -102,21 +102,23 @@ const ViewBill = React.forwardRef((props, ref) => {
                     {
                         props.exemptedParagraph &&
                         <div className="text-justify mt-4 text-[10px] pb-5">
-                        <h4 className='text-right mr-4 text-[12px] py-2 font-bold'>:ضروری ہدایات</h4>
-                        <ul>
-                            {exemptedParagraph?.map((paragraph, i) => (
-                                paragraph.length > 3 &&
-                                <li key={i} className='text-right flex flex-row-reverse gap-1 py-1'> <span>&#8592;</span> <span>{paragraph}</span></li>
-                            ))}
-                        </ul>
-                    </div>
+                            <h4 className='text-right mr-4 text-[12px] py-2 font-bold'>:ضروری ہدایات</h4>
+                            <ul>
+                                {exemptedParagraph?.map((paragraph, i) => (
+                                    paragraph.length > 3 &&
+                                    <li key={i} className='text-right flex flex-row-reverse gap-1 py-1'> <span>&#8592;</span> <span>{paragraph}</span></li>
+                                ))}
+                            </ul>
+                        </div>
                     }
-                    <div className="text-right mt-16 mr-24">
-                        <p>____________________________</p>
-                        <p className='mr-4'>Signature & Stamp</p>
+                    <div className='flex items-end justify-end gap-20'>
+                        <p className='text-center text-[10px]'>Software by Pandas. 📞 03103480229 🌐 www.pandas.com.pk</p>
+                        <div className="text-right mt-16 mr-24">
+                            <p>____________________________</p>
+                            <p className='mr-4'>Signature & Stamp</p>
+                        </div>
                     </div>
                 </div>
-                <p className='text-center text-[10px] mt-4'>Software by Pandas. 📞 03103480229 🌐 www.pandas.com.pk</p>
             </div>
         </div>
     );
