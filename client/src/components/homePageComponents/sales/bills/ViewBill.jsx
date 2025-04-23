@@ -19,7 +19,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                     <div className='text-center'>
                         <h2 className="text-2xl font-bold pb-2">{bill?.BusinessId?.businessName}</h2>
                         <p className="text-sm">{bill?.storeAddress}</p>
-                        <p className="text-sm">Phone &#128382;: {bill?.BusinessId?.owner?.mobileno} | Email &#128231;: {bill?.BusinessId?.owner?.email}</p>
+                        <p className="text-sm"><span className='font-bold'>Phone</span> &#128382;: {bill?.BusinessId?.owner?.mobileno} | <span className='font-bold'>Address</span> &#128231;: {bill?.BusinessId?.businessRegion}</p>
                         <h3 className="text-xl font-bold mt-4">Sale Invoice</h3>
                     </div>
                     <div></div>
@@ -97,6 +97,12 @@ const ViewBill = React.forwardRef((props, ref) => {
                         <p className='font-bold'><span className='inline-block font-medium w-44'>Bill Balance:</span> {bill && (bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount).toFixed(2)}</p>
                     </div>
                 </div>
+
+                <div className='mt-3'>
+                    <p className='text-[12px] text-right'>نوٹ:  کوئی بھی آئیٹم واپس یا تبدیل ہو سکتی ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو۔ چائنہ آئیٹمز کی واپسی نہیں ہوگی۔ کسی بھی آئٹم کی واپسی صرف بل یا رسید کی موجودگی میں ہی قابل قبول ہوگی۔ </p>
+                    
+                </div>
+
                 {/* Signature Section */}
                 <div className=''>
                     {

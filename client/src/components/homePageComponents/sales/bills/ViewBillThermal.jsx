@@ -85,14 +85,28 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                     </div>
                 </div>}
 
+                <div className='mt-3'>
+                    <ul className='text-[8px] text-right'>
+                        <li className='flex flex-row-reverse gap-1 pt-1'>
+                            <span>&#8592;</span> کوئی بھی آئیٹم واپس یا تبدیل ہو سکتی ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو
+                        </li>
+                        <li className='flex flex-row-reverse gap-1 pt-1'>
+                            <span>&#8592;</span> کسی بھی آئٹم کی واپسی صرف بل یا رسید کی موجودگی میں ہی قابل قبول ہوگی
+                        </li>
+                        <li className='flex flex-row-reverse gap-1 pt-1'>
+                            <span>&#8592;</span> چائنہ آئیٹمز کی واپسی نہیں ہوگی
+                        </li>
+                    </ul>
+                </div>
+
                 {/* Footer Section */}
                 {props.exemptedParagraph == true &&
-                    <div className="text-justify mt-4 text-[8px] pb-5">
+                    <div className="text-justify mt-1 text-[8px] pb-5">
                         <h4 className='text-center text-[10px] py-2 font-bold'>:ضروری ہدایات</h4>
                         <ul>
                             {exemptedParagraph?.map((paragraph, i) => (
                                 paragraph.length > 3 &&
-                                <li key={i} className='text-right flex flex-row-reverse gap-1'> <span>&#8592;</span> <span>{paragraph}</span></li>
+                                <li key={i} className='text-right flex flex-row-reverse gap-1 pt-1'> <span>&#8592;</span> <span>{paragraph}</span></li>
                             ))}
                         </ul>
                     </div>
