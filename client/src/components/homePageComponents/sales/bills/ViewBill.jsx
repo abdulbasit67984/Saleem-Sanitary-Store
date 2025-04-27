@@ -7,6 +7,9 @@ import Logo from '../../../Logo';
 const ViewBill = React.forwardRef((props, ref) => {
 
     const bill = props.bill;
+    const packingSlip = props.packingSlip
+    const previousBalance = props.previousBalance
+    const showPreviousBalance = props.showPreviousBalance
 
     const exemptedParagraph = bill?.BusinessId?.exemptedParagraph?.split('۔')
 
@@ -65,24 +68,38 @@ const ViewBill = React.forwardRef((props, ref) => {
                                 <th className="text-xs text-left p-2">Item Name</th>
                                 <th className="text-xs text-left p-2">Company</th>
                                 <th className="text-xs text-left p-2">Qty</th>
-                                <th className="text-xs text-left p-2">Rate</th>
-                                <th className="text-xs text-left p-2">Gross Am.</th>
-                                <th className="text-xs text-left p-2">Extra Disc.</th>
-                                <th className="text-xs text-left p-2">Net Am.</th>
-                            </tr>
+                                {
+                                    !packingSlip && <th className="text-xs text-left p-2">Rate</th>}
+                                {
+                                    !packingSlip && <th className="text-xs text-left p-2">Gross Am.</th>}
+                                {
+                                    !packingSlip &&
+                                    <th className="text-xs text-left p-2">Extra Disc.</th>
+                                }
+                                {
+                                    !packingSlip &&
+                                    <th className="text-xs text-left p-2">Net Am.</th>
+                                }                    </tr>
                         </thead>
                         <tbody>
-                            {/* Render rows dynamically based on data */}
                             {bill?.billItems && bill?.billItems.map((item, index) => (
                                 <tr key={index} className="break-inside-avoid border-2">
                                     <td className="text-xs p-2">{index + 1}</td>
                                     <td className="text-xs p-2">{item.productId.productName}</td>
                                     <td className="text-xs p-2">{item.productId?.companyId?.companyName}</td>
                                     <td className="text-xs p-2">{item.quantity}</td>
-                                    <td className="text-xs p-2">{item.billItemPrice}</td>
-                                    <td className="text-xs p-2">{item.quantity * item.billItemPrice}</td>
-                                    <td className="text-xs p-2">{item.billItemDiscount}</td>
-                                    <td className="text-xs p-2">{(item.quantity * item.billItemPrice) - ((item.quantity * item.billItemPrice) * item.billItemDiscount / 100)}</td>
+                                    {!packingSlip &&
+                                        <td className="text-xs p-2">{item.billItemPrice}</td>
+                                    }
+                                    {!packingSlip &&
+                                        <td className="text-xs p-2">{item.quantity * item.billItemPrice}</td>
+                                    }
+                                    {!packingSlip &&
+                                        <td className="text-xs p-2">{item.billItemDiscount}</td>
+                                    }
+                                    {!packingSlip &&
+                                        <td className="text-xs p-2">{(item.quantity * item.billItemPrice) - ((item.quantity * item.billItemPrice) * item.billItemDiscount / 100)}</td>
+                                    }
                                 </tr>
                             ))}
                         </tbody>
@@ -95,12 +112,14 @@ const ViewBill = React.forwardRef((props, ref) => {
                         <p className='font-semibold'><span className='inline-block font-medium w-44'>Discount Amount:</span> {bill && (bill.flatDiscount).toFixed(2)}</p>
                         <p className='font-semibold'><span className='inline-block font-medium w-44'>Paid Amount:</span> {bill && (bill.paidAmount).toFixed(2)}</p>
                         <p className='font-bold'><span className='inline-block font-medium w-44'>Bill Balance:</span> {bill && (bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount).toFixed(2)}</p>
+                        {showPreviousBalance && <p className='font-bold'><span className='inline-block font-medium w-44'>Previous Balance:</span><span className='underline'> {previousBalance && (parseFloat(previousBalance)).toFixed(2)}</span></p>}
+                        {showPreviousBalance && <p className='font-bold'><span className='inline-block font-medium w-44'>Total Balance:</span> {previousBalance && (parseFloat(previousBalance) + (bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount)).toFixed(2)}</p>}
                     </div>
                 </div>
 
                 <div className='mt-3'>
                     <p className='text-[12px] text-right'>نوٹ:  کوئی بھی آئیٹم واپس یا تبدیل ہو سکتی ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو۔ چائنہ آئیٹمز کی واپسی نہیں ہوگی۔ کسی بھی آئٹم کی واپسی صرف بل یا رسید کی موجودگی میں ہی قابل قبول ہوگی۔ </p>
-                    
+
                 </div>
 
                 {/* Signature Section */}

@@ -6,18 +6,20 @@ import Logo from '../../../Logo';
 const ViewBillThermal = React.forwardRef((props, ref) => {
     const bill = props.bill;
     const exemptedParagraph = bill.BusinessId?.exemptedParagraph?.split('۔')
-    const quotation = props.quotation
+    const packingSlip = props.packingSlip
+    const previousBalance = props.previousBalance
+    const showPreviousBalance = props.showPreviousBalance
     // console.log(exemptedParagraph)
 
     const truncateString = (str, maxLength) => {
         if (!str) return "";
         return str.length > maxLength ? str.substring(0, maxLength - 3) + "..." : str;
-      };
+    };
 
     return bill && (
         <div className="thermal-bill w-[80mm] min-h-[24rem] max-h-72 shadow-lg overflow-y-auto scrollbar-thin mx-auto">
             <div ref={ref} className="view-bill p-2 bg-white">
-                
+
                 {/* Business Information */}
                 <div className="text-center mb-2">
 
@@ -54,8 +56,8 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                                 <th className="p-1 text-left">Item</th>
                                 <th className="p-1 text-left">Company</th>
                                 <th className="p-1 text-right">Qty</th>
-                                {!quotation && <th className="p-1 text-right">Price</th>}
-                                {!quotation && <th className="p-1 text-right">Total</th>}
+                                {!packingSlip && <th className="p-1 text-right">Price</th>}
+                                {!packingSlip && <th className="p-1 text-right">Total</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -64,8 +66,8 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                                     <td className="p-1">{truncateString(item.productId.productName, 13)}</td>
                                     <td className="p-1">{truncateString(item.productId.companyId?.companyName, 13)}</td>
                                     <td className="p-1 text-right">{item.quantity}</td>
-                                    {!quotation && <td className="p-1 text-right">{item.billItemPrice.toFixed(2)}</td>}
-                                    {!quotation && <td className="p-1 text-right">
+                                    {!packingSlip && <td className="p-1 text-right">{item.billItemPrice.toFixed(2)}</td>}
+                                    {!packingSlip && <td className="p-1 text-right">
                                         {((item.quantity * item.billItemPrice) -
                                             ((item.quantity * item.billItemPrice) * item.billItemDiscount / 100)).toFixed(2)}
                                     </td>}
@@ -76,12 +78,23 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                 </div>
 
                 {/* Totals Section */}
-               {!quotation &&  <div className='flex justify-end'>
-                    <div className="text-xs mt-2 w-32 border p-2 border-gray-600">
-                        <p><span className='font-semibold w-14 inline-block'>Total:</span> {bill.totalAmount?.toFixed(2)}</p>
-                        <p className='font-bold'><span className='font-semibold w-14 inline-block'>Discount:</span> {bill.flatDiscount.toFixed(2)}</p>
-                        <p><span className='font-semibold w-14 inline-block'>Paid:</span> {bill.paidAmount.toFixed(2)}</p>
-                        <p><span className='font-semibold w-14 inline-block'>Balance:</span> {(bill.totalAmount - bill.flatDiscount - bill.paidAmount).toFixed(2)}</p>
+                {!packingSlip && <div className='flex justify-end'>
+                    <div className={` text-xs mt-2 ${showPreviousBalance ? 'w-7/12' : 'w-32' } border flex flex-col gap-[2px] p-2 border-gray-600`}>
+                        <p><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Total:</span> {bill.totalAmount?.toFixed(2)}</p>
+                        <p className='font-bold'><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Discount:</span> {bill.flatDiscount.toFixed(2)}</p>
+                        <p><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Paid:</span> {bill.paidAmount.toFixed(2)}</p>
+                        <p><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Balance:</span> {(bill.totalAmount - bill.flatDiscount - bill.paidAmount).toFixed(2)}</p>
+                        {showPreviousBalance &&
+                            <p className='font-semibold'>
+                                <span className={` ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Previous Bal. :</span> 
+                                <span className='underline'>{previousBalance && (parseFloat(previousBalance)).toFixed(2)}</span>
+                            </p>
+                        }
+                        {showPreviousBalance &&
+                            <p>
+                                <span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}> Total:</span> {previousBalance && (parseFloat(previousBalance) + (bill.totalAmount - bill.flatDiscount - bill.paidAmount)).toFixed(2)}
+                            </p>
+                        }
                     </div>
                 </div>}
 

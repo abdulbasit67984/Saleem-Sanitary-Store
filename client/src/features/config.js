@@ -1190,6 +1190,28 @@ export class Config {
             throw error;
         }
     }
+
+    async getPreviousBalance(customerId) {
+        try {
+            const response = await this.client.get(`/account/get-previous-balance`, {
+                params: { customerId },
+                headers: {
+                    Authorization: `Bearer ${authService.getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.data) {
+                console.log(response.data.data)
+                return response.data.data;
+            } else {
+                return null;
+            }
+
+        } catch (error) {
+            console.error("Error in fetching previous Balance:", error);
+            throw error;
+        }
+    }
 }
 const config = new Config();
 

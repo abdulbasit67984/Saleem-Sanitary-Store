@@ -15,7 +15,9 @@ const PrintBill = () => {
   const [bill, setBill] = useState({})
   const [isLoading, setIsLoading] = useState(true)
   const [exemptedParagraph, setExemptedParagraph] = useState(false)
-  const [quotation, setquotation] = useState(false)
+  const [packingSlip, setPackingSlip] = useState(false)
+  const [showPreviousBalance, setShowPreviousBalance] = useState(false)
+  const [previousBalance, setPreviousBalance] = useState(0)
 
   const componentRef = useRef();
   const { billId } = useParams()
@@ -27,6 +29,14 @@ const PrintBill = () => {
         const response = await config.fetchSingleBill(billId);
         console.log('bill', response)
         setBill(response.data);
+        if (response.data && response.data.customer) {
+          const customerId = response.data.customer._id;
+          const res = await config.getPreviousBalance(customerId)
+          if(res) {
+            setPreviousBalance(res.accountBalance)
+            // console.log(res.accountBalance)
+          }
+        }
       } catch (error) {
         console.error('Error fetching bill:', error);
       } finally {
@@ -112,17 +122,38 @@ const PrintBill = () => {
           <input type='checkbox' id='exempted' className='' checked={exemptedParagraph == true} onChange={() => setExemptedParagraph((prev) => !prev)} />
         </div>
         <div className='text-xs mb-2 flex gap-2'>
-          <label htmlFor="quotation" className=''>Quotation</label>
-          <input type='checkbox' id='quotation' className='' checked={quotation == true} onChange={() => setquotation((prev) => !prev)} />
+          <label htmlFor="packingSlip" className=''>Packing Slip</label>
+          <input type='checkbox' id='packingSlip' className='' checked={packingSlip == true} onChange={() => setPackingSlip((prev) => !prev)} />
         </div>
+        { bill?.customer &&
+          <div className='text-xs mb-2 flex gap-2'>
+          <label htmlFor="showPreviousBalance" className=''>Show Previous Balance</label>
+          <input type='checkbox' id='showPreviousBalance' className='' checked={showPreviousBalance == true} onChange={() => setShowPreviousBalance((prev) => !prev)} />
+        </div>
+        }
 
       </div>
 
       {/* Render the bill content */}
       {billId.at(0) === 'T' ?
-        <ViewBillThermal bill={bill} ref={componentRef} exemptedParagraph={exemptedParagraph} quotation={quotation} />
+        <ViewBillThermal
+          bill={bill}
+          ref={componentRef}
+          exemptedParagraph={exemptedParagraph}
+          packingSlip={packingSlip}
+          showPreviousBalance={showPreviousBalance}
+          previousBalance={previousBalance}
+
+        />
         :
-        <ViewBill bill={bill} ref={componentRef} exemptedParagraph={exemptedParagraph} quotation={quotation} />
+        <ViewBill
+          bill={bill}
+          ref={componentRef}
+          exemptedParagraph={exemptedParagraph}
+          packingSlip={packingSlip}
+          showPreviousBalance={showPreviousBalance}
+          previousBalance={previousBalance}
+        />
       }
     </div>
   ) :

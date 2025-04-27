@@ -1232,6 +1232,54 @@ const getTotalInventory = asyncHandler(async (req, res) => {
     }
 });
 
+const getPreviousBalance = asyncHandler(async (req, res) => {
+    const user = req.user;
+    const { customerId } = req.query;
+
+    if (!user) {
+        throw new ApiError(401, "Authorization Failed!");
+    }
+
+    if (!customerId) {
+        throw new ApiError(400, "Customer ID is required.");
+    }
+
+    const BusinessId = user.BusinessId;
+    const transactionManager = new TransactionManager();
+
+    try {
+        await transactionManager.run(async (transaction) => {
+            let individualAccount = await IndividualAccount.findOne({
+                BusinessId,
+                customerId,
+            });
+
+            if (!individualAccount) {
+                throw new ApiError(404, "Individual account not found for this customer.");
+            }
+
+            // Handle mergedInto recursively
+            while (individualAccount.mergedInto) {
+                const mergedAccount = await IndividualAccount.findById(individualAccount.mergedInto);
+
+                if (!mergedAccount) {
+                    break;
+                }
+
+                individualAccount = mergedAccount;
+            }
+
+            res.status(200).json(
+                new ApiResponse(200, { 
+                    accountBalance: individualAccount.accountBalance 
+                }, "Previous balance retrieved successfully!")
+            );
+        });
+    } catch (error) {
+        throw new ApiError(500, `${error.message}`);
+    }
+});
+
 
 export {
     registerAccount,
@@ -1251,5 +1299,6 @@ export {
     openAccountBalance,
     closeAccountBalance,
     adjustAccountBalance,
-    getTotalInventory
+    getTotalInventory,
+    getPreviousBalance
 }
