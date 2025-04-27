@@ -2,7 +2,8 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   billData: [],
-  bill: {}
+  bill: {},
+  billNo: ""
 };
 
 const billSlice = createSlice({
@@ -15,9 +16,12 @@ const billSlice = createSlice({
     setBill: (state, action) => {
       state.bill = action.payload;
     },
+    setBillNo: (state, action) => {
+      state.billNo = action.payload;
+    },
 
   },
 });
 
-export const { setBillData, setBill } = billSlice.actions;
+export const { setBillData, setBill, setBillNo } = billSlice.actions;
 export default billSlice.reducer;
