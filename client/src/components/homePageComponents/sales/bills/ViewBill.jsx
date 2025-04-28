@@ -24,7 +24,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                         <h2 className="text-2xl font-bold pb-2">{bill?.BusinessId?.businessName}</h2>
                         <p className="text-sm">{bill?.storeAddress}</p>
                         <p className="text-sm"><span className='font-bold'>Phone</span> &#128382;: {bill?.BusinessId?.owner?.mobileno} | <span className='font-bold'>Address</span> &#128231;: {bill?.BusinessId?.businessRegion}</p>
-                        <h3 className="text-xl font-bold mt-4">Sale Invoice</h3>
+                        <h3 className="text-xl font-bold mt-4">{packingSlip ? 'Packing Slip' : 'Sale Invoice'}</h3>
                     </div>
                     <div></div>
                 </div>
@@ -86,8 +86,8 @@ const ViewBill = React.forwardRef((props, ref) => {
                             {bill?.billItems && bill?.billItems.map((item, index) => (
                                 <tr key={index} className="break-inside-avoid border-2">
                                     <td className="text-xs p-2">{index + 1}</td>
-                                    <td className="text-xs p-2">{item.productId.productName}</td>
-                                    <td className="text-xs p-2">{item.productId?.companyId?.companyName}</td>
+                                    <td className="text-xs p-2">{commonFunction.truncateString(item.productId.productName, 16)}</td>
+                                    <td className="text-xs p-2">{commonFunction.truncateString(item.productId?.companyId?.companyName, 16)}</td>
                                     <td className="text-xs p-2">{item.quantity}</td>
                                     {!packingSlip &&
                                         <td className="text-xs p-2">{commonFunction.formatAsianNumber(item.billItemPrice)}</td>

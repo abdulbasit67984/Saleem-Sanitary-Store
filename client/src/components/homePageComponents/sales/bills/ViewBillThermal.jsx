@@ -12,10 +12,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
     const showPreviousBalance = props.showPreviousBalance
     // console.log(exemptedParagraph)
 
-    const truncateString = (str, maxLength) => {
-        if (!str) return "";
-        return str.length > maxLength ? str.substring(0, maxLength - 3) + "..." : str;
-    };
+    
 
     return bill && (
         <div className="thermal-bill w-[80mm] min-h-[24rem] max-h-72 shadow-lg overflow-y-auto scrollbar-thin mx-auto">
@@ -24,9 +21,9 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                 {/* Business Information */}
                 <div className="text-center mb-2">
 
-                    <h2 className="text-sm mt-2 font-bold">{bill.BusinessId.businessName}</h2>
-                    <p className="text-[10px]">{bill.BusinessId.businessRegion}</p>
-                    <p className="text-[10px]">{bill.BusinessId.owner?.mobileno}</p>
+                    <h2 className="text-sm mt-2 font-bold">{bill?.BusinessId?.businessName}</h2>
+                    <p className="text-[10px]">{bill?.BusinessId?.businessRegion}</p>
+                    <p className="text-[10px]">{bill?.BusinessId?.owner?.mobileno}</p>
                     <h3 className="text-[10px] font-semibold mt-2">Sale Receipt</h3>
                 </div>
 
@@ -64,8 +61,8 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                         <tbody>
                             {bill.billItems && bill.billItems.map((item, index) => (
                                 <tr key={index} className="border border-gray-600">
-                                    <td className="p-1">{truncateString(item.productId.productName, 13)}</td>
-                                    <td className="p-1">{truncateString(item.productId.companyId?.companyName, 13)}</td>
+                                    <td className="p-1">{commonFunction.truncateString(item.productId.productName, 16)}</td>
+                                    <td className="p-1">{commonFunction.truncateString(item.productId.companyId?.companyName, 16)}</td>
                                     <td className="p-1 text-right">{item.quantity}</td>
                                     {!packingSlip && <td className="p-1 text-right">{commonFunction.formatAsianNumber(item.billItemPrice)}</td>}
                                     {!packingSlip && <td className="p-1 text-right">
@@ -80,7 +77,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
 
                 {/* Totals Section */}
                 {!packingSlip && <div className='flex justify-end'>
-                    <div className={` text-xs mt-2 ${showPreviousBalance ? 'w-7/12' : 'w-32' } border flex flex-col gap-[2px] p-2 border-gray-600`}>
+                    <div className={` text-xs mt-2 ${showPreviousBalance ? 'w-7/12' : 'w-36' } border flex flex-col gap-[2px] p-2 border-gray-600`}>
                         <p><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Total:</span> {commonFunction.formatAsianNumber(bill.totalAmount)}</p>
                         <p className='font-bold'><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Discount:</span> {commonFunction.formatAsianNumber(bill.flatDiscount)}</p>
                         <p><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Paid:</span> {commonFunction.formatAsianNumber(bill.paidAmount)}</p>
