@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import Logo from '../../../Logo';
+import commonFunction from '../../../../features/functions';
 // import { useSelector } from 'react-redux';
 
 // ViewBill component wrapped in forwardRef
@@ -89,16 +90,16 @@ const ViewBill = React.forwardRef((props, ref) => {
                                     <td className="text-xs p-2">{item.productId?.companyId?.companyName}</td>
                                     <td className="text-xs p-2">{item.quantity}</td>
                                     {!packingSlip &&
-                                        <td className="text-xs p-2">{item.billItemPrice}</td>
+                                        <td className="text-xs p-2">{commonFunction.formatAsianNumber(item.billItemPrice)}</td>
                                     }
                                     {!packingSlip &&
-                                        <td className="text-xs p-2">{item.quantity * item.billItemPrice}</td>
+                                        <td className="text-xs p-2">{commonFunction.formatAsianNumber(item.quantity * item.billItemPrice)}</td>
                                     }
                                     {!packingSlip &&
-                                        <td className="text-xs p-2">{item.billItemDiscount}</td>
+                                        <td className="text-xs p-2">{commonFunction.formatAsianNumber(item.billItemDiscount)}</td>
                                     }
                                     {!packingSlip &&
-                                        <td className="text-xs p-2">{(item.quantity * item.billItemPrice) - ((item.quantity * item.billItemPrice) * item.billItemDiscount / 100)}</td>
+                                        <td className="text-xs p-2">{commonFunction.formatAsianNumber((item.quantity * item.billItemPrice) - ((item.quantity * item.billItemPrice) * item.billItemDiscount / 100))}</td>
                                     }
                                 </tr>
                             ))}
@@ -106,21 +107,25 @@ const ViewBill = React.forwardRef((props, ref) => {
                     </table>
                 </div>
                 {/* Totals Section */}
-                <div className='flex  justify-end'>
+                {!packingSlip && 
+                    <div className='flex  justify-end'>
                     <div className=" mb-4 text-l w-5/12">
-                        <p className='font-semibold'><span className='inline-block font-medium w-44'>Total Gross Amount:</span> {bill && (bill.totalAmount).toFixed(2)}</p>
-                        <p className='font-semibold'><span className='inline-block font-medium w-44'>Discount Amount:</span> {bill && (bill.flatDiscount).toFixed(2)}</p>
-                        <p className='font-semibold'><span className='inline-block font-medium w-44'>Paid Amount:</span> {bill && (bill.paidAmount).toFixed(2)}</p>
-                        <p className='font-bold'><span className='inline-block font-medium w-44'>Bill Balance:</span> {bill && (bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount).toFixed(2)}</p>
-                        {showPreviousBalance && <p className='font-bold'><span className='inline-block font-medium w-44'>Previous Balance:</span><span className='underline'> {previousBalance && (parseFloat(previousBalance)).toFixed(2)}</span></p>}
-                        {showPreviousBalance && <p className='font-bold'><span className='inline-block font-medium w-44'>Total Balance:</span> {previousBalance && (parseFloat(previousBalance) + (bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount)).toFixed(2)}</p>}
+                        <p className='font-semibold'><span className='inline-block font-medium w-44'>Total Gross Amount:</span> {bill && commonFunction.formatAsianNumber(bill.totalAmount)}</p>
+                        <p className='font-semibold'><span className='inline-block font-medium w-44'>Discount Amount:</span> {bill && commonFunction.formatAsianNumber(bill.flatDiscount)}</p>
+                        <p className='font-semibold'><span className='inline-block font-medium w-44'>Paid Amount:</span> {bill && commonFunction.formatAsianNumber(bill.paidAmount)}</p>
+                        <p className='font-bold'><span className='inline-block font-medium w-44'>Bill Balance:</span> {bill && commonFunction.formatAsianNumber(bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount)}</p>
+                        {showPreviousBalance && <p className='font-bold'><span className='inline-block font-medium w-44'>Previous Balance:</span><span className='underline'> {previousBalance && commonFunction.formatAsianNumber(previousBalance - (bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount))}</span></p>}
+                        {showPreviousBalance && <p className='font-bold'><span className='inline-block font-medium w-44'>Total Balance:</span> {previousBalance && commonFunction.formatAsianNumber(previousBalance)}</p>}
                     </div>
                 </div>
+                }
 
-                <div className='mt-3'>
+                {!packingSlip && 
+                    <div className='mt-3'>
                     <p className='text-[12px] text-right'>نوٹ:  کوئی بھی آئیٹم واپس یا تبدیل ہو سکتی ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو۔ چائنہ آئیٹمز کی واپسی نہیں ہوگی۔ کسی بھی آئٹم کی واپسی صرف بل یا رسید کی موجودگی میں ہی قابل قبول ہوگی۔ </p>
 
                 </div>
+                }
 
                 {/* Signature Section */}
                 <div className=''>

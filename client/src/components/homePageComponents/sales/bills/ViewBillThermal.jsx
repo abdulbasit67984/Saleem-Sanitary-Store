@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import Logo from '../../../Logo';
+import commonFunction from '../../../../features/functions';
 
 // ViewBill component wrapped in forwardRef
 const ViewBillThermal = React.forwardRef((props, ref) => {
@@ -66,10 +67,10 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                                     <td className="p-1">{truncateString(item.productId.productName, 13)}</td>
                                     <td className="p-1">{truncateString(item.productId.companyId?.companyName, 13)}</td>
                                     <td className="p-1 text-right">{item.quantity}</td>
-                                    {!packingSlip && <td className="p-1 text-right">{item.billItemPrice.toFixed(2)}</td>}
+                                    {!packingSlip && <td className="p-1 text-right">{commonFunction.formatAsianNumber(item.billItemPrice)}</td>}
                                     {!packingSlip && <td className="p-1 text-right">
-                                        {((item.quantity * item.billItemPrice) -
-                                            ((item.quantity * item.billItemPrice) * item.billItemDiscount / 100)).toFixed(2)}
+                                        {commonFunction.formatAsianNumber((item.quantity * item.billItemPrice) -
+                                            ((item.quantity * item.billItemPrice) * item.billItemDiscount / 100))}
                                     </td>}
                                 </tr>
                             ))}
@@ -80,19 +81,19 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                 {/* Totals Section */}
                 {!packingSlip && <div className='flex justify-end'>
                     <div className={` text-xs mt-2 ${showPreviousBalance ? 'w-7/12' : 'w-32' } border flex flex-col gap-[2px] p-2 border-gray-600`}>
-                        <p><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Total:</span> {bill.totalAmount?.toFixed(2)}</p>
-                        <p className='font-bold'><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Discount:</span> {bill.flatDiscount.toFixed(2)}</p>
-                        <p><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Paid:</span> {bill.paidAmount.toFixed(2)}</p>
-                        <p><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Balance:</span> {(bill.totalAmount - bill.flatDiscount - bill.paidAmount).toFixed(2)}</p>
+                        <p><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Total:</span> {commonFunction.formatAsianNumber(bill.totalAmount)}</p>
+                        <p className='font-bold'><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Discount:</span> {commonFunction.formatAsianNumber(bill.flatDiscount)}</p>
+                        <p><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Paid:</span> {commonFunction.formatAsianNumber(bill.paidAmount)}</p>
+                        <p><span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Balance:</span> {commonFunction.formatAsianNumber(bill.totalAmount - bill.flatDiscount - bill.paidAmount)}</p>
                         {showPreviousBalance &&
                             <p className='font-semibold'>
                                 <span className={` ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}>Previous Bal. :</span> 
-                                <span className='underline'>{previousBalance && (parseFloat(previousBalance)).toFixed(2)}</span>
+                                <span className='underline'>{previousBalance && commonFunction.formatAsianNumber((previousBalance) - (bill.totalAmount - bill.flatDiscount - bill.paidAmount))}</span>
                             </p>
                         }
                         {showPreviousBalance &&
                             <p>
-                                <span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}> Total:</span> {previousBalance && (parseFloat(previousBalance) + (bill.totalAmount - bill.flatDiscount - bill.paidAmount)).toFixed(2)}
+                                <span className={`font-semibold ${showPreviousBalance ? 'w-20' : 'w-16'} inline-block`}> Total:</span> {previousBalance && commonFunction.formatAsianNumber(previousBalance)}
                             </p>
                         }
                     </div>
