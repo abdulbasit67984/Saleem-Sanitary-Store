@@ -6,6 +6,7 @@ import { login } from '../store/slices/auth/authSlice.js'
 import { Button, Input, Logo } from './index.js'
 import { useDispatch, useSelector } from 'react-redux'
 import { useForm } from 'react-hook-form'
+import UpdateBusiness from './UpdateBusiness.jsx'
 
 function RegisterBusiness() {
     const navigate = useNavigate()
@@ -13,6 +14,9 @@ function RegisterBusiness() {
     const [isLoading, setIsLoading] = useState("")
     const [response, setResponse] = useState("")
     const [isStoreCreated, setIsStoreCreated] = useState(false)
+    const [isBusinessUpdate, setisBusinessUpdate] = useState(false)
+
+
     const dispatch = useDispatch()
     const { register, handleSubmit, watch, reset } = useForm()
     const { authStatus, userData, token } = useSelector(state => state.auth)
@@ -54,7 +58,9 @@ function RegisterBusiness() {
     }
 
 
-    return (
+    return ( isBusinessUpdate ?
+        <UpdateBusiness setisBusinessUpdate={setisBusinessUpdate} />
+        :
         <div className="h-auto w-full flex mt-8 justify-center">
 
             {isStoreCreated && (
@@ -70,6 +76,7 @@ function RegisterBusiness() {
 
             <div className="w-4/6 bg-gray-100 rounded-lg p-6 border border-gray-300">
                 <h2 className="text-center text-lg font-bold leading-tight">Register Business</h2>
+
 
                 {error && <p className="text-red-600 mt-2 mb-1 text-center text-sm">{error}</p>}
 
@@ -165,6 +172,13 @@ function RegisterBusiness() {
                         )}
                     </div>
                 </form>
+                <p className='text-center py-3'>
+                    <button
+                        className='text-blue-700'
+                        onClick={() => setisBusinessUpdate(true)}
+                    >Update </button>
+                    <span> Business details</span>
+                </p>
             </div>
         </div>
     )

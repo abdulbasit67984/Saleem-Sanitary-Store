@@ -7,6 +7,7 @@ import { Button, Input, Logo } from './index.js'
 import { useDispatch } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import { extractErrorMessage } from '../utils/extractErrorMessage.js'
+import UpdateUserDetails from './UpdateUserDetails.jsx'
 
 function Signup() {
     const navigate = useNavigate()
@@ -14,6 +15,9 @@ function Signup() {
     const [isLoading, setIsLoading] = useState(false)
     const [response, setResponse] = useState("")
     const [isAccountCreated, setIsAccountCreated] = useState(false)
+    const [isUpdateUserDetails, setIsUpdateUserDetails] = useState(false)
+
+
     const dispatch = useDispatch()
     const { register, handleSubmit, watch, reset } = useForm()
 
@@ -41,6 +45,9 @@ function Signup() {
 
 
     return (
+        isUpdateUserDetails ?
+        <UpdateUserDetails setIsUpdateUserDetails={setIsUpdateUserDetails} />
+        :
         <div className="h-auto w-full flex mt-8 justify-center">
 
             {isAccountCreated && (
@@ -161,6 +168,13 @@ function Signup() {
                         )}
                     </button>
                 </form>
+                <p className='text-center py-3'>
+                    <button
+                        className='text-blue-700'
+                        onClick={() => setIsUpdateUserDetails(true)}
+                    >Update </button>
+                    <span> Account details</span>
+                </p>
             </div>
         </div>
     )

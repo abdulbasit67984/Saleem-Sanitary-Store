@@ -31,13 +31,6 @@ const generateAccessAndRefreshTokens = async (userId) => {
 }
 
 const registerUser = asyncHandler(async (req, res) => {
-    //get user details from client
-    //validation: not empty
-    //check if user already exists: username, email
-    //create new user object and add to db
-    //remove password and refreshtoken field from response
-    //check if user is created successfully
-    //send success response with user details
 
     const { username, firstname, lastname, email, mobileno, password, cnic } = req.body
 
@@ -80,6 +73,91 @@ const registerUser = asyncHandler(async (req, res) => {
         new ApiResponse(200, createdUser, "User created successfully")
     )
 })
+
+const updateUserDetails = asyncHandler(async (req, res) => {
+    // Get the authenticated user from the request object
+    // This assumes your authentication middleware populates req.user
+    const authenticatedUser = req.user;
+
+    if (!authenticatedUser) {
+        throw new ApiError(401, "Unauthorized request. User not authenticated.");
+    }
+
+    // Extract potential update fields from request body
+    // Exclude password from here - password updates need a separate secure route
+    const { username, firstname, lastname, email, mobileno, cnic } = req.body;
+
+    // Prepare the update object
+    const updateFields = {};
+
+    // Add fields to updateFields only if they are provided in the request body
+    // Using undefined check allows sending empty strings or null if needed to clear a field
+    if (username !== undefined) updateFields.username = username?.toLowerCase(); // Assuming you want usernames lowercase
+    if (firstname !== undefined) updateFields.firstname = firstname;
+    if (lastname !== undefined) updateFields.lastname = lastname;
+    if (email !== undefined) updateFields.email = email;
+    if (mobileno !== undefined) updateFields.mobileno = mobileno;
+    if (cnic !== undefined) updateFields.cnic = cnic;
+
+
+    // IMPORTANT: Check for unique constraints if username or email are being updated
+    if (updateFields.username && updateFields.username !== authenticatedUser.username?.toLowerCase()) {
+        const userExists = await User.findOne({
+            username: updateFields.username,
+            _id: { $ne: authenticatedUser._id } // Exclude the current user
+        });
+
+        if (userExists) {
+            throw new ApiError(409, "Username already exists!");
+        }
+    }
+
+    if (updateFields.email && updateFields.email !== authenticatedUser.email) {
+         const emailExists = await User.findOne({
+            email: updateFields.email,
+            _id: { $ne: authenticatedUser._id } // Exclude the current user
+        });
+
+        if (emailExists) {
+            throw new ApiError(409, "Email already exists!");
+        }
+    }
+
+    // Check if there's anything to update
+    if (Object.keys(updateFields).length === 0) {
+        throw new ApiError(400, "No update fields provided.");
+    }
+
+    // Find the user by ID and update their details
+    // We use findByIdAndUpdate on the _id from the authenticated user to ensure
+    // the correct user is being updated.
+    const updatedUser = await User.findByIdAndUpdate(
+        authenticatedUser._id,
+        {
+            $set: updateFields // Use $set to update only the specified fields
+        },
+        {
+            new: true,           // Return the updated document
+            runValidators: true  // Run Mongoose schema validators on the updated fields
+        }
+    ).select("-password -refreshToken"); // Exclude sensitive fields from the response
+
+    // This check is a safeguard; findByIdAndUpdate with a valid ID should return a doc
+    if (!updatedUser) {
+         // This case is highly unlikely if authenticatedUser._id is valid
+        throw new ApiError(500, "Failed to update user details. User not found or update failed.");
+    }
+
+    // Return a success response with the updated user details (excluding sensitive fields)
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            updatedUser,
+            "User details updated successfully"
+        )
+    );
+});
+
 
 const loginUser = asyncHandler( async (req, res) => {
     // request body -> data
@@ -136,7 +214,7 @@ const loginUser = asyncHandler( async (req, res) => {
             )
         )
     } catch (error) {
-        throw new ApiError(400, "Error in logging in user")
+        throw new ApiError(400, error )
     }
 })
 
@@ -336,6 +414,152 @@ const registerBusiness = asyncHandler(async (req, res) => {
     );
 });
 
+const updateBusinessDetails = asyncHandler(async (req, res) => {
+    // Extract potential update fields from request body
+    const { businessName, businessRegion, subscription, exemptedParagraph, gst } = req.body;
+
+    console.log('req.body', req.body)
+    console.log('businessName, businessRegion, subscription, exemptedParagraph, gst ', businessName, businessRegion, subscription, exemptedParagraph, gst )
+    // Get the authenticated user from the request object
+    const owner = req.user;
+    if (!owner) {
+        throw new ApiError(401, "Unauthorized request. User not found.");
+    }
+
+    // Find the user to get their BusinessId
+    const user = await User.findById(owner._id);
+    if (!user) {
+         // This case should ideally not happen if req.user is populated correctly
+        throw new ApiError(404, "User not found in database.");
+    }
+
+    // Check if the user has a business registered
+    if (!user.BusinessId) {
+        throw new ApiError(404, "No business found for this user to update.");
+    }
+
+    // Find the existing business document using the BusinessId from the user
+    const business = await Business.findById(user.BusinessId);
+    if (!business) {
+        // This case might happen if the BusinessId exists on the user but the business document is missing
+        throw new ApiError(404, "Business document not found.");
+    }
+
+    let logoUrl = business.businessLogo; // Start with the existing logo URL
+
+    // Handle potential logo file upload
+    if (req.file?.path) {
+        try {
+            // Upload the new logo to Cloudinary
+            const newLogo = await uploadOnCloudinary(req.file.path);
+            if (!newLogo?.url) {
+                throw new Error("Upload failed");
+            }
+            // If upload is successful, update the logoUrl
+            logoUrl = newLogo.url;
+
+            // Optional: You might want to delete the old logo from Cloudinary here
+            // await deleteFromCloudinary(business.businessLogo); // You'd need a delete utility
+
+        } catch (error) {
+            console.error("Error uploading new logo:", error.message);
+            // Decide whether to stop the update or proceed without updating the logo
+            // For now, we throw an error
+            throw new ApiError(500, "Error while uploading the new logo");
+        }
+    }
+
+    // Prepare the update object with fields that were provided in the request body
+    const updateFields = {};
+    if (businessName !== undefined) updateFields.businessName = businessName;
+    if (businessRegion !== undefined) updateFields.businessRegion = businessRegion;
+    if (subscription !== undefined) updateFields.subscription = subscription;
+    // Allow clearing or updating exemptedParagraph and gst
+    if (exemptedParagraph !== undefined) updateFields.exemptedParagraph = exemptedParagraph;
+    if (gst !== undefined) updateFields.gst = gst;
+
+    console.log('updateFields', updateFields)
+
+    // Add the potentially updated logo URL
+    updateFields.businessLogo = logoUrl;
+
+    // Check if there's anything to update
+    if (Object.keys(updateFields).length === 0) {
+         // Consider if only a file upload without other fields is valid
+         // If a file was uploaded, updateFields will contain businessLogo, so this check works.
+        throw new ApiError(400, "No update fields provided.");
+    }
+
+
+    // Update the business document
+    const updatedBusiness = await Business.findByIdAndUpdate(
+        business._id,
+        {
+            $set: updateFields // Use $set to update only specified fields
+        },
+        {
+            new: true // Return the updated document
+        }
+    ).populate('owner', 'username email'); // Populate owner details for the response
+
+    if (!updatedBusiness) {
+        // This check is a safeguard, findByIdAndUpdate should return null if doc not found
+        throw new ApiError(500, "Failed to update business details. Something went wrong.");
+    }
+
+    // Return a success response with the updated business details
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            updatedBusiness,
+            "Business details updated successfully"
+        )
+    );
+});
+
+const getBusinessDetails = asyncHandler(async (req, res) => {
+    // Get the authenticated user from the request object
+    const owner = req.user;
+    if (!owner) {
+        // This check is primarily if middleware fails, but good practice
+        throw new ApiError(401, "Unauthorized request. User not authenticated.");
+    }
+
+    // Find the user document to get the BusinessId
+    // We fetch the full user just in case req.user only contained partial data
+    const user = await User.findById(owner._id);
+
+    if (!user) {
+         // This is an edge case, implies user exists in auth but not DB
+        throw new ApiError(404, "User profile not found.");
+    }
+
+    // Check if the user has a BusinessId linked
+    if (!user.BusinessId) {
+        throw new ApiError(404, "No business registered for this user.");
+    }
+
+    // Find the business document using the BusinessId from the user
+    const business = await Business.findById(user.BusinessId).populate('owner', 'username email');
+    // Populate owner details as done in the registerBusiness controller
+
+    // Check if the business document was found
+    if (!business) {
+        // This could happen if the BusinessId on the user is stale
+        // Consider unlinking the BusinessId from the user here if this happens often
+        throw new ApiError(404, "Business document not found for the linked ID.");
+    }
+
+    // Return a success response with the business details
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            business,
+            "Business details fetched successfully"
+        )
+    );
+});
+
 const registerRole = asyncHandler( async (req, res) => {
     const { businessRoleName } = req.body;
 
@@ -397,5 +621,8 @@ export {
     getCurrentUser,
     registerBusiness,
     registerRole,
-    getRoles
+    getRoles,
+    updateBusinessDetails,
+    getBusinessDetails,
+    updateUserDetails
 }

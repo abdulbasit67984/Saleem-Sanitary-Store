@@ -230,7 +230,69 @@ export class AuthService {
             return null;
         }
     }
+    
+    async updateBusinessDetails(formData) {
+        try {
+            console.log("data in auth: ", formData )
+            const response = await this.client.patch('/users/update-business-details',
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${this.getAccessToken()}`,
+                    }
+                }
+            );
 
+            if (response.data) {
+                console.log("response in auth: ", response.data)
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error in update business details:", error);
+            throw error;
+        }
+    }
+    
+    async getBusinessDetails() {
+        try {
+            const response = await this.client.get('/users/get-business-details', {
+                headers: {
+                    'Authorization': `Bearer ${this.getAccessToken()}`
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.log("Error in get business details:", error);
+            return null;
+        }
+    }
+
+    async updateUserDetails(formData) {
+        try {
+            // console.log("data in auth: ", formData )
+            const response = await this.client.patch('/users/update-user-details',
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${this.getAccessToken()}`,
+                    }
+                }
+            );
+    
+            if (response.data) {
+                console.log("response in auth: ", response.data)
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error in update user details:", error);
+            throw error;
+        }
+    }
+    
 }
 
 

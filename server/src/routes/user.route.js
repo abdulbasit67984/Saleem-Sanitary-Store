@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginUser, logoutUser, refreshAccessToken, registerUser, changeCurrentPassword, getCurrentUser, registerBusiness, registerRole, getRoles } from "../controllers/user.controller.js";
+import { loginUser, logoutUser, refreshAccessToken, registerUser, changeCurrentPassword, getCurrentUser, registerBusiness, registerRole, getRoles, updateBusinessDetails, getBusinessDetails, updateUserDetails } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 
@@ -16,6 +16,9 @@ router.route("/current-user").get(verifyJWT, getCurrentUser)
 router.route("/register-business").post(verifyJWT, upload.single("businessLogo"), registerBusiness)
 router.route("/register-role").post(verifyJWT, registerRole)
 router.route("/get-roles").get(verifyJWT, getRoles)
+router.route("/get-business-details").get(verifyJWT, getBusinessDetails)
+router.route("/update-business-details").patch(verifyJWT, upload.single("businessLogo"), updateBusinessDetails)
+router.route("/update-user-details").patch(verifyJWT, updateUserDetails)
 
 
 
