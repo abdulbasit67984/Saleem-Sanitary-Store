@@ -606,6 +606,11 @@ const postVendorJournalEntry = asyncHandler(async (req, res) => {
                 throw new ApiError(404, "Vendor account not found!");
             }
 
+            let parentAccount = null;
+            if (vendorAccount.mergedInto) {
+                parentAccount = await IndividualAccount.findById(vendorAccount.mergedInto)
+            }
+
             // Fetch Cash Account
             const cashAccount = await IndividualAccount.findOne({
                 BusinessId,
@@ -630,25 +635,33 @@ const postVendorJournalEntry = asyncHandler(async (req, res) => {
             const originalVendorBalance = vendorAccount.accountBalance;
             const originalCashBalance = cashAccount.accountBalance;
             const originalPayablesBalance = accountPayables.accountBalance;
+            let originalParentBalance;
+            if(parentAccount) {
+                originalParentBalance = parentAccount?.accountBalance
+            }
 
             // Update balances
             vendorAccount.accountBalance -= parseInt(amount);
             cashAccount.accountBalance -= parseInt(amount);
             accountPayables.accountBalance -= parseInt(amount);
+            if (parentAccount) parentAccount.accountBalance -= parseInt(amount)
 
             transaction.addOperation(
                 async () => {
                     await vendorAccount.save();
                     await cashAccount.save();
                     await accountPayables.save();
+                    if (parentAccount) await parentAccount.save();
                 },
                 async () => {
                     vendorAccount.accountBalance = originalVendorBalance;
                     cashAccount.accountBalance = originalCashBalance;
                     accountPayables.accountBalance = originalPayablesBalance;
+                    if (parentAccount) parentAccount.accountBalance = originalParentBalance
                     await vendorAccount.save();
                     await cashAccount.save();
                     await accountPayables.save();
+                    if (parentAccount) await parentAccount.save();
                 }
             );
 
@@ -694,7 +707,7 @@ const postCustomerJournalEntry = asyncHandler(async (req, res) => {
 
             const BusinessId = user.BusinessId;
 
-            // Fetch Vendor Account
+            // Fetch customer Account
             const customerAccount = await IndividualAccount.findOne({
                 _id: customerAccountId,
                 BusinessId,
@@ -720,46 +733,46 @@ const postCustomerJournalEntry = asyncHandler(async (req, res) => {
             }
 
             // Fetch Account Payables Account
-            const accountPayables = await IndividualAccount.findOne({
+            const accountReceivables = await IndividualAccount.findOne({
                 BusinessId,
-                individualAccountName: "Account Payables",
+                individualAccountName: "Account Receivables",
             });
 
-            if (!accountPayables) {
-                throw new ApiError(404, "Account Payables account not found!");
+            if (!accountReceivables) {
+                throw new ApiError(404, "Account Receivables account not found!");
             }
 
             // Capture original balances for rollback
             const originalCustomerBalance = customerAccount.accountBalance;
             const originalCashBalance = cashAccount.accountBalance;
-            const originalPayablesBalance = accountPayables.accountBalance;
+            const originalReceivablesBalance = accountReceivables.accountBalance;
             let originalParentBalance;
             if(parentAccount) {
-                originalParentBalance = parentAccount.accountBalance
+                originalParentBalance = parentAccount?.accountBalance
             }
 
             // Update balances
             customerAccount.accountBalance -= parseInt(amount);
             cashAccount.accountBalance -= parseInt(amount);
-            accountPayables.accountBalance -= parseInt(amount);
-            parentAccount.accountBalance -= parseInt(amount)
+            accountReceivables.accountBalance -= parseInt(amount);
+            if (parentAccount) parentAccount.accountBalance -= parseInt(amount)
 
             transaction.addOperation(
                 async () => {
                     await customerAccount.save();
                     await cashAccount.save();
-                    await accountPayables.save();
-                    await parentAccount.save();
+                    await accountReceivables.save();
+                    if (parentAccount) await parentAccount.save();
                 },
                 async () => {
                     customerAccount.accountBalance = originalCustomerBalance;
                     cashAccount.accountBalance = originalCashBalance;
-                    accountPayables.accountBalance = originalPayablesBalance;
-                    parentAccount.accountBalance = originalParentBalance
+                    accountReceivables.accountBalance = originalReceivablesBalance;
+                    if (parentAccount) parentAccount.accountBalance = originalParentBalance
                     await customerAccount.save();
                     await cashAccount.save();
-                    await accountPayables.save();
-                    await parentAccount.save();
+                    await accountReceivables.save();
+                    if (parentAccount) await parentAccount.save();
                 }
             );
 

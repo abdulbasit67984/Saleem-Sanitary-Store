@@ -1212,6 +1212,31 @@ export class Config {
             throw error;
         }
     }
+
+    async mergeBills(data) {
+        try {
+            const response = await this.client.post(`/bill/merge-bills`,
+                JSON.stringify(
+                    data
+                ),
+                {
+                    headers: {
+                        Authorization: `Bearer ${authService.getAccessToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            )
+            if (response.data) {
+                return response.data;
+            } else {
+                return null;
+            }
+    
+        } catch (error) {
+            console.error("Error in Merging bills:", error);
+            throw error;
+        }
+    }
 }
 const config = new Config();
 

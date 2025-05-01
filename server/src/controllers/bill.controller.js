@@ -74,7 +74,7 @@ const registerBill = asyncHandler(async (req, res) => {
                 // billNo = `A4${businessInitials}${nextSequence.toString().padStart(5, "0")}`;
                 billNo = `${nextSequence.toString().padStart(5, "0")}`;
             } else if (billType === "thermal") {
-                // billNo = `TH${businessInitials}${nextSequence.toString().padStart(7, "0")}`;
+                // billNo = `TH${businessInitials}${nextSequence.toString().padStart(5, "0")}`;
                 billNo = `TH${nextSequence.toString().padStart(5, "0")}`;
             } else {
                 throw new ApiError(400, "Invalid bill type!");
@@ -289,7 +289,181 @@ const registerBill = asyncHandler(async (req, res) => {
     }
 });
 
+const mergeBills = asyncHandler(async (req, res) => {
+    const transactionManager = new TransactionManager();
 
+    try {
+        await transactionManager.run(async (transaction) => {
+            const { parentBillId, childBillIds } = req.body;
+
+            // Validation
+            if (!childBillIds || !Array.isArray(childBillIds) || childBillIds.length < 2) {
+                throw new ApiError(400, "At least two child bill IDs are required.");
+            }
+
+            const user = req.user;
+            if (!user) {
+                throw new ApiError(401, "Unauthorized request!");
+            }
+
+            const BusinessId = user.BusinessId;
+
+            // Check for duplicate IDs
+            const uniqueIds = new Set(childBillIds);
+            if (uniqueIds.size !== childBillIds.length) {
+                throw new ApiError(400, "Duplicate bill IDs in request.");
+            }
+
+            // Load all child bills first
+            const childBills = await Bill.find({
+                _id: { $in: childBillIds },
+                BusinessId,
+                mergedInto: null // Only unmerged bills can be merged
+            });
+
+            // Verify we found all requested bills
+            if (childBills.length !== childBillIds.length) {
+                const foundIds = childBills.map(b => b._id.toString());
+                const missingIds = childBillIds.filter(id => !foundIds.includes(id));
+                throw new ApiError(404, `Some bills not found or already merged: ${missingIds.join(', ')}`);
+            }
+
+            // Check if any child bills are already merged
+            const alreadyMerged = childBills.filter(b => b.mergedInto);
+            if (alreadyMerged.length > 0) {
+                throw new ApiError(400, `Some bills are already merged: ${alreadyMerged.map(b => b.billNo).join(', ')}`);
+            }
+
+            let parentBill;
+            if (parentBillId) {
+                // Case 1: Merge into existing parent bill
+                if (childBillIds.includes(parentBillId)) {
+                    throw new ApiError(400, "Parent bill cannot be in child bills list.");
+                }
+
+                parentBill = await Bill.findOne({
+                    _id: parentBillId,
+                    BusinessId,
+                    mergedInto: null
+                });
+
+                if (!parentBill) {
+                    throw new ApiError(404, "Parent bill not found or already merged.");
+                }
+
+                // Store original values for rollback
+                const originalParentBill = { ...parentBill.toObject() };
+
+                // Update parent bill with combined values
+                parentBill.billItems = [...parentBill.billItems, ...childBills.flatMap(b => b.billItems)];
+                parentBill.totalAmount += childBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+                parentBill.paidAmount += childBills.reduce((sum, b) => sum + (b.paidAmount || 0), 0);
+                parentBill.flatDiscount += childBills.reduce((sum, b) => sum + (b.flatDiscount || 0), 0);
+                parentBill.totalPurchaseAmount += childBills.reduce((sum, b) => sum + (b.totalPurchaseAmount || 0), 0);
+                let remainingAmount = parentBill.totalAmount - parentBill.paidAmount - parentBill.flatDiscount
+                parentBill.billStatus = (remainingAmount) <= 0 ? 'paid' : (parentBill.paidAmount > 0 ? 'partiallypaid' : 'unpaid' )
+                parentBill.description = `Merged bill containing ${childBills.length + 1} bills`;
+
+                transaction.addOperation(
+                    async () => await parentBill.save(),
+                    async () => {
+                        await Bill.updateOne(
+                            { _id: parentBill._id },
+                            { $set: originalParentBill }
+                        );
+                    }
+                );
+            } else {
+                // Case 2: Create new parent bill
+                const firstChildBill = childBills[0];
+
+                const business = await Business.findById(BusinessId).select("businessName");
+                if (!business || !business.businessName) {
+                    throw new ApiError(404, "Business not found or business name is missing!");
+                }
+
+                const lastBill = await Bill.findOne({ BusinessId, billType: firstChildBill.billType })
+                    .sort({ createdAt: -1 })
+                    .select("billNo");
+
+                let nextSequence = 1;
+                if (lastBill && lastBill.billNo) {
+                    const lastSequence = parseInt(lastBill.billNo.match(/\d+$/)?.[0]);
+                    if (lastSequence) {
+                        nextSequence = lastSequence + 1;
+                    }
+                }
+
+                let billNo = "";
+                if (firstChildBill.billType === "A4") {
+                    billNo = `${nextSequence.toString().padStart(5, "0")}`;
+                } else if (firstChildBill.billType === "thermal") {
+                    billNo = `TH${nextSequence.toString().padStart(5, "0")}`;
+                }
+
+                // Calculate totals
+                const totalAmount = childBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+                const paidAmount = childBills.reduce((sum, b) => sum + (b.paidAmount || 0), 0);
+                const flatDiscount = childBills.reduce((sum, b) => sum + (b.flatDiscount || 0), 0);
+                const totalPurchaseAmount = childBills.reduce((sum, b) => sum + (b.totalPurchaseAmount || 0), 0);
+                const allBillItems = childBills.flatMap(b => b.billItems);
+
+                let remainingAmount = totalAmount - paidAmount - flatDiscount
+
+                // Create new parent bill
+                parentBill = new Bill({
+                    BusinessId,
+                    customer: firstChildBill.customer,
+                    salesPerson: user._id,
+                    billNo,
+                    description: `Merged bill containing ${childBills.length} bills`,
+                    billType: firstChildBill.billType,
+                    billPaymentType: firstChildBill.billPaymentType,
+                    billItems: allBillItems,
+                    flatDiscount,
+                    billStatus: (remainingAmount) <= 0 ? 'paid' : (paidAmount > 0 ? 'partiallypaid' : 'unpaid' ),
+                    totalAmount,
+                    paidAmount,
+                    totalPurchaseAmount,
+                    mergedInto: null
+                });
+
+                transaction.addOperation(
+                    async () => await parentBill.save(),
+                    async () => {
+                        await Bill.deleteOne({ _id: parentBill._id });
+                    }
+                );
+            }
+
+            // Update all child bills to point to the parent
+            for (const childBill of childBills) {
+                const originalChildBill = { ...childBill.toObject() };
+                
+                childBill.mergedInto = parentBill._id;
+                childBill.description = `Bill merged into ${parentBill.billNo}`
+                
+                transaction.addOperation(
+                    async () => await childBill.save(),
+                    async () => {
+                        await Bill.updateOne(
+                            { _id: childBill._id },
+                            { $set: originalChildBill }
+                        );
+                    }
+                );
+            }
+
+
+            res.status(200).json(new ApiResponse(200, { 
+                mergedBill: parentBill,
+                mergedCount: childBills.length
+            }, "Bills merged successfully!"));
+        });
+    } catch (error) {
+        throw new ApiError(500, `Bill merging failed: ${error.message}`);
+    }
+});
 
 const updateBill = asyncHandler(async (req, res) => {
     const { _id, description, billStatus, paidAmount, flatDiscount, dueDate, billItems, customer } = req.body;
@@ -842,6 +1016,7 @@ const billPosting = asyncHandler(async (req, res) => {
 
 export {
     registerBill,
+    mergeBills,
     getBills,
     updateBill,
     getLastBillNo,

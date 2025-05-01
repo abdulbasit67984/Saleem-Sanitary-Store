@@ -44,8 +44,7 @@ const BillSchema = new Schema({
         required: true
     },
     description: {
-        type: String,
-        default: ""
+        type: String
     },
     billType: {
         type: String,
@@ -72,9 +71,8 @@ const BillSchema = new Schema({
         type: Number,
         default: 0
     },
-    dueDate: { 
-        type: Date,
-        default: Date.now
+    dueDate: { // date for the payment of the invoice
+        type: Date
     },
     isPosted: {
         type: Boolean,
@@ -82,6 +80,11 @@ const BillSchema = new Schema({
     },
     totalPurchaseAmount: {
         type: Number
+    },
+    mergedInto: {
+        type: Schema.Types.ObjectId,
+        ref: 'Bill',
+        default: null
     }
 }, {
     timestamps: true

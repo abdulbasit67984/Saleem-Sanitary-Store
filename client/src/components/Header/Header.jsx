@@ -86,6 +86,11 @@ function Header() {
           active: false
         },
         {
+          name: 'Merge Bills',
+          slug: `/${primaryPath}/sales/merge-bills`,
+          active: true
+        },
+        {
           name: 'Sale Reports (For Sales Man)',
           slug: `/${primaryPath}/sales/sale-report-for-sales-man`,
           active: false

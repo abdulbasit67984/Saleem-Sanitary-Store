@@ -13,6 +13,7 @@ import {
   Mycustomers,
   AccountsReceivables,
   BillPayment,
+  MergeBills,
 
   //purchase
 
@@ -85,6 +86,8 @@ function Home() {
             return <BillPayment billId={billId} />;
           case `view-bill`:
             return <PrintBill />;
+          case `merge-bills`:
+            return <MergeBills />;
           default:
             return <MagicUiAnimation text='Sales Management' />;
         }

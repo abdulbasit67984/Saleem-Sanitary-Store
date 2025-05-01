@@ -36,6 +36,7 @@ import AddCustomer from "./homePageComponents/sales/AddCustomer";
 import Mycustomers from "./homePageComponents/sales/Mycustomers";
 import AccountsReceivables from "./homePageComponents/sales/AccountsReceivables";
 import BillPayment from "./homePageComponents/sales/bills/BillPayment";
+import MergeBills from "./homePageComponents/sales/MergeBills";
 
 //purchase
 
@@ -85,6 +86,7 @@ export {
     Mycustomers,
     AccountsReceivables,
     BillPayment,
+    MergeBills,
     //purchase
     PurchaseItem,
     AddSupplier,

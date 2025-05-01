@@ -86,8 +86,8 @@ const ViewBill = React.forwardRef((props, ref) => {
                             {bill?.billItems && bill?.billItems.map((item, index) => (
                                 <tr key={index} className="break-inside-avoid border-2">
                                     <td className="text-xs p-2">{index + 1}</td>
-                                    <td className="text-xs p-2">{commonFunction.truncateString(item.productId.productName, 19)}</td>
-                                    <td className="text-xs p-2">{commonFunction.truncateString(item.productId?.companyId?.companyName, 16)}</td>
+                                    <td className="text-xs p-2">{commonFunction.truncateString(item.productId.productName, 23)}</td>
+                                    <td className="text-xs p-2">{commonFunction.truncateString(item.productId?.companyId?.companyName, 13)}</td>
                                     <td className="text-xs p-2">{item.quantity}</td>
                                     {!packingSlip &&
                                         <td className="text-xs p-2">{commonFunction.formatAsianNumber(item.billItemPrice)}</td>
