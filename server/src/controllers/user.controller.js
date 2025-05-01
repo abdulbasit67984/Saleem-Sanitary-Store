@@ -18,13 +18,13 @@ const generateAccessAndRefreshTokens = async (userId) => {
 
         user.refreshToken = refreshToken;
 
-        await user.save({validateBeforeSave: false});
+        await user.save({ validateBeforeSave: false });
 
         return {
             accessToken,
             refreshToken
         }
-        
+
     } catch (error) {
         throw new ApiError(500, "Something went wrong while generating refresh and access token")
     }
@@ -32,47 +32,66 @@ const generateAccessAndRefreshTokens = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
 
-    const { username, firstname, lastname, email, mobileno, password, cnic } = req.body
+    const { username, firstname, lastname, email, mobileno, password, cnic } = req.body;
+    // After updating schema, mobileno is expected as an array or undefined from the frontend
 
-    // console.log(username, firstname, lastname, email, mobileno, password, cnic);
-    
-
-    // if ([username, firstname, mobileno, password].some((field) => field?.trim() === "")) {
-    //     throw new ApiError(400, "Required fields missing!")
-    // }
-
-    if (!username || !firstname || !mobileno || !password) {
-        throw new ApiError(400, "Required fields missing!");
+    // --- MODIFIED VALIDATION ---
+    // Check for required fields, including that mobileno is an array with at least one non-empty string
+    if (
+        !username ||
+        !firstname ||
+        !password ||
+        !Array.isArray(mobileno) || // Check if mobileno is an array
+        mobileno.length === 0 ||    // Check if the array is not empty
+        mobileno.every(num => typeof num !== 'string' || num.trim() === '') // Check if all elements are empty strings or not strings
+    ) {
+        throw new ApiError(400, "Required fields missing or invalid mobile number format!");
     }
+    // Optional: Add specific format validation for each mobile number if needed
+
+    // Clean up the mobileno array before attempting to find/create user
+    const cleanedMobileNos = mobileno.map(num => String(num || '').trim()).filter(num => num !== '');
+
+    // Re-validate after cleaning in case the array contained only empty strings
+    if (cleanedMobileNos.length === 0) {
+         throw new ApiError(400, "At least one valid mobile number is required.");
+    }
+    // ---------------------------
+
 
     const userExists = await User.findOne({
-        $or: [{ username }, { email }]
-    })
+        $or: [{ username }, { email }] // Keep existing unique check for username/email
+    });
 
     if (userExists) {
-        throw new ApiError(409, "Username or Email already exists!")
+        throw new ApiError(409, "Username or Email already exists!");
     }
 
+    // --- MODIFIED User.create call ---
+    // Pass the cleaned array of mobile numbers to User.create
     const user = await User.create({
         username: username?.toLowerCase(),
         firstname,
         lastname,
         email,
-        mobileno,
+        mobileno: cleanedMobileNos, // Use the cleaned array
         password,
         cnic
-    })
+    });
+    // ---------------------------------
 
-    const createdUser = await User.findById(user._id).select("-password -refreshToken")
+    const createdUser = await User.findById(user._id).select("-password -refreshToken");
 
-    if(!createdUser) {
-        throw new ApiError(500, "Failed to create user! something went wrong")
+    if (!createdUser) {
+        throw new ApiError(500, "Failed to create user! something went wrong");
     }
 
     return res.status(201).json(
         new ApiResponse(200, createdUser, "User created successfully")
-    )
-})
+    );
+});
+
+// export { registerUser }; // Assuming you already have this export
 
 const updateUserDetails = asyncHandler(async (req, res) => {
     // Get the authenticated user from the request object
@@ -96,7 +115,14 @@ const updateUserDetails = asyncHandler(async (req, res) => {
     if (firstname !== undefined) updateFields.firstname = firstname;
     if (lastname !== undefined) updateFields.lastname = lastname;
     if (email !== undefined) updateFields.email = email;
-    if (mobileno !== undefined) updateFields.mobileno = mobileno;
+    if (mobileno !== undefined) {
+        if (!Array.isArray(mobileno)) {
+            // If it's provided but not an array, treat it as a bad request
+            throw new ApiError(400, "Mobile number field must be an array.");
+        }
+        // Optionally, clean up the array (remove empty strings, trim whitespace)
+        updateFields.mobileno = mobileno.map(num => String(num || '').trim()).filter(num => num !== '');
+    }
     if (cnic !== undefined) updateFields.cnic = cnic;
 
 
@@ -113,7 +139,7 @@ const updateUserDetails = asyncHandler(async (req, res) => {
     }
 
     if (updateFields.email && updateFields.email !== authenticatedUser.email) {
-         const emailExists = await User.findOne({
+        const emailExists = await User.findOne({
             email: updateFields.email,
             _id: { $ne: authenticatedUser._id } // Exclude the current user
         });
@@ -144,7 +170,7 @@ const updateUserDetails = asyncHandler(async (req, res) => {
 
     // This check is a safeguard; findByIdAndUpdate with a valid ID should return a doc
     if (!updatedUser) {
-         // This case is highly unlikely if authenticatedUser._id is valid
+        // This case is highly unlikely if authenticatedUser._id is valid
         throw new ApiError(500, "Failed to update user details. User not found or update failed.");
     }
 
@@ -159,7 +185,7 @@ const updateUserDetails = asyncHandler(async (req, res) => {
 });
 
 
-const loginUser = asyncHandler( async (req, res) => {
+const loginUser = asyncHandler(async (req, res) => {
     // request body -> data
     // username or email 
     // find user
@@ -168,59 +194,59 @@ const loginUser = asyncHandler( async (req, res) => {
     //send cookies
 
     try {
-        const {username, password} = req.body
+        const { username, password } = req.body
         // console.log({username, password});
-        
-    
+
+
         if (!username || !password) {  // check logic
             throw new ApiError(400, "Credentials missing username or password")
         }
-    
+
         const user = await User.findOne({ username });
-    
+
         if (!user) {
-            throw new ApiError(404, "User does not exist") 
+            throw new ApiError(404, "User does not exist")
         }
-    
+
         const isPasswordValid = await user.isPasswordCorrect(password);
-    
+
         if (!isPasswordValid) {
             throw new ApiError(401, "Invalid Credentials")
         }
-    
-        const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id)
-    
+
+        const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
+
         const loggedInUser = await User.findById(user._id).select("-password -refreshToken").populate('BusinessId', 'businessName businessRegion businessLogo subscription gst isActive exemptedParagraph');
 
-    
+
         const options = {
             httpOnly: true,
             secure: true
         }
-    
+
         return res
-        .status(200)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
-        .json(
-            new ApiResponse(
-                200,
-                {
-                    user: loggedInUser,
-                    accessToken,
-                    refreshToken
-                },
-                "Logged in successfully"
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json(
+                new ApiResponse(
+                    200,
+                    {
+                        user: loggedInUser,
+                        accessToken,
+                        refreshToken
+                    },
+                    "Logged in successfully"
+                )
             )
-        )
     } catch (error) {
-        throw new ApiError(400, error )
+        throw new ApiError(400, error)
     }
 })
 
 const logoutUser = asyncHandler(async (req, res) => {
     // console.log('logging out user');
-    
+
     // User.findByIdAndUpdate(
     //     req.user._id,
     //     {
@@ -233,28 +259,28 @@ const logoutUser = asyncHandler(async (req, res) => {
     //     }
     // )
     // console.log('token cleared');
-    
+
     const options = {
         httpOnly: true,
         secure: true
     }
-    
+
     // console.log('sending logout response');
     return res
-    .status(200)
-    .clearCookie("accessToken", options)
-    .clearCookie("refreshToken", options)
-    .json(
-        new ApiResponse(200, {}, "User logged out successfully")
-    )
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(
+            new ApiResponse(200, {}, "User logged out successfully")
+        )
 })
 
-const refreshAccessToken = asyncHandler( async (req, res) => {
+const refreshAccessToken = asyncHandler(async (req, res) => {
 
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
     // console.log('incoming refresh token:', incomingRefreshToken);
 
-    if(!incomingRefreshToken) {
+    if (!incomingRefreshToken) {
         throw new ApiError(401, "Unauthorized request")
     }
 
@@ -266,11 +292,11 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
 
         const user = await User.findById(decodedToken?._id)
 
-        if(!user) {
+        if (!user) {
             throw new ApiError(401, "Invalid refresh token")
         }
 
-        if( incomingRefreshToken !== user?.refreshToken ) {
+        if (incomingRefreshToken !== user?.refreshToken) {
             throw new ApiError(401, "Refresh token is expired or used")
         }
 
@@ -282,19 +308,19 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
         const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id) //refresh token -> new refresh token
 
         return res
-        .status(200)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options) //refresh token: new refresh token
-        .json(
-            new ApiResponse(
-                200,
-                {
-                    accessToken,
-                    refreshToken
-                },
-                "Access Token refreshed"
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options) //refresh token: new refresh token
+            .json(
+                new ApiResponse(
+                    200,
+                    {
+                        accessToken,
+                        refreshToken
+                    },
+                    "Access Token refreshed"
+                )
             )
-        )
 
     } catch (error) {
         new ApiError(401, "Failed to refresh Access Token")
@@ -325,7 +351,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
 
 
-const getCurrentUser = asyncHandler(async(req, res) => {
+const getCurrentUser = asyncHandler(async (req, res) => {
     const user = req.user;
     if (!user) {
         throw new ApiError(401, "Unauthorized request. User not found.");
@@ -336,12 +362,12 @@ const getCurrentUser = asyncHandler(async(req, res) => {
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken").populate('BusinessId', 'businessName businessRegion businessLogo subscription gst isActive exemptedParagraph');
 
     return res
-    .status(200)
-    .json(new ApiResponse(
-        200,
-        loggedInUser,
-        "User fetched successfully"
-    ))
+        .status(200)
+        .json(new ApiResponse(
+            200,
+            loggedInUser,
+            "User fetched successfully"
+        ))
 })
 
 const registerBusiness = asyncHandler(async (req, res) => {
@@ -358,11 +384,11 @@ const registerBusiness = asyncHandler(async (req, res) => {
 
     const user = await User.findById(owner._id)
 
-    if(user.BusinessId) {
+    if (user.BusinessId) {
         throw new ApiError(400, "User already has a business registered");
     }
 
-    let logoUrl = ""; 
+    let logoUrl = "";
 
     if (req.file?.path) {
         try {
@@ -386,7 +412,7 @@ const registerBusiness = asyncHandler(async (req, res) => {
         exemptedParagraph: exemptedParagraph || "",
         gst: gst || "",
         isActive: true,
-        owner: owner._id, 
+        owner: owner._id,
     });
 
     await User.findByIdAndUpdate(
@@ -419,7 +445,7 @@ const updateBusinessDetails = asyncHandler(async (req, res) => {
     const { businessName, businessRegion, subscription, exemptedParagraph, gst } = req.body;
 
     console.log('req.body', req.body)
-    console.log('businessName, businessRegion, subscription, exemptedParagraph, gst ', businessName, businessRegion, subscription, exemptedParagraph, gst )
+    console.log('businessName, businessRegion, subscription, exemptedParagraph, gst ', businessName, businessRegion, subscription, exemptedParagraph, gst)
     // Get the authenticated user from the request object
     const owner = req.user;
     if (!owner) {
@@ -429,7 +455,7 @@ const updateBusinessDetails = asyncHandler(async (req, res) => {
     // Find the user to get their BusinessId
     const user = await User.findById(owner._id);
     if (!user) {
-         // This case should ideally not happen if req.user is populated correctly
+        // This case should ideally not happen if req.user is populated correctly
         throw new ApiError(404, "User not found in database.");
     }
 
@@ -485,8 +511,8 @@ const updateBusinessDetails = asyncHandler(async (req, res) => {
 
     // Check if there's anything to update
     if (Object.keys(updateFields).length === 0) {
-         // Consider if only a file upload without other fields is valid
-         // If a file was uploaded, updateFields will contain businessLogo, so this check works.
+        // Consider if only a file upload without other fields is valid
+        // If a file was uploaded, updateFields will contain businessLogo, so this check works.
         throw new ApiError(400, "No update fields provided.");
     }
 
@@ -530,7 +556,7 @@ const getBusinessDetails = asyncHandler(async (req, res) => {
     const user = await User.findById(owner._id);
 
     if (!user) {
-         // This is an edge case, implies user exists in auth but not DB
+        // This is an edge case, implies user exists in auth but not DB
         throw new ApiError(404, "User profile not found.");
     }
 
@@ -560,14 +586,14 @@ const getBusinessDetails = asyncHandler(async (req, res) => {
     );
 });
 
-const registerRole = asyncHandler( async (req, res) => {
+const registerRole = asyncHandler(async (req, res) => {
     const { businessRoleName } = req.body;
 
     if (!businessRoleName) {
         throw new ApiError(400, "Business role name is required");
     }
 
-    const businessRoleExist = await BusinessRole.findOne({businessRoleName})
+    const businessRoleExist = await BusinessRole.findOne({ businessRoleName })
 
     if (businessRoleExist) {
         throw new ApiError(400, "Business role already exists");
@@ -612,7 +638,7 @@ const getRoles = asyncHandler(async (req, res) => {
 })
 
 
-export { 
+export {
     registerUser,
     loginUser,
     logoutUser,

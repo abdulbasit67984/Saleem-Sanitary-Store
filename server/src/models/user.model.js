@@ -28,7 +28,8 @@ const UserSchema = new Schema({
         trim: true
     },
     mobileno: {
-        type: String
+        type: [String],
+        default: []    
     },
     password: {
         type: String,
@@ -41,8 +42,7 @@ const UserSchema = new Schema({
     },
     cnic: {
         type: String,
-        unique: true,
-        default: ""
+        unique: true
     },
     BusinessId: {
         type: Schema.Types.ObjectId,
@@ -64,6 +64,13 @@ const UserSchema = new Schema({
 UserSchema.pre(  //hook
     "save",
     async function (next) {
+        if (this.isModified('mobileno')) {
+            if (!Array.isArray(this.mobileno)) {
+                 this.mobileno = [this.mobileno].filter(Boolean); // Convert to array, remove empty/null entries
+            }
+             this.mobileno = this.mobileno.filter(num => typeof num === 'string' && num.trim() !== ''); // Clean up array
+        }
+        
         if (!this.isModified("password")) return next();
 
         this.password = await bcrypt.hash(this.password, 10);
