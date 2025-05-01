@@ -10,7 +10,6 @@ import { GeneralLedger } from "../models/accounts/generalLedger.model.js";
 import { TransactionManager } from "../utils/TransactionManager.js";
 import { Product } from "../models/product/product.model.js"
 
-
 const registerAccount = asyncHandler(async (req, res) => {
 
     const { accountName } = req.body
@@ -705,6 +704,11 @@ const postCustomerJournalEntry = asyncHandler(async (req, res) => {
                 throw new ApiError(404, "Customer account not found!");
             }
 
+            let parentAccount = null;
+            if (customerAccount.mergedInto) {
+                parentAccount = await IndividualAccount.findById(customerAccount.mergedInto)
+            }
+
             // Fetch Cash Account
             const cashAccount = await IndividualAccount.findOne({
                 BusinessId,
@@ -729,25 +733,33 @@ const postCustomerJournalEntry = asyncHandler(async (req, res) => {
             const originalCustomerBalance = customerAccount.accountBalance;
             const originalCashBalance = cashAccount.accountBalance;
             const originalPayablesBalance = accountPayables.accountBalance;
+            let originalParentBalance;
+            if(parentAccount) {
+                originalParentBalance = parentAccount.accountBalance
+            }
 
             // Update balances
             customerAccount.accountBalance -= parseInt(amount);
             cashAccount.accountBalance -= parseInt(amount);
             accountPayables.accountBalance -= parseInt(amount);
+            parentAccount.accountBalance -= parseInt(amount)
 
             transaction.addOperation(
                 async () => {
                     await customerAccount.save();
                     await cashAccount.save();
                     await accountPayables.save();
+                    await parentAccount.save();
                 },
                 async () => {
                     customerAccount.accountBalance = originalCustomerBalance;
                     cashAccount.accountBalance = originalCashBalance;
                     accountPayables.accountBalance = originalPayablesBalance;
+                    parentAccount.accountBalance = originalParentBalance
                     await customerAccount.save();
                     await cashAccount.save();
                     await accountPayables.save();
+                    await parentAccount.save();
                 }
             );
 
@@ -762,6 +774,7 @@ const postCustomerJournalEntry = asyncHandler(async (req, res) => {
                     description
                 }
             ]);
+
 
             res.status(201).json(new ApiResponse(201, null, "Customer journal entry posted successfully!"));
         });
@@ -778,7 +791,7 @@ const getGeneralLedger = asyncHandler(async (req, res) => {
     if (!user) {
         throw new ApiError(401, "Authorization Failed!");
     }
-    
+
 
     const generalLedgers = await GeneralLedger.aggregate([
         {
@@ -886,15 +899,10 @@ const mergeAccounts = asyncHandler(async (req, res) => {
 
     try {
         await transactionManager.run(async (transaction) => {
-            const { parentAccountName, childAccountIds } = req.body;
+            const { parentAccountName, childAccountIds, existingParentAccountId } = req.body;
 
-            if ( !childAccountIds || !Array.isArray(childAccountIds)) {
+            if (!childAccountIds || !Array.isArray(childAccountIds)) {
                 throw new ApiError(400, "Account Id's are required.");
-            }
-
-
-            if (!parentAccountName) {
-                throw new ApiError(400, "Account Name is Required!");
             }
 
             const user = req.user;
@@ -904,48 +912,66 @@ const mergeAccounts = asyncHandler(async (req, res) => {
 
             const BusinessId = user.BusinessId;
 
-            // console.log('parentAccountName', parentAccountName)
-            // console.log('childAccountIds', childAccountIds)
-
-            const childAccount = await IndividualAccount.findById(childAccountIds[0])
-
-            // Fetch Vendor Account
-            const parentAccount = await AccountSubCategory.findById(childAccount.parentAccount)
-
-            // console.log('childAccount', childAccount)
-            if (!parentAccount) {
-                throw new ApiError(404, "Parent account not found!");
+            // Validate at least one merging option is provided
+            if (!parentAccountName && !existingParentAccountId) {
+                throw new ApiError(400, "Either new parent account name or existing parent account must be provided");
             }
 
-            let accountBalance = 0
+            // Validate only one merging option is used
+            if (parentAccountName && existingParentAccountId) {
+                throw new ApiError(400, "Cannot provide both new parent account name and existing parent account");
+            }
+
+            const childAccount = await IndividualAccount.findById(childAccountIds[0]);
+            if (!childAccount) {
+                throw new ApiError(404, "Child account not found!");
+            }
+
+            // Calculate total balance
+            let accountBalance = 0;
             for (let i = 0; i < childAccountIds.length; i++) {
-                const account = await IndividualAccount.findById(childAccountIds[i])
-                accountBalance += account.accountBalance
+                const account = await IndividualAccount.findById(childAccountIds[i]);
+                accountBalance += account.accountBalance;
             }
-            // console.log('accountBalance', accountBalance)
 
-            const individualAccount = await IndividualAccount.create({
-                BusinessId,
-                individualAccountName: parentAccountName,
-                accountBalance: accountBalance || 0,
-                parentAccount: parentAccount._id,
-                companyId: childAccount.companyId,
-                supplierId: childAccount.supplierId,
-                customerId: childAccount.customerId,
-                mergedInto: null
-            });
+            let parentAccount;
+            if (existingParentAccountId) {
+                // Case 1: Merge into existing parent account
+                parentAccount = await IndividualAccount.findById(existingParentAccountId);
+                if (!parentAccount) {
+                    throw new ApiError(404, "Existing parent account not found!");
+                }
+                
+                // Update parent account balance
+                parentAccount.accountBalance += accountBalance;
+                await parentAccount.save();
+            } else {
+                // Case 2: Create new parent account (original functionality)
+                const subCategory = await AccountSubCategory.findById(childAccount.parentAccount);
+                if (!subCategory) {
+                    throw new ApiError(404, "Parent subcategory not found!");
+                }
 
-            // console.log('individualAccount', individualAccount)
+                parentAccount = await IndividualAccount.create({
+                    BusinessId,
+                    individualAccountName: parentAccountName,
+                    accountBalance: accountBalance || 0,
+                    parentAccount: subCategory._id,
+                    companyId: childAccount.companyId,
+                    supplierId: childAccount.supplierId,
+                    customerId: childAccount.customerId,
+                    mergedInto: null
+                });
+            }
 
+            // Update all child accounts to point to the parent
             for (let i = 0; i < childAccountIds.length; i++) {
-                const account = await IndividualAccount.findById(childAccountIds[i])
-                account.mergedInto = individualAccount._id
-                await account.save()
-                // console.log('account', account)
+                const account = await IndividualAccount.findById(childAccountIds[i]);
+                account.mergedInto = parentAccount._id;
+                await account.save();
             }
-            
 
-            res.status(201).json(new ApiResponse(201, null, "Accounts Merged successfully!"));
+            res.status(201).json(new ApiResponse(201, null, "Accounts merged successfully!"));
         });
     } catch (error) {
         throw new ApiError(500, `${error.message}`);
@@ -1011,7 +1037,7 @@ const openAccountBalance = asyncHandler(async (req, res) => {
                 }
             ]);
 
-    
+
             res.status(201).json(new ApiResponse(201, { glEntry }, "Account Balance Opened successfully!"));
         });
 
@@ -1037,27 +1063,32 @@ const closeAccountBalance = asyncHandler(async (req, res) => {
 
     try {
         await transactionManager.run(async (transaction) => {
-            
+
             const lastOpeningEntry = await GeneralLedger.findOne({
                 BusinessId,
                 individualAccountId: accountId,
                 details: "Opening Balance"
             }).sort({ createdAt: -1 }); // Get the latest "Opening Balance" entry
 
-            if (!lastOpeningEntry) {
-                throw new ApiError(404, "No Opening Balance found for this account.");
-            }
+            let ledgerEntries;
 
-            
-            const ledgerEntries = await GeneralLedger.find({
-                BusinessId,
-                individualAccountId: accountId,
-                createdAt: { $gte: lastOpeningEntry.createdAt }
-            }).sort({ createdAt: 1 }); // Sort from oldest to newest
+            if (!lastOpeningEntry) {
+                ledgerEntries = await GeneralLedger.find({
+                    BusinessId,
+                    individualAccountId: accountId,
+                }).sort({ createdAt: 1 });
+            } else {
+                ledgerEntries = await GeneralLedger.find({
+                    BusinessId,
+                    individualAccountId: accountId,
+                    createdAt: { $gte: lastOpeningEntry.createdAt }
+                }).sort({ createdAt: 1 }); // Sort from oldest to newest
+            }
+            console.log("ledgerEntries: ", ledgerEntries)
             
             let totalDebit = 0;
             let totalCredit = 0;
-
+            
             ledgerEntries.forEach(entry => {
                 if (entry.debit) {
                     totalDebit += entry.debit;
@@ -1066,13 +1097,18 @@ const closeAccountBalance = asyncHandler(async (req, res) => {
                     totalCredit += entry.credit;
                 }
             });
-
+            console.log("total debit: ", totalDebit)
+            console.log("total credit: ", totalCredit)
+            
             let closingBalance = totalDebit - totalCredit;
-            let isDebit = closingBalance > 0; 
+            
+            console.log("Closing balance: ", closingBalance)
+            let isDebit = closingBalance > 0;
 
             if (closingBalance < 0) {
                 closingBalance = Math.abs(closingBalance);
             }
+
 
 
             const closingEntry = new GeneralLedger({
@@ -1093,7 +1129,7 @@ const closeAccountBalance = asyncHandler(async (req, res) => {
             const now = new Date();
             const month = now.toLocaleString('default', { month: 'long' }); // e.g., "March"
             const year = now.getFullYear(); // e.g., "2025"
-            
+
             const openingEntry = new GeneralLedger({
                 BusinessId,
                 individualAccountId: accountId,
@@ -1109,7 +1145,10 @@ const closeAccountBalance = asyncHandler(async (req, res) => {
                 async () => await GeneralLedger.deleteOne({ _id: openingEntry._id })
             );
 
-
+            // const test = true;
+            // if (test) {
+            //     throw new ApiError(500, `test error`);
+            // }
             res.status(200).json(new ApiResponse(200, { closingEntry, openingEntry }, "Account balance closed successfully!"));
         });
     } catch (error) {
@@ -1134,7 +1173,7 @@ const adjustAccountBalance = asyncHandler(async (req, res) => {
 
     try {
         await transactionManager.run(async (transaction) => {
-            
+
             const individualAccount = await IndividualAccount.findOne({
                 _id: accountId,
                 BusinessId,
@@ -1196,29 +1235,29 @@ const getTotalInventory = asyncHandler(async (req, res) => {
             // Aggregate all products and calculate the sum of (productPurchasePrice * productTotalQuantity)
             const inventoryValueResult = await Product.aggregate([
                 {
-                  $project: {
-                    _id: 1,
-                    purchaseValueOfPacks: {
-                      $cond: {
-                        if: { $eq: ['$productPack', 0] },
-                        then: 0, // If productPack is 0, the value contribution is 0
-                        else: {
-                          $multiply: [
-                            '$productPurchasePrice',
-                            { $divide: ['$productTotalQuantity', '$productPack'] },
-                          ],
+                    $project: {
+                        _id: 1,
+                        purchaseValueOfPacks: {
+                            $cond: {
+                                if: { $eq: ['$productPack', 0] },
+                                then: 0, // If productPack is 0, the value contribution is 0
+                                else: {
+                                    $multiply: [
+                                        '$productPurchasePrice',
+                                        { $divide: ['$productTotalQuantity', '$productPack'] },
+                                    ],
+                                },
+                            },
                         },
-                      },
                     },
-                  },
                 },
                 {
-                  $group: {
-                    _id: null,
-                    totalInventoryValueOfPacks: { $sum: '$purchaseValueOfPacks' },
-                  },
+                    $group: {
+                        _id: null,
+                        totalInventoryValueOfPacks: { $sum: '$purchaseValueOfPacks' },
+                    },
                 },
-              ]);
+            ]);
 
             let totalInventoryValue = 0;
             if (inventoryValueResult.length > 0) {
@@ -1279,6 +1318,8 @@ const getPreviousBalance = asyncHandler(async (req, res) => {
         throw new ApiError(500, `${error.message}`);
     }
 });
+
+
 
 
 export {
