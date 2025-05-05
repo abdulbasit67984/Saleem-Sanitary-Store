@@ -269,11 +269,11 @@ function SoldItems() {
                 <th className="py-2 px-1 text-left">Bill No.</th>
                 <th className="py-2 px-1 text-left">Date & Time</th>
                 <th className="py-2 px-1 text-left">QTY of Items</th>
-                <th className="py-2 px-1 text-left">Flat Discount</th>
+                <th className="py-2 px-1 text-left">Description</th>
                 <th className="py-2 px-1 text-left">Total Amount</th>
                 <th className="py-2 px-1 text-left">Bill Balance</th>
                 <th className="py-2 px-1 text-left">Customer Name</th>
-                <th className="py-2 px-1 text-left">Status</th>
+                {/* <th className="py-2 px-1 text-left">Status</th> */}
                 <th className="py-2 px-1 text-left">Actions</th>
                 <th className="py-2 px-1 text-left"></th>
                 <th className="py-2 px-1 text-left"></th>
@@ -288,18 +288,18 @@ function SoldItems() {
                     <td className="py-2 px-2">{bill.billNo}</td>
                     <td className="py-2 px-2">{getDate(bill.createdAt)}</td>
                     <td className="py-2 px-2">{bill.totalQuantity}</td>
-                    <td className="py-2 px-2">{bill.flatDiscount}</td>
+                    <td className="py-2 px-2">{bill.description}</td>
                     <td className="py-2 px-2">{bill.totalAmount}</td>
                     <td className="py-2 px-2">{bill.totalAmount - bill.paidAmount - bill.flatDiscount}</td>
                     <td className="py-2 px-2">{bill.customer?.customerName}</td>
-                    <td className="py-2 px-2">
+                    {/* <td className="py-2 px-2">
                       <span
                         className={`px-2 py-1 rounded-lg ${bill.isPosted ? 'bg-white text-black' : (bill.billStatus === "paid" ? 'bg-green-600' : 'bg-red-700 text-white')
                           }`}
                       >
                         {bill.isPosted ? "Bill Posted" : (bill.billStatus === "paid" ? 'Paid' : 'Unpaid')}
                       </span>
-                    </td>
+                    </td> */}
                     <td className="py-1 px-2">
                       {bill.isPosted ? <span className='p-2'>Bill Posted</span> : (!(bill.billStatus === "paid") ? (
                         <button

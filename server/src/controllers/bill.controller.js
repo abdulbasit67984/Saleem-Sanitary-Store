@@ -253,6 +253,7 @@ const registerBill = asyncHandler(async (req, res) => {
                             BusinessId,
                             individualAccountId: customerIndividualAccount.mergedInto !== null ? customerIndividualAccount.mergedInto : customerIndividualAccount._id,
                             details: billItems.length === 1 ? ` ${productName}` : `Bill ${billNo}`,
+                            description,
                             debit: totalAmount - flatDiscount,
                             reference: customerIndividualAccount.mergedInto !== null ? customerIndividualAccount.mergedInto : customerIndividualAccount._id,
                         },
