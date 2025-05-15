@@ -1,8 +1,10 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
 import { LineChart, Line, PieChart, Pie, BarChart, Bar, Tooltip, Legend, CartesianGrid, XAxis, YAxis, Cell, ResponsiveContainer } from "recharts";
 import { FaChartLine, FaBox, FaDollarSign, FaStar } from "react-icons/fa";
 import config from "../../../features/config";
 import Loader from "../../../pages/Loader";
+import functions from "../../../features/functions";
 
 const Dashboard = () => {
   const [salesData, setSalesData] = useState([]);
@@ -72,7 +74,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-gray-600">Total Sales</h2>
-                <p className="text-2xl font-bold text-gray-800">{totalSales}</p>
+                <p className="text-2xl font-bold text-gray-800">{totalSales && functions.formatAsianNumber(totalSales)}</p>
               </div>
             </div>
           </div>
@@ -85,7 +87,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-gray-600">Total Revenue</h2>
-                <p className="text-2xl font-bold text-gray-800">{totalRevenue}</p>
+                <p className="text-2xl font-bold text-gray-800">{totalRevenue && functions.formatAsianNumber(totalRevenue)}</p>
               </div>
             </div>
           </div>
@@ -98,7 +100,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-gray-600">Avg Sales / Month</h2>
-                <p className="text-2xl font-bold text-gray-800">{avgSales}</p>
+                <p className="text-2xl font-bold text-gray-800">{avgSales && functions.formatAsianNumber(avgSales)}</p>
               </div>
             </div>
           </div>

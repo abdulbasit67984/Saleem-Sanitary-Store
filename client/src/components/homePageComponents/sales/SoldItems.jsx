@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import UpdateBill from './bills/UpdateBill';
 import Button from '../../Button';
 import Input from '../../Input';
+import functions from "../../../features/functions"
 
 const ITEMS_PER_PAGE = 200; // Adjust as needed
 
@@ -15,7 +16,7 @@ function SoldItems() {
   const [totalSales, setTotalSales] = useState(0);
   const [totalQuantity, setTotalQuantity] = useState(0);
   const [totalFlatDiscount, setTotalFlatDiscount] = useState(0);
-  const [totalGst, setTotalGst] = useState(0);
+  const [remainingBalance, setRemainingBalance] = useState(0);
   const [validationMessage, setValidationMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -85,7 +86,7 @@ function SoldItems() {
     setTotalSales(totalSaleCounter);
     setTotalQuantity(totalQtyCounter);
     setTotalFlatDiscount(totalDiscountCounter);
-    setTotalGst(totalRemainingBalance);
+    setRemainingBalance(totalRemainingBalance);
   };
 
   const handleDateChange = (e) => {
@@ -289,8 +290,8 @@ function SoldItems() {
                     <td className="py-2 px-2">{getDate(bill.createdAt)}</td>
                     <td className="py-2 px-2">{bill.totalQuantity}</td>
                     <td className="py-2 px-2">{bill.description}</td>
-                    <td className="py-2 px-2">{bill.totalAmount}</td>
-                    <td className="py-2 px-2">{bill.totalAmount - bill.paidAmount - bill.flatDiscount}</td>
+                    <td className="py-2 px-2">{bill.totalAmount && functions.formatAsianNumber(bill.totalAmount)}</td>
+                    <td className="py-2 px-2">{functions.formatAsianNumber(bill.totalAmount - bill.paidAmount - bill.flatDiscount)}</td>
                     <td className="py-2 px-2">{bill.customer?.customerName}</td>
                     {/* <td className="py-2 px-2">
                       <span
@@ -390,7 +391,7 @@ function SoldItems() {
             <input
               type="text"
               className="border p-1 rounded w-full"
-              value={`${totalFlatDiscount}`}
+              value={`${totalFlatDiscount && functions.formatAsianNumber(totalFlatDiscount)}`}
               readOnly
             />
           </div>
@@ -399,7 +400,7 @@ function SoldItems() {
             <input
               type="text"
               className="border p-1 rounded w-full"
-              value={`${totalGst}`}
+              value={`${remainingBalance && functions.formatAsianNumber(remainingBalance)}`}
               readOnly
             />
           </div>
@@ -408,7 +409,7 @@ function SoldItems() {
             <input
               type="text"
               className="border p-1 rounded w-full"
-              value={`${totalSales}`}
+              value={`${totalSales && functions.formatAsianNumber(totalSales)}`}
               readOnly
             />
           </div>

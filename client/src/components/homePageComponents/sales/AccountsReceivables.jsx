@@ -7,6 +7,7 @@ import UpdateConfirmation from '../../UpdateConfirmation'
 import SuccessResponseMessage from '../../SuccessResponseMessage'
 import ErrorResponseMessage from '../../ErrorResponseMessage';
 import Button from '../../Button';
+import functions from '../../../features/functions';
 
 const ITEMS_PER_PAGE = 200;
 
@@ -172,7 +173,7 @@ const AccountReceivables = () => {
                       {receivable.bill.salesPerson.firstname + " " + receivable.bill.salesPerson.lastname || 'N/A'}
                     </td>
                     <td className="py-2 px-2 text-center">
-                      {(receivable.bill.totalAmount - receivable.bill.paidAmount - receivable.bill.flatDiscount).toFixed(2) || '0.00'}
+                      {functions.formatAsianNumber(receivable.bill.totalAmount - receivable.bill.paidAmount - receivable.bill.flatDiscount) || '0.00'}
                     </td>
                     <td className="py-2 px-2 text-center">
                       {receivable.bill.dueDate ? new Date(receivable.bill.dueDate).toLocaleDateString() : 'N/A'}
@@ -235,7 +236,7 @@ const AccountReceivables = () => {
           <input
             type="text"
             className="border p-1 rounded w-full"
-            value={totalReceivables.toFixed(2)}
+            value={functions.formatAsianNumber(totalReceivables)}
             readOnly
           />
         </div>

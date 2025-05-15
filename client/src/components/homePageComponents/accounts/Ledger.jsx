@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import config from "../../../features/config"; // Ensure API service import
 import { useSelector } from "react-redux";
 import Loader from "../../../pages/Loader";
+import functions from "../../../features/functions"
 
 const Ledger = () => {
   const [accounts, setAccounts] = useState([]);
@@ -206,9 +207,9 @@ const Ledger = () => {
                       <td className="p-2">{entry.createdAt.slice(0, 10)}</td>
                       <td className="p-2">{entry.details}</td>
                       <td className="p-2">{entry.description}</td>
-                      <td className="p-2">{entry.debit}</td>
-                      <td className="p-2">{entry.credit}</td>
-                      <td className="p-2">{entryBalance}</td>
+                      <td className="p-2">{entry.debit && functions.formatAsianNumber(entry.debit)}</td>
+                      <td className="p-2">{entry.credit && functions.formatAsianNumber(entry.credit)}</td>
+                      <td className="p-2">{entryBalance && functions.formatAsianNumber(entryBalance)}</td>
                     </tr>
                   )})}
                 </tbody>
@@ -216,7 +217,7 @@ const Ledger = () => {
             </div>
             <div className="flex justify-end">
               <div className="p-4">
-              <h3 className="p-2 border font-semibold text-xs mr-20">Total Balance: {balance}</h3>
+              <h3 className="p-2 border font-semibold text-xs mr-20">Total Balance: {balance && functions.formatAsianNumber(balance)}</h3>
               
               </div>
             </div>
