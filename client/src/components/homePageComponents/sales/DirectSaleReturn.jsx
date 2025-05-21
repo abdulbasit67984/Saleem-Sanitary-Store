@@ -9,6 +9,7 @@ import {
   setFlatDiscount,
   setReturnReason,
   resetSaleReturn,
+  setLoading,
 } from '../../../store/slices/sales/saleReturnSlice';
 import Input from '../../Input';
 import Button from '../../Button';
@@ -81,11 +82,18 @@ const DirectSaleReturn = () => {
     dispatch(setTotalReturnAmount(total));
   };
 
+  const handleDelete = (index) => {
+    const updatedItems = [...selectedItems];
+        updatedItems.splice(index, 1);
+        dispatch(setSelectedItems(updatedItems));
+  }
+
   const handleSubmit = async () => {
     if (selectedItems.length === 0) {
       alert("Please select add items for return.");
       return;
     }
+    console.log('first', selectedItems)
 
     setIsLoading(true);
     setSubmitError('');
@@ -93,40 +101,41 @@ const DirectSaleReturn = () => {
 
     try {
       const returnItems = selectedItems.map((item) => ({
-        productId: item.productId._id, // Assuming your product has an _id
-        quantity: item.quantity,
+        productId: item._id, 
+        quantity: parseInt( item.quantity),
         returnPrice: item.returnPrice,
 
       }));
-
-      const response = await config.createSaleReturn({
-        customer,
-        returnType: 'direct',
-        returnItems,
-        totalReturnAmount,
-        flatDiscount: flatDiscount || 0,
-        returnReason,
-      });
-
+       console.log('returnItems', returnItems)
+       
+       const response = await config.createSaleReturn({
+         customer,
+         returnType: 'direct',
+         returnItems,
+         totalReturnAmount,
+         flatDiscount: flatDiscount || 0,
+         returnReason,
+        });
+        console.log('1', response)
+        
       if (response) {
         setSubmitSuccess(true);
         dispatch(resetSaleReturn());
       }
     } catch (error) {
-      let errorMessage = "An error occurred.";
+      // let errorMessage = "An error occurred.";
       if (error.response && error.response.data) {
         const htmlString = error.response.data;
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlString, 'text/html');
         const preContent = doc.querySelector('pre')?.innerHTML.replace(/<br\s*\/?>/gi, '\n');
-        errorMessage = preContent?.split('\n')[0] || errorMessage;
+        // errorMessage = preContent?.split('\n')[0] || errorMessage;
+        setSubmitError(preContent);
       }
-      setSubmitError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
-
 
   useEffect(() => {
     handleCalculateTotal()
@@ -166,7 +175,7 @@ const DirectSaleReturn = () => {
           <div className="flex gap-2 text-xs">
             <Button
               className='px-4'
-              onClick={handleSubmit}
+              onClick={() => handleSubmit()}
               disabled={isLoading}
             >
               {isLoading ? 'Submitting...' : 'Submit Return'}
@@ -225,7 +234,7 @@ const DirectSaleReturn = () => {
       )}
 
       {/* Selected Products */}
-      <div className="mb-4 max-h-72">
+      <div className="mb-4 max-h-72 overflow-auto">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-100">
@@ -233,6 +242,7 @@ const DirectSaleReturn = () => {
               <th className="p-2 border text-left">Quantity</th>
               <th className="p-2 border text-left">Price</th>
               <th className="p-2 border text-left">Total</th>
+              <th className="p-2 border text-left">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -246,6 +256,9 @@ const DirectSaleReturn = () => {
                 <input type="number" value={item.returnPrice} className="border p-1 w-16" onChange={(e) => handlePriceChange(index, e.target.value)} />
                 </td>
                 <td className="p-2 text-left">{(item.returnPrice * item.quantity).toFixed(2)}</td>
+                <td className="p-2 text-left">
+                  <Button onClick={handleDelete}>Remove</Button>
+                </td>
               </tr>
             ))}
           </tbody>
