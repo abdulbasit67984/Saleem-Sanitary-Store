@@ -14,13 +14,13 @@ function MagicUiAnimation({ text = "Welcome to PANDAS" }) {
         <div className="relative w-full h-screen overflow-hidden flex items-center justify-center gap-6 bg-white dark:bg-black">
             <AnimatedGridPattern
                 numSquares={50}
-                maxOpacity={0.2}
+                maxOpacity={0.4}
                 duration={3}
                 repeatDelay={5}
                 className={cn(
-                    "absolute inset-0 h-full w-full",
+                    "text-[#27aedb] absolute inset-0 h-full w-full",
                     "[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]",
-                    "skew-y-12"
+                    "skew-y-12 "
                 )}
             />
             <Logo width='w-20 h-20' className='rounded-full opacity-90 hue-rotate-180 mb-16' />

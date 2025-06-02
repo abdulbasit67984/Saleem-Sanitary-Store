@@ -9,11 +9,11 @@ import { useNavigate } from "react-router-dom";
 import {
     setAllProducts
 } from '../store/slices/products/productsSlice'
-import {setCustomerData} from '../store/slices/customer/customerSlice'
-import {setCompanyData} from '../store/slices/company/companySlice'
-import {setSupplierData} from '../store/slices/supplier/supplierSlice'
-import {setCategoryData} from '../store/slices/products/categorySlice'
-import {setTypeData} from '../store/slices/products/typeSlice'
+import { setCustomerData } from '../store/slices/customer/customerSlice'
+import { setCompanyData } from '../store/slices/company/companySlice'
+import { setSupplierData } from '../store/slices/supplier/supplierSlice'
+import { setCategoryData } from '../store/slices/products/categorySlice'
+import { setTypeData } from '../store/slices/products/typeSlice'
 import authService from "../features/auth";
 import { logout } from "../store/slices/auth/authSlice";
 import { setCurrentUser, setPrimayPath } from '../store/slices/auth/authSlice'
@@ -21,16 +21,16 @@ import { setCurrentUser, setPrimayPath } from '../store/slices/auth/authSlice'
 
 function WelcomePage() {
 
-  const [error, setError] = useState(null)
-  const [successMessage, setSuccessMessage] = useState("")
-  const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+    const [successMessage, setSuccessMessage] = useState("")
+    const [loading, setLoading] = useState(true)
 
     // const allProducts = useSelector(state => state.saleItems.allProducts)
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
     // authService.startTokenRefreshTimer();
-    
+
     const fetchAllProducts = async () => {
         setError("")
         try {
@@ -43,7 +43,7 @@ function WelcomePage() {
         } catch (error) {
             // console.log("products error: ", error.response.status)
             setError(error)
-            if(error?.response.status === 401) {
+            if (error?.response.status === 401) {
                 dispatch(logout())
                 navigate('/login')
             }
@@ -53,8 +53,8 @@ function WelcomePage() {
         //         navigate('/login')
         //     }
         // }
-        
-        
+
+
     }
 
     const fetchAllCustomers = async () => {
@@ -70,13 +70,7 @@ function WelcomePage() {
         } catch (error) {
             setError(error.message)
         }
-        // finally {
-        //     if(error?.response.status === 401) {
-        //         navigate('/login')
-        //     }
-        // }
-        
-        
+
     }
 
     const fetchAllCompanies = async () => {
@@ -96,8 +90,8 @@ function WelcomePage() {
         //         navigate('/login')
         //     }
         // }
-        
-        
+
+
     }
 
     const fetchAllSuppliers = async () => {
@@ -117,8 +111,8 @@ function WelcomePage() {
         //         navigate('/login')
         //     }
         // }
-        
-        
+
+
     }
 
     const fetchAllCategories = async () => {
@@ -138,8 +132,8 @@ function WelcomePage() {
         //         navigate('/login')
         //     }
         // }
-        
-        
+
+
     }
 
     const fetchAllTypes = async () => {
@@ -154,26 +148,27 @@ function WelcomePage() {
             setSuccessMessage("Data Loaded Successfully...")
         } catch (error) {
             setError(error.message)
-            if(error?.response.status === 401) {
+            if (error?.response.status === 401) {
                 navigate('/login')
             }
         }
-        
-        
+
+
     }
 
     const fetchUserData = async () => {
         const response = await authService.getCurrentUser()
-    if (response) {
-      console.log("welcome page userdata: ", response.data);
-      dispatch(setPrimayPath((response.data?.BusinessId ? response.data.BusinessId.businessName : response.data?.username)?.replace(/ /g, '-')))
-      dispatch(setCurrentUser(response.data))
+        if (response) {
+            console.log("welcome page userdata: ", response.data);
+            dispatch(setPrimayPath((response.data?.BusinessId ? response.data.BusinessId.businessName : response.data?.username)?.replace(/ /g, '-')))
+            dispatch(setCurrentUser(response.data))
+        }
+
+
     }
-        
-        
-    }
-    
-    useEffect(()=> {
+
+    useEffect(() => {
+        fetchUserData();
         setSuccessMessage('')
         fetchAllProducts();
         fetchAllCustomers();
@@ -181,9 +176,8 @@ function WelcomePage() {
         fetchAllSuppliers();
         fetchAllCategories();
         fetchAllTypes();
-        fetchUserData();
         setLoading(false);
-        
+
 
         setTimeout(() => {
             setSuccessMessage('')
@@ -194,8 +188,8 @@ function WelcomePage() {
     return (
         <>
             <MagicUiAnimation />
-            {loading && <Loader message="Loading Data Please Wait...." mt="mt-28" h_w="h-10 w-10 border-t-2 border-b-2"/>}
-            
+            {loading && <Loader message="Loading Data Please Wait...." mt="mt-28" h_w="h-10 w-10 border-t-2 border-b-2" />}
+
             {successMessage && <p className="absolute text-green-600 top-[30rem] w-screen text-center">{successMessage}</p>}
         </>
 

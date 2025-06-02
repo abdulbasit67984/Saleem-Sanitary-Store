@@ -3,7 +3,14 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   billData: [],
   bill: {},
-  billNo: ""
+  billNo: "",
+  searchBillFilters: {
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    billType: [],
+    customer: "",
+    billStatus: [],
+  }
 };
 
 const billSlice = createSlice({
@@ -19,9 +26,13 @@ const billSlice = createSlice({
     setBillNo: (state, action) => {
       state.billNo = action.payload;
     },
+    setSearchBillFilters: (state, action) => {
+      state.searchBillFilters = action.payload;
+    },
+
 
   },
 });
 
-export const { setBillData, setBill, setBillNo } = billSlice.actions;
+export const { setBillData, setBill, setBillNo, setSearchBillFilters } = billSlice.actions;
 export default billSlice.reducer;

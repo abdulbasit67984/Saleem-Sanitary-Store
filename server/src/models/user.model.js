@@ -23,7 +23,6 @@ const UserSchema = new Schema({
     },
     email: {
         type: String,
-        unique: true,
         lowercase: true,
         trim: true
     },
@@ -42,7 +41,6 @@ const UserSchema = new Schema({
     },
     cnic: {
         type: String,
-        unique: true
     },
     BusinessId: {
         type: Schema.Types.ObjectId,

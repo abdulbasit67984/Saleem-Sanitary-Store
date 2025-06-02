@@ -15,7 +15,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
     
 
     return bill && (
-        <div className="thermal-bill w-[80mm] min-h-[24rem] max-h-72 shadow-lg overflow-y-auto scrollbar-thin mx-auto">
+        <div className="thermal-bill mt-5 w-[80mm] min-h-[24rem] max-h-72 shadow-lg overflow-y-auto scrollbar-thin mx-auto">
             <div ref={ref} className="view-bill p-2 bg-white">
 
                 {/* Business Information */}
@@ -68,6 +68,18 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                                     {!packingSlip && <td className="p-1 text-right">
                                         {commonFunction.formatAsianNumber((item.quantity * item.billItemPrice) -
                                             ((item.quantity * item.billItemPrice) * item.billItemDiscount / 100))}
+                                    </td>}
+                                </tr>
+                            ))}
+
+                            {bill.extraItems && bill.extraItems.map((item, index) => (
+                                <tr key={index} className="border border-gray-600">
+                                    <td className="p-1">{commonFunction.truncateString(item.itemName, 16)}</td>
+                                    <td className="p-1"></td>
+                                    <td className="p-1 text-right">{item.quantity}</td>
+                                    {!packingSlip && <td className="p-1 text-right">{commonFunction.formatAsianNumber(item.salePrice)}</td>}
+                                    {!packingSlip && <td className="p-1 text-right">
+                                        {commonFunction.formatAsianNumber((item.quantity * item.salePrice))}
                                     </td>}
                                 </tr>
                             ))}

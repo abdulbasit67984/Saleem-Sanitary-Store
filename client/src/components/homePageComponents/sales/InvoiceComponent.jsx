@@ -23,7 +23,9 @@ import {
   setProduct,
   setTotalGrossAmount,
   setProductUnits,
-  setCustomer
+  setCustomer,
+  setExtraProducts,
+  removeExtraItem
 } from '../../../store/slices/products/productsSlice'
 import { setBillData } from '../../../store/slices/bills/billSlice';
 import Input from '../../Input';
@@ -53,10 +55,18 @@ const InvoiceComponent = () => {
   const [isInvoiceGenerated, setIsInvoiceGenerated] = useState(false);
   const [billError, setBillError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [dueDate, setDueDate] = useState('');
+  const [dueDate, setDueDate] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [showAddExtraProductModal, setShowAddExtraProductModal] = useState(false);
+  const [extraProduct, setExtraProduct] = useState({
+    id: 0,
+    itemName: '',
+    salePrice: 0,
+    quantity: 1
+  });
 
   const thermalColor = {
     th100: "bg-blue-100",
@@ -103,7 +113,8 @@ const InvoiceComponent = () => {
     productDiscount,
     productPrice,
     product,
-    totalGrossAmount
+    totalGrossAmount,
+    extraProducts
   } = useSelector((state) => state.saleItems);
 
   const billData = useSelector(state => state.bills.billData)
@@ -125,8 +136,8 @@ const InvoiceComponent = () => {
       ) : customerFlag === "white" ? (
         dispatch(setProductPrice(product.salePriceDetails[0].salePrice4))
       ) : (
-      dispatch(setProductPrice(product.salePriceDetails[0].salePrice1))
-    )
+        dispatch(setProductPrice(product.salePriceDetails[0].salePrice1))
+      )
     }
     dispatch(setProduct(product));
   };
@@ -260,12 +271,19 @@ const InvoiceComponent = () => {
     const totalGst = 0
     // totalAmount * 0.18; // Assuming a GST rate of 18%
     const netAmount = totalAmount - totalDiscount + totalGst;
-    const balance = (totalAmount - flatDiscount + totalGst - paidAmount);
+    
+    const totalExtraProductsQuantity = extraProducts.reduce((sum, item) => sum + Number((item.quantity || 0)), 0);
+    
+    const totalExtraProductsGrossAmount = extraProducts.reduce((sum, item) => sum + ((item.salePrice * item.quantity)), 0);
+    
+    const totalExtraProductsTotalAmount = Math.floor(totalExtraProductsGrossAmount)
+    
+    const balance = (totalAmount + totalExtraProductsTotalAmount - flatDiscount + totalGst - paidAmount);
 
-    dispatch(setTotalGrossAmount(totalGrossAmount))
-    dispatch(setTotalQty(totalQty))
+    dispatch(setTotalGrossAmount(totalGrossAmount + totalExtraProductsGrossAmount))
+    dispatch(setTotalQty(totalQty + totalExtraProductsQuantity))
     // dispatch(setFlatDiscount(totalDiscount));
-    dispatch(setTotalAmount(totalAmount));
+    dispatch(setTotalAmount(totalAmount + totalExtraProductsTotalAmount));
     dispatch(setTotalGst(totalGst));
     dispatch(setIsPaid(balance === 0 ? 'paid' : 'unpaid'));
   };
@@ -295,6 +313,18 @@ const InvoiceComponent = () => {
           billItemUnit: item.billItemUnit,
         }))
 
+        console.log('first', description,
+          'billType:', billType,
+          billPaymentType,
+          'customer:', customerId,
+          billItems,
+          'flatDiscount:', flatDiscount || 0,
+          'billStatus:', isPaid,
+          'totalAmount:', totalAmount || 0,
+          'paidAmount:', paidAmount || 0,
+          dueDate,
+          'extraItems:', extraProducts)
+
         const response = await config.createInvoice({
           description,
           billType,
@@ -305,7 +335,8 @@ const InvoiceComponent = () => {
           billStatus: isPaid,
           totalAmount: totalAmount || 0,
           paidAmount: paidAmount || 0,
-          dueDate
+          dueDate,
+          extraItems: extraProducts
         });
 
         if (response) {
@@ -323,6 +354,7 @@ const InvoiceComponent = () => {
           dispatch(setProductPrice(''))
           dispatch(setProduct({}))
           dispatch(setCustomer(null));
+          dispatch(setExtraProducts([]))
         }
 
         setIsInvoiceGenerated(true);
@@ -366,6 +398,7 @@ const InvoiceComponent = () => {
       dispatch(setProductDiscount(''));
       dispatch(setProductPrice(''));
       dispatch(setProduct({}));
+      dispatch(setExtraProducts([]));
     }
   };
 
@@ -381,6 +414,9 @@ const InvoiceComponent = () => {
     customer.customerName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  useEffect(() => {
+    console.log('extraProducts', extraProducts)
+  }, [extraProducts])
 
   useEffect(() => {
     const handleKeyPress = (event) => {
@@ -426,7 +462,7 @@ const InvoiceComponent = () => {
 
   useEffect(() => {
     updateTotals();
-  }, [selectedItems, paidAmount, previousBalance]);
+  }, [selectedItems, paidAmount, previousBalance, extraProducts]);
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -446,6 +482,7 @@ const InvoiceComponent = () => {
     // Clean up the interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
+
   useEffect(() => {
     if (searchQuery) {
       const results = allProducts.filter(
@@ -459,6 +496,8 @@ const InvoiceComponent = () => {
       dispatch(setSearchQueryProducts([]));
     }
   }, [searchQuery, allProducts, dispatch]);
+
+
   return (!isLoading ?
     (<div className="w-full mx-auto p-2 bg-white rounded shadow-lg overflow-auto max-h-[90vh]">
 
@@ -477,6 +516,73 @@ const InvoiceComponent = () => {
               <Button className='px-4 text-xs' onClick={() => handleViewBill(billNo)}>
                 View Invoice
               </Button>}
+          </div>
+        </div>
+      )}
+
+      {showAddExtraProductModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md max-h-[80vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Add Extra Item</h3>
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setShowAddExtraProductModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 text-sm mb-1">Item Name</label>
+                <input
+                  type="text"
+                  value={extraProduct.itemName}
+                  onChange={(e) => setExtraProduct({ ...extraProduct, itemName: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700 text-sm mb-1">Sale Price</label>
+                <input
+                  type="number"
+                  value={extraProduct.salePrice}
+                  onChange={(e) => setExtraProduct({ ...extraProduct, salePrice: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700 text-sm mb-1">Quantity</label>
+                <input
+                  type="number"
+                  value={extraProduct.quantity}
+                  onChange={(e) => setExtraProduct({ ...extraProduct, quantity: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6 text-xs">
+              <Button
+                onClick={() => setShowAddExtraProductModal(false)}
+                className="px-2"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  dispatch(setExtraProducts([...extraProducts, {...extraProduct, id: extraProducts.length + 101}]))
+                  setShowAddExtraProductModal(false)
+                }}
+                className="px-2"
+              >
+                Add Item
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -543,7 +649,7 @@ const InvoiceComponent = () => {
             <input
               type="text"
               placeholder="Search Customers..."
-              className={`${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} border p-1 rounded text-xs mb-1 w-20`} 
+              className={`${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} border p-1 rounded text-xs mb-1 w-20`}
               value={searchTerm}
               onChange={handleSearch}
             />
@@ -555,7 +661,7 @@ const InvoiceComponent = () => {
                 setCustomerFlag(customer?.customerFlag); // Added optional chaining
                 console.log('customerFlag', customer?.customerFlag); // Added optional chaining
               }}
-              className={`${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} border p-1 rounded text-xs w-full`} 
+              className={`${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} border p-1 rounded text-xs w-full`}
             >
               <option value="">Select Customer</option>
               {filteredCustomers?.map((customer, index) => (
@@ -581,46 +687,45 @@ const InvoiceComponent = () => {
 
       {/* Product Search */}
       <div className="mb-2">
-        <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="grid grid-cols-12 gap-2 text-xs">
 
           <Input
             label='Search:'
             placeholder='Search by Name / Item code'
-            divClass="flex items-center"
+            divClass="flex items-center col-span-4"
             labelClass="w-24"
-            className='w-72 text-xs p-1'
+            className='w-44 text-xs p-1'
             value={searchQuery || ''}
             onChange={(e) => dispatch(setSearchQuery(e.target.value))}
           // onChange={handleSearch}
 
           />
 
-          <div className='flex'>
+          <Input
+            label='Item Name:'
+            divClass="flex items-center col-span-4"
+            labelClass="w-24"
+            className='w-44 text-xs p-1'
+            value={productName ?? ''}
+            readOnly
 
-            <Input
-              label='Item Name:'
-              divClass="flex items-center"
-              labelClass="w-24"
-              className='w-44 text-xs p-1'
-              value={productName ?? ''}
-              readOnly
-
-            />
-
-            <Button
-              className={`px-4 w-44  ${billType === 'thermal' ? 'hover:bg-blue-800' : 'hover:bg-gray-700'}`}
-              bgColor={billType === 'thermal' ? thermalColor.th500 : A4Color.a4500}
-              onClick={handleAddProduct}
-            >
-              <p className='text-xs text-gray-100'>Add</p>
-            </Button>
+          />
 
 
-          </div>
+          <Input
+            label='Due Date:'
+            divClass="flex items-center col-span-4 w-52"
+            type="date"
+            labelClass="w-24 text-red-600"
+            className='w-56 text-xs p-1 text-red-600'
+            value={dueDate || ''}
+            onChange={(e) => setDueDate(e.target.value)}
+          >
+          </Input>
 
           <Input
             label='Discount %:'
-            divClass="flex items-center"
+            divClass="flex items-center col-span-4"
             type="number"
             labelClass="w-24"
             className='w-44 text-xs p-1'
@@ -631,30 +736,44 @@ const InvoiceComponent = () => {
           </Input>
 
 
-          <div className='flex justify-between '>
-            <Input
-              label='Quantity:'
-              divClass="flex items-center"
-              labelClass="w-24"
-              type="number"
-              className='w-44 text-xs p-1'
-              value={productQuantity || ''}
-              onChange={handleQuantityChange}
-            >
-              {quantityError && <p className="pl-2 text-red-500 text-xs">{quantityError}</p>}
-            </Input>
+          <Input
+            label='Quantity:'
+            divClass="flex items-center col-span-4"
+            labelClass="w-24"
+            type="number"
+            className='w-44 text-xs p-1'
+            value={productQuantity || ''}
+            onChange={handleQuantityChange}
+          >
+            {quantityError && <p className="pl-2 text-red-500 text-xs">{quantityError}</p>}
+          </Input>
 
-            <Button className={`w-44 px-4 ${billType === 'thermal' ? 'hover:bg-blue-800' : 'hover:bg-gray-700'}`}
+          
+          <div className=' col-span-2'>
+            <Button
+              className={`px-4 w-40  ${billType === 'thermal' ? 'hover:bg-blue-800' : 'hover:bg-gray-700'}`}
               bgColor={billType === 'thermal' ? thermalColor.th500 : A4Color.a4500}
-              onClick={clearInvoice}>
-              <p className='text-xs text-gray-100'>Clear Invoice</p>
+              onClick={handleAddProduct}
+            >
+              <p className='text-xs text-gray-100'>Add</p>
+            </Button>
+          </div>
+
+          <div className=' col-span-2'>
+            <Button
+              className={`px-4 w-40  ${billType === 'thermal' ? 'hover:bg-yellow-800' : 'hover:bg-gray-700'}`}
+              bgColor={billType === 'thermal' ? 'bg-yellow-600' : A4Color.a4500}
+              onClick={() => setShowAddExtraProductModal(true)}
+            >
+              <p className='text-xs text-white'>Add Extra Item</p>
             </Button>
           </div>
 
 
+
           <Input
             label='Units / Packs:'
-            divClass="flex items-center"
+            divClass="flex items-center col-span-4"
             labelClass="w-24"
             type="number"
             className='w-44 text-xs p-1'
@@ -665,28 +784,38 @@ const InvoiceComponent = () => {
             {discountError && <p className="pl-2 text-red-500 text-xs">{discountError}</p>}
           </Input>
 
-          <div className='flex justify-between '>
-
-            <Input
-              label='Price:'
-              divClass="flex items-center"
-              labelClass="w-24"
-              type="number"
-              className='w-44 text-xs p-1'
-              value={productPrice && productPrice || ''}
-              onChange={handlePriceChange}
-            >
-              {priceError && <p className="pl-2 text-red-500 text-xs">{priceError}</p>}
-            </Input>
-
-            <Button
-              className={`w-44 px-4 ${billType === 'thermal' ? 'hover:bg-blue-800' : 'hover:bg-gray-700'}`}
-              bgColor={billType === 'thermal' ? thermalColor.th500 : A4Color.a4500}
-              onClick={generateInvoice}
-            >
-              <p className='text-xs text-gray-100'>Generate Invoice</p>
+          <Input
+            label='Price:'
+            divClass="flex items-center col-span-4"
+            labelClass="w-24"
+            type="number"
+            className='w-44 text-xs p-1'
+            value={productPrice && productPrice || ''}
+            onChange={handlePriceChange}
+          >
+            {priceError && <p className="pl-2 text-red-500 text-xs">{priceError}</p>}
+          </Input>
+          
+          <div className='col-span-2'>
+            <Button className={`w-40 px-4 ${billType === 'thermal' ? 'hover:bg-red-800' : 'hover:bg-gray-700'}`}
+              bgColor={billType === 'thermal' ? 'bg-red-600' : A4Color.a4500}
+              onClick={clearInvoice}>
+              <p className='text-xs text-white'>Clear Invoice</p>
             </Button>
           </div>
+
+          <div className=' col-span-2'>
+
+
+            <Button
+              className={`w-40 px-4 ${billType === 'thermal' ? 'hover:bg-green-800' : 'hover:bg-gray-700'}`}
+              bgColor={billType === 'thermal' ? 'bg-green-600' : A4Color.a4500}
+              onClick={generateInvoice}
+            >
+              <p className='text-xs text-white'>Generate Invoice</p>
+            </Button>
+          </div>
+
         </div>
 
         {/* Search Result Table */}
@@ -761,7 +890,7 @@ const InvoiceComponent = () => {
               </tr>
             </thead>
             <tbody>
-              {selectedItems.map((item, index) => {
+              {selectedItems && selectedItems?.map((item, index) => {
                 const grossAmount = (item.salePrice1 / item.productPack * item.billItemUnit * item.quantity);
                 const netAmount = (grossAmount * (1 - item.discount / 100)).toFixed(2);
 
@@ -811,6 +940,36 @@ const InvoiceComponent = () => {
                       <button
                         className={`px-2 py-1 text-xs text-white bg-red-500 hover:bg-red-700 rounded-lg`}
                         onClick={() => handleRemoveItem(index)}
+                      >
+                        <span>Remove</span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {/* extra products */}
+              {extraProducts && extraProducts?.map((item, index) => {
+                const grossAmount = (parseFloat(item.salePrice) * parseFloat(item.quantity));
+                const netAmount = (grossAmount).toFixed(2);
+
+                return (
+                  <tr key={index} className={`border-t ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}>
+                    <td className=" px-1">{selectedItems.length + index + 1}</td>
+                    <td className=" px-1">{item.itemName}</td>
+                    <td className=" px-1">{item.quantity}</td>
+                    <td className=" px-1"></td>
+                    <td className=" px-1">{item.salePrice}</td>
+                    <td className=" px-1">{grossAmount.toFixed(2)}</td>
+                    <td className=" px-1"></td>
+                    <td className=" px-1">{netAmount}</td>
+                    <td className=" px-1">
+                      <button
+                        className={`px-2 py-1 text-xs text-white bg-red-500 hover:bg-red-700 rounded-lg`}
+                        onClick={() => {
+                          dispatch(removeExtraItem(index))
+                          updateTotals()
+                        }} 
                       >
                         <span>Remove</span>
                       </button>
@@ -944,101 +1103,3 @@ const InvoiceComponent = () => {
 
 export default InvoiceComponent;
 
-
-// const PurchaseItemTable = ({ items, setSelectedItems }) => {
-//   const [editIndex, setEditIndex] = useState(null);
-
-//   const handleEdit = (index) => {
-//     setEditIndex(index);
-//   };
-
-//   const handleChange = (index, field, value) => {
-//     const newItems = [...items];
-
-//     if (field === "quantity") {
-//       // Ensure it's a valid number
-//       const quantity = parseFloat(value) || 0;
-//       newItems[index].quantity = quantity;
-
-//       // Calculate new total price based on productPack logic
-//       const productPack = newItems[index].productPack || 1;
-//       const pricePerUnit = newItems[index].pricePerUnit / productPack;
-//       newItems[index].totalPrice = quantity * pricePerUnit;
-//     } else {
-//       newItems[index][field] = value;
-//     }
-
-//     setItems(newItems);
-//   };
-
-//   const handleSave = () => {
-//     setEditIndex(null);
-//   };
-
-//   return (
-//     <table border="1" style={{ width: "100%", textAlign: "left" }}>
-//       <thead>
-//         <tr>
-//           <th>Product</th>
-//           <th>Quantity (Units/Packs)</th>
-//           <th>Price per Unit</th>
-//           <th>Total Price</th>
-//           <th>Discount</th>
-//           <th>Actions</th>
-//         </tr>
-//       </thead>
-//       <tbody>
-//         {items.map((item, index) => (
-//           <tr key={index}>
-//             <td>{item.productName}</td>
-
-//             {/* Quantity Input */}
-//             <td>
-//               {editIndex === index ? (
-//                 <input
-//                   type="number"
-//                   value={item.quantity}
-//                   onChange={(e) =>
-//                     handleChange(index, "quantity", e.target.value)
-//                   }
-//                 />
-//               ) : (
-//                 item.quantity
-//               )}
-//             </td>
-
-//             {/* Price per Unit (Read-only) */}
-//             <td>{(item.pricePerUnit / (item.productPack || 1)).toFixed(2)}</td>
-
-//             {/* Total Price (Auto-Calculated) */}
-//             <td>{item.totalPrice.toFixed(2)}</td>
-
-//             {/* Discount Input */}
-//             <td>
-//               {editIndex === index ? (
-//                 <input
-//                   type="number"
-//                   value={item.discount}
-//                   onChange={(e) =>
-//                     handleChange(index, "discount", e.target.value)
-//                   }
-//                 />
-//               ) : (
-//                 item.discount
-//               )}
-//             </td>
-
-//             {/* Edit/Save Button */}
-//             <td>
-//               {editIndex === index ? (
-//                 <button onClick={handleSave}>Save</button>
-//               ) : (
-//                 <button onClick={() => handleEdit(index)}>Edit</button>
-//               )}
-//             </td>
-//           </tr>
-//         ))}
-//       </tbody>
-//     </table>
-//   );
-// };

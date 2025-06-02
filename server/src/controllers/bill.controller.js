@@ -29,6 +29,7 @@ const registerBill = asyncHandler(async (req, res) => {
                 totalAmount,
                 paidAmount,
                 dueDate,
+                extraItems
             } = req.body;
 
             if (customer && !mongoose.Types.ObjectId.isValid(customer)) {
@@ -226,7 +227,8 @@ const registerBill = asyncHandler(async (req, res) => {
                     totalAmount,
                     paidAmount,
                     dueDate,
-                    totalPurchaseAmount
+                    totalPurchaseAmount,
+                    extraItems
 
                 },
             ]);
@@ -286,7 +288,7 @@ const registerBill = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        throw new ApiError(500, `Transaction failed: ${error.message}`);
+        throw new ApiError(500, `${error.message}`);
     }
 });
 

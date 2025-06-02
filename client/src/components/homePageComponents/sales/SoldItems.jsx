@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import config from '../../../features/config';
-import { setBillData, setBill, setBillNo } from '../../../store/slices/bills/billSlice';
+import { setBillData, setBill, setBillNo, setSearchBillFilters } from '../../../store/slices/bills/billSlice';
 import Loader from '../../../pages/Loader';
 import { useNavigate } from 'react-router-dom';
 import UpdateBill from './bills/UpdateBill';
@@ -39,7 +39,8 @@ function SoldItems() {
   const customerData = useSelector((state) => state.customers.customerData)
   const { 
     billData,
-    billNo
+    billNo,
+    searchBillFilters
   } = useSelector((state) => state.bills);
   const navigate = useNavigate();
 
@@ -50,18 +51,18 @@ function SoldItems() {
 
   const fetchAllBills = async () => {
     try {
-      const start = new Date(filters.startDate);
+      const start = new Date(searchBillFilters.startDate);
       start.setHours(0, 0, 0, 0); // Set to the start of the day
-      const end = new Date(filters.endDate);
+      const end = new Date(searchBillFilters.endDate);
       end.setHours(23, 59, 59, 999); // Set to the end of the day
 
-      // const query = new URLSearchParams(filters).toString();
+      // const query = new URLSearchParams(searchBillFilters).toString();
       const query = new URLSearchParams({
-        ...filters,
+        ...searchBillFilters,
         startDate: start.toISOString(),
         endDate: end.toISOString(),
-        billType: filters.billType.join(","),
-        billStatus: filters.billStatus.join(","),
+        billType: searchBillFilters?.billType.join(","),
+        billStatus: searchBillFilters?.billStatus.join(","),
       }).toString();
 
       const response = await config.fetchAllBills(query);
@@ -90,27 +91,28 @@ function SoldItems() {
   };
 
   const handleDateChange = (e) => {
-    setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setValidationMessage("");
-  };
+        const { name, value } = e.target;
+        dispatch(setSearchBillFilters({ ...searchBillFilters, [name]: value }));
+        setValidationMessage("");
+    };
 
   const handleCheckboxChange = (e) => {
-    const { name, value, checked } = e.target;
-    setFilters((prev) => ({
-      ...prev,
-      [name]: checked
-        ? [...prev[name], value]
-        : prev[name].filter((item) => item !== value),
-    }));
-  };
+        const { name, value, checked } = e.target;
+        const currentValues = searchBillFilters[name];
+        const newValues = checked
+            ? [...currentValues, value]
+            : currentValues.filter((item) => item !== value);
+
+        dispatch(setSearchBillFilters({ ...searchBillFilters, [name]: newValues }));
+    };
 
   const handleRetrieve = () => {
-    if (filters.startDate && filters.endDate && new Date(filters.endDate) < new Date(filters.startDate)) {
+    if (searchBillFilters.startDate && searchBillFilters.endDate && new Date(searchBillFilters.endDate) < new Date(searchBillFilters.startDate)) {
       setValidationMessage("End date cannot be earlier than start date.");
       return;
     }
     fetchAllBills();
-    console.log(filters)
+    console.log(searchBillFilters)
   };
 
   const handleBillPayment = (billNo) => {
@@ -171,7 +173,7 @@ function SoldItems() {
               type="date"
               className="border p-1 rounded w-full"
               name="startDate"
-              value={filters.startDate || new Date()}
+              value={searchBillFilters.startDate || new Date()}
               onChange={handleDateChange}
             />
           </div>
@@ -181,7 +183,7 @@ function SoldItems() {
               type="date"
               className="border p-1 rounded w-full"
               name="endDate"
-              value={filters.endDate}
+              value={searchBillFilters.endDate}
               onChange={handleDateChange}
             />
           </div>
@@ -194,7 +196,7 @@ function SoldItems() {
                     type="checkbox"
                     name="billType"
                     value={type}
-                    checked={filters.billType.includes(type)}
+                    checked={searchBillFilters?.billType.includes(type)}
                     onChange={handleCheckboxChange}
                     className="mr-1"
                   />
@@ -212,7 +214,7 @@ function SoldItems() {
                     type="checkbox"
                     name="billStatus"
                     value={status}
-                    checked={filters.billStatus.includes(status)}
+                    checked={searchBillFilters?.billStatus.includes(status)}
                     onChange={handleCheckboxChange}
                     className="mr-1"
                   />
@@ -223,10 +225,7 @@ function SoldItems() {
           </div>
           <div className="border p-2 rounded col-span-2">
             <label className="block mb-2">Customer:
-              <select onChange={(e) => setFilters((prev) => ({
-                ...prev,
-                customer: e.target.value,
-              }))} className={` border p-1 rounded text-xs w-36`}>
+              <select value={searchBillFilters.customer} onChange={(e) => dispatch(setSearchBillFilters({ ...searchBillFilters, customer: e.target.value }))} className={` border p-1 rounded text-xs w-36`}>
                 <option value=''>Select Customer</option>
                 {customerData && customerData?.map((customer, index) => (
                   <option key={index} value={customer._id}>{customer.customerName}</option>

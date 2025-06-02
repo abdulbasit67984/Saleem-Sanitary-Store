@@ -4,13 +4,13 @@ import React from "react";
 export default function Button({
     children,
     type = "button",
-    bgColor = "bg-gray-500",
+    bgColor = "bg-[#175367] hover:bg-[#1a4452] ",
     textColor = "text-white",
-    className = "text-white bg-gray-500",
+    className = "text-white bg-[#175367]",
     ...props
 }) {
     return (
-        <button className={`${className} py-2 rounded-lg hover:bg-gray-700 duration-200 ${bgColor} ${textColor} `} {...props}>
+        <button className={`${className} py-2 rounded-lg duration-200 ${bgColor} ${textColor} `} {...props}>
             {children}
         </button>
     );

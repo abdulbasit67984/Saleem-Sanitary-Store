@@ -18,18 +18,21 @@ function FeaturesCategory() {
   };
 
   return navCategoryData ? (
-    <div className='h-screen w-1/6 bg-gray-600'>
+    <div className='h-screen w-1/6 bg-[#175367]'>
       <ul className='flex flex-col gap-1 pt-4 w-full justify-center px-4'>
         {navCategoryData.map((item, i) => 
-        item.active && (
+        (
           <li
             key={i}
-            className={` font-light  px-2 py-1 rounded cursor-pointer duration-300 ${
-              activeIndex === i ? 'bg-white py-2 text-sm text-black' : 'text-gray-300 text-xs'
-            }`}
+            className={`${!item.active ? 'cursor-not-allowed pointer-events-none' : ''}`}
             onClick={() => handleItemClick(i, item.slug)}
           >
-            {item.name}
+            <button className={` font-light  px-2 py-1 rounded ${item.active ? 'cursor-pointer ' : ''} duration-300 ${
+              activeIndex === i ? 'bg-white py-2 text-sm text-black' : `${item.active ? 'text-gray-200 text-xs' : 'text-gray-400 text-xs' }`
+            }`}
+            disabled={!item.active}
+            >{item.name}
+            </button>
           </li>
         ))}
       </ul>

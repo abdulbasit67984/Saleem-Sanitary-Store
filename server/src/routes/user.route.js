@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { loginUser, logoutUser, refreshAccessToken, registerUser, changeCurrentPassword, getCurrentUser, registerBusiness, registerRole, getRoles, updateBusinessDetails, getBusinessDetails, updateUserDetails } from "../controllers/user.controller.js";
+import { loginUser, logoutUser, refreshAccessToken, registerUser, changeCurrentPassword, getCurrentUser, registerBusiness, registerRole, getRoles, updateBusinessDetails, getBusinessDetails, updateUserDetails, 
+    registerUserByAdmin,
+    assignUserRights,
+    getBusinessUsers, 
+    updateUser, 
+    deleteUser } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 
@@ -19,6 +24,12 @@ router.route("/get-roles").get(verifyJWT, getRoles)
 router.route("/get-business-details").get(verifyJWT, getBusinessDetails)
 router.route("/update-business-details").patch(verifyJWT, upload.single("businessLogo"), updateBusinessDetails)
 router.route("/update-user-details").patch(verifyJWT, updateUserDetails)
+
+router.route("/add-new-user").post(verifyJWT, registerUserByAdmin)
+router.route("/:userId/rights").patch(verifyJWT, assignUserRights)
+router.route("/get-all-users").get(verifyJWT, getBusinessUsers)
+router.route("/:userId").patch(verifyJWT, updateUser)
+router.route("/:userId").delete(verifyJWT, deleteUser)
 
 
 

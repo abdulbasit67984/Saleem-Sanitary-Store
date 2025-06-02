@@ -25,6 +25,23 @@ const BillProductsSchema = new Schema({
     timestamps: true
 })
 
+const ExtraItemSchema = new Schema({
+    itemName: {
+        type: String,
+        required: true
+    },
+    salePrice: {
+        type: Number,
+        required: true
+    },
+    quantity: {
+        type: Number,
+        default: 1
+    }
+}, {
+    _id: false // Prevents Mongoose from adding an _id to each subdocument if you don't need it
+});
+
 const BillSchema = new Schema({
     BusinessId: {
         type: Schema.Types.ObjectId,
@@ -56,6 +73,7 @@ const BillSchema = new Schema({
         enum: ['cash', 'credit']
     },
     billItems: [BillProductsSchema],
+    extraItems: [ExtraItemSchema],
     flatDiscount: {
         type: Number,
         default: 0

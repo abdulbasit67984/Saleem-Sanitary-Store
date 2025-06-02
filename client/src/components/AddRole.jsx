@@ -136,8 +136,8 @@ function AddRole() {
             </div>
 
             <div className=' w-full flex justify-center'>
-                <div className="w-3/6 bg-gray-100 rounded-lg p-6 border border-gray-300">
-                    <table className='w-full'>
+                <div className="w-3/6 bg-gray-100 rounded-lg p-6 border border-gray-300 max-h-72 overflow-auto scrollbar-thin">
+                    <table className='w-full text-xs'>
                         <thead className='bg-gray-300 py-2'>
                             <tr className='py-5 bg-gray-300'>
                                 <th className='py-1'>Role ID</th>

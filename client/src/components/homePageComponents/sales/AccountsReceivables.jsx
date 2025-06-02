@@ -78,6 +78,17 @@ const AccountReceivables = () => {
     navigate(`/${primaryPath}/sales/bill-payment/${billNo}`);
   };
 
+  const getDate = (date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+
+    });
+  }
+
 
   // Fetch account receivables on component mount
   useEffect(() => {
@@ -161,12 +172,7 @@ const AccountReceivables = () => {
                     <td className="py-2 px-2 text-center">
                       {
                         receivable.bill.createdAt &&
-                        new Date(receivable.bill.createdAt).toLocaleString("en-PK", {
-                          timeZone: "Asia/Karachi",
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                        })
+                        getDate(receivable.bill.createdAt)
                       }
                     </td>
                     <td className="py-2 px-2 text-center">
@@ -176,7 +182,7 @@ const AccountReceivables = () => {
                       {functions.formatAsianNumber(receivable.bill.totalAmount - receivable.bill.paidAmount - receivable.bill.flatDiscount) || '0.00'}
                     </td>
                     <td className="py-2 px-2 text-center">
-                      {receivable.bill.dueDate ? new Date(receivable.bill.dueDate).toLocaleDateString() : 'N/A'}
+                      {receivable.bill.dueDate ? getDate(receivable.bill.dueDate).slice(0, 12) : 'N/A'}
                     </td>
                     <td className="py-2 px-2 text-center">
                       {receivable.customer?.customerRegion || 'N/A'}

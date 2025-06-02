@@ -54,7 +54,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // Re-validate after cleaning in case the array contained only empty strings
     if (cleanedMobileNos.length === 0) {
-         throw new ApiError(400, "At least one valid mobile number is required.");
+        throw new ApiError(400, "At least one valid mobile number is required.");
     }
     // ---------------------------
 
@@ -357,15 +357,94 @@ const getCurrentUser = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Unauthorized request. User not found.");
     }
 
+    const loggedInUser = await User.aggregate([
+        { $match: { _id: user._id } },
+        {
+            $lookup: {
+                from: 'businesses',
+                localField: 'BusinessId',
+                foreignField: '_id',
+                as: 'BusinessId',
+                pipeline: [
+                    {
+                        $project: {
+                            businessName: 1,
+                            businessRegion: 1,
+                            businessLogo: 1,
+                            subscription: 1,
+                            gst: 1,
+                            isActive: 1,
+                            exemptedParagraph: 1
+                        }
+                    }
+                ]
+            }
+        },
+        { $unwind: '$BusinessId' },
+        {
+            $lookup: {
+                from: 'users',
+                let: { businessId: '$BusinessId._id' },
+                pipeline: [
+                    { $match: { $expr: { $eq: ['$BusinessId', '$$businessId'] } } },
+                    { $count: 'count' }
+                ],
+                as: 'userCount'
+            }
+        },
+        // New lookup to populate businessRole with businessRoleName
+        {
+            $lookup: {
+                from: 'businessroles',
+                localField: 'businessRole',
+                foreignField: '_id',
+                as: 'businessRole',
+                pipeline: [
+                    {
+                        $project: {
+                            businessRoleName: 1,
+                            isActive: 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $addFields: {
+                'BusinessId.userCount': { $ifNull: [{ $arrayElemAt: ['$userCount.count', 0] }, 0] }
+            }
+        },
+        // First exclude fields you don't want
+        { $project: { password: 0, refreshToken: 0, userCount: 0 } },
+        // Then add a second $project to explicitly include only the fields you want
+        {
+            $project: {
+                username: 1,
+                firstname: 1,
+                lastname: 1,
+                email: 1,
+                mobileno: 1,
+                role: 1,
+                cnic: 1,
+                BusinessId: 1,
+                businessRole: {
+                    businessRoleName: 1,
+                    isActive: 1
+                },
+                createdAt: 1,
+                updatedAt: 1
+            }
+        }
+    ]);
 
+    const result = loggedInUser.length > 0 ? loggedInUser[0] : null;
 
-    const loggedInUser = await User.findById(user._id).select("-password -refreshToken").populate('BusinessId', 'businessName businessRegion businessLogo subscription gst isActive exemptedParagraph');
 
     return res
         .status(200)
         .json(new ApiResponse(
             200,
-            loggedInUser,
+            result,
             "User fetched successfully"
         ))
 })
@@ -638,6 +717,189 @@ const getRoles = asyncHandler(async (req, res) => {
 })
 
 
+//admin added users
+
+
+const registerUserByAdmin = asyncHandler(async (req, res) => {
+    const { username, firstname, lastname, mobileno, password } = req.body;
+    const adminBusinessId = req.user.BusinessId; // Assuming admin is logged in and BusinessId is in token
+
+
+    // Validate required fields
+    if (
+        !username ||
+        !firstname ||
+        !password ||
+        !Array.isArray(mobileno) ||
+        mobileno.length === 0 ||
+        mobileno.every(num => typeof num !== 'string' || num.trim() === '')
+    ) {
+        throw new ApiError(400, "Required fields missing or invalid mobile number format!");
+    }
+
+    // Clean mobile numbers
+    const cleanedMobileNos = mobileno.map(num => String(num || '').trim()).filter(num => num !== '');
+
+    if (cleanedMobileNos.length === 0) {
+        throw new ApiError(400, "At least one valid mobile number is required.");
+    }
+
+    // Check subscription limits
+    const business = await Business.findById(adminBusinessId);
+    if (!business) {
+        throw new ApiError(404, "Business not found");
+    }
+
+    // Get current user count for this business
+    const currentUserCount = await User.countDocuments({ BusinessId: adminBusinessId });
+
+    if (currentUserCount >= business.subscription) {
+        throw new ApiError(403, "User limit reached according to your subscription plan");
+    }
+
+    // Check if username already exists
+    const userExists = await User.findOne({ username });
+    if (userExists) {
+        throw new ApiError(409, "Username already exists!");
+    }
+
+    // Create user with 'user' role by default
+    const user = await User.create({
+        username: username.toLowerCase(),
+        firstname,
+        lastname,
+        mobileno: cleanedMobileNos,
+        password,
+        role: "user", // Default role for admin-created users
+        BusinessId: adminBusinessId
+    });
+
+    const createdUser = await User.findById(user._id).select("-password -refreshToken");
+
+    if (!createdUser) {
+        throw new ApiError(500, "Failed to create user! something went wrong");
+    }
+
+    return res.status(201).json(
+        new ApiResponse(200, createdUser, "User created successfully by admin")
+    );
+});
+
+const assignUserRights = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const { businessRoleIds } = req.body; // Array of BusinessRole IDs
+    const adminBusinessId = req.user?.BusinessId;
+
+    console.log('first', userId, businessRoleIds, adminBusinessId)
+
+    // Validate input
+    if (!businessRoleIds || !Array.isArray(businessRoleIds)) {
+        throw new ApiError(400, "businessRoleIds must be an array");
+    }
+
+    // Check if user exists and belongs to the same business
+    const user = await User.findOne({
+        _id: userId,
+        BusinessId: adminBusinessId
+    });
+
+    if (!user) {
+        throw new ApiError(404, "User not found or doesn't belong to your business");
+    }
+
+    // Update user's business roles
+    user.businessRole = businessRoleIds;
+    await user.save();
+
+    const updatedUser = await User.findById(user._id)
+        .select("-password -refreshToken")
+        .populate("businessRole");
+
+    return res.status(200).json(
+        new ApiResponse(200, updatedUser, "User rights updated successfully")
+    );
+});
+
+const getBusinessUsers = asyncHandler(async (req, res) => {
+    const adminBusinessId = req.user.BusinessId;
+
+    const users = await User.find({ BusinessId: adminBusinessId })
+        .select("-password -refreshToken")
+        .populate("businessRole");
+
+    return res.status(200).json(
+        new ApiResponse(200, users, "Business users fetched successfully")
+    );
+});
+
+const updateUser = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const { firstname, lastname, mobileno } = req.body;
+    const adminBusinessId = req.user.BusinessId;
+
+    // Validate input
+    if (!firstname && !lastname && !mobileno) {
+        throw new ApiError(400, "At least one field to update is required");
+    }
+
+    // Clean mobile numbers if provided
+    let cleanedMobileNos;
+    if (mobileno) {
+        if (!Array.isArray(mobileno)) {
+            throw new ApiError(400, "mobileno must be an array");
+        }
+        cleanedMobileNos = mobileno.map(num => String(num || '').trim()).filter(num => num !== '');
+        if (cleanedMobileNos.length === 0) {
+            throw new ApiError(400, "At least one valid mobile number is required.");
+        }
+    }
+
+    // Find and update user
+    const user = await User.findOneAndUpdate(
+        { _id: userId, BusinessId: adminBusinessId },
+        {
+            $set: {
+                ...(firstname && { firstname }),
+                ...(lastname && { lastname }),
+                ...(mobileno && { mobileno: cleanedMobileNos })
+            }
+        },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    if (!user) {
+        throw new ApiError(404, "User not found or doesn't belong to your business");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, user, "User updated successfully")
+    );
+});
+
+const deleteUser = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const adminBusinessId = req.user.BusinessId;
+
+    // Prevent admin from deleting themselves
+    if (userId === req.user._id.toString()) {
+        throw new ApiError(400, "You cannot delete your own account");
+    }
+
+    const user = await User.findOneAndDelete({
+        _id: userId,
+        BusinessId: adminBusinessId
+    });
+
+    if (!user) {
+        throw new ApiError(404, "User not found or doesn't belong to your business");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, null, "User deleted successfully")
+    );
+});
+
+
 export {
     registerUser,
     loginUser,
@@ -650,5 +912,11 @@ export {
     getRoles,
     updateBusinessDetails,
     getBusinessDetails,
-    updateUserDetails
+    updateUserDetails,
+
+    registerUserByAdmin,
+    assignUserRights,
+    getBusinessUsers,
+    updateUser,
+    deleteUser
 }

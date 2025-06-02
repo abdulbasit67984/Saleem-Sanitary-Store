@@ -59,6 +59,11 @@ import Ledger from "./homePageComponents/accounts/Ledger";
 import IncomeStatement from "./homePageComponents/accounts/IncomeStatement";
 import MergeAccounts from "./homePageComponents/accounts/MergeAccounts";
 
+//users
+import AddUser from "./homePageComponents/users/AddUser";
+import AllUsers from "./homePageComponents/users/AllUsers";
+import Rights from "./homePageComponents/users/Rights";
+
 export {
     Header,
     Footer,
@@ -114,8 +119,11 @@ export {
     NewAccount,
     Ledger,
     IncomeStatement,
-    MergeAccounts
-
+    MergeAccounts,
+    //users
+    AddUser,
+    AllUsers,
+    Rights
 
 
 }

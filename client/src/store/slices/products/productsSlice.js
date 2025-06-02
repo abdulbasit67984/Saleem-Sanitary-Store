@@ -23,7 +23,8 @@ const initialState = {
   productDiscount: '',
   productPrice: '',
   productUnits: '',
-  product: {}
+  product: {},
+  extraProducts: []
 
 };
 
@@ -94,6 +95,15 @@ const productsSlice = createSlice({
     setProduct: (state, action) => {
       state.product = action.payload;
     },
+    setExtraProducts: (state, action) => {
+      state.extraProducts = action.payload;
+    },
+    removeExtraItem: (state, action) => {
+      const indexToRemove = action.payload; // Payload will be the index
+      if (indexToRemove >= 0 && indexToRemove < state.extraProducts.length) {
+        state.extraProducts.splice(indexToRemove, 1); // Immer allows this mutation
+      }
+    },
   },
 });
 
@@ -118,7 +128,9 @@ export const {
   , setProduct,
   setTotalGrossAmount,
   setProductUnits,
-  setCustomer
+  setCustomer,
+  setExtraProducts,
+  removeExtraItem
 } = productsSlice.actions;
 export default productsSlice.reducer;
 

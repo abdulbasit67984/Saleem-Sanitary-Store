@@ -44,7 +44,12 @@ import {
   VendorJournalEntry,
   CustomerJournalEntry,
   IncomeStatement,
-  MergeAccounts
+  MergeAccounts,
+
+  //users
+  AddUser,
+  AllUsers,
+  Rights
 }
   from '../components/index.js';
 import MagicUiAnimation from '../components/magicUI/magicUiAnimation.jsx';
@@ -156,6 +161,17 @@ function Home() {
             return <IncomeStatement />;
           case 'merge-accounts':
             return <MergeAccounts />;
+          default:
+            return <MagicUiAnimation text='Accounts Management' />;
+        }
+      case 'users':
+        switch (pathParts[3]) {
+          case 'add-new-users':
+            return <AddUser />;
+          case 'all-users':
+            return <AllUsers />;
+          case 'rights':
+            return <Rights />;
           default:
             return <MagicUiAnimation text='Accounts Management' />;
         }

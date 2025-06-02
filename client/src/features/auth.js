@@ -98,7 +98,7 @@ export class AuthService {
                     }
                 });
 
-            if (response.data ) {
+            if (response.data) {
                 const data = response.data
                 return data;
             }
@@ -230,10 +230,10 @@ export class AuthService {
             return null;
         }
     }
-    
+
     async updateBusinessDetails(formData) {
         try {
-            console.log("data in auth: ", formData )
+            console.log("data in auth: ", formData)
             const response = await this.client.patch('/users/update-business-details',
                 formData,
                 {
@@ -254,7 +254,7 @@ export class AuthService {
             throw error;
         }
     }
-    
+
     async getBusinessDetails() {
         try {
             const response = await this.client.get('/users/get-business-details', {
@@ -280,7 +280,7 @@ export class AuthService {
                     }
                 }
             );
-    
+
             if (response.data) {
                 console.log("response in auth: ", response.data)
                 return response.data;
@@ -292,7 +292,83 @@ export class AuthService {
             throw error;
         }
     }
-    
+
+    async addNewUser(data) {
+        try {
+            const response = await this.client.post('/users/add-new-user',
+                data,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${this.getAccessToken()}`
+                    }
+                });
+            return response.data;
+        } catch (error) {
+            console.log("Error in adding new user:", error);
+            throw error;
+        }
+    }
+
+    async getBusinessUsers() {
+        try {
+            const response = await this.client.get('/users/get-all-users', {
+                headers: {
+                    'Authorization': `Bearer ${this.getAccessToken()}`
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.log("Error in get all users:", error);
+            throw error;
+        }
+    }
+
+    async deleteUser(userId) {
+        try {
+            const response = await this.client.delete(`/users/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.getAccessToken()}`
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.log("Error in deleting user:", error);
+            throw error;
+        }
+    }
+
+    async updateUser(userId, userData) {
+        try {
+            const response = await this.client.patch(`/users/${userId}`,
+                userData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${this.getAccessToken()}`
+                    }
+                });
+            return response.data;
+        } catch (error) {
+            console.log("Error in updating user:", error);
+            throw error;
+        }
+    }
+
+    async assignUserRights(userId, roleIds) {
+        try {
+            const response = await this.client.patch(`/users/${userId}/rights`,
+                { businessRoleIds: roleIds },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${this.getAccessToken()}`
+                    }
+                });
+            return response.data;
+        } catch (error) {
+            console.log("Error in assigning user rights:", error);
+            throw error;
+        }
+    }
+
 }
 
 

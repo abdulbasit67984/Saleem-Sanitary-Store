@@ -18,6 +18,7 @@ const PrintBill = () => {
   const [packingSlip, setPackingSlip] = useState(false)
   const [showPreviousBalance, setShowPreviousBalance] = useState(false)
   const [previousBalance, setPreviousBalance] = useState(0)
+  const [billType, setBillType] = useState('')
 
   const componentRef = useRef();
   const { billId } = useParams()
@@ -25,6 +26,7 @@ const PrintBill = () => {
   useEffect(() => {
     async function fetchBill() {
       setIsLoading(true);
+      setBillType(() => billId.at(0) === 'T'? 'thermal' : 'A4')
       try {
         const response = await config.fetchSingleBill(billId);
         console.log('bill', response)
@@ -32,7 +34,7 @@ const PrintBill = () => {
         if (response.data && response.data.customer) {
           const customerId = response.data.customer._id;
           const res = await config.getPreviousBalance(customerId)
-          if(res) {
+          if (res) {
             setPreviousBalance(res.accountBalance)
             // console.log(res.accountBalance)
           }
@@ -110,7 +112,7 @@ const PrintBill = () => {
   return !isLoading ? (
 
     <div>
-      <div className='flex items-center gap-3'>
+      <div className='flex items-center gap-4'>
         <Button onClick={handlePrint} className='text-xs px-4 mb-2'>
           Print Bill
         </Button>
@@ -118,24 +120,33 @@ const PrintBill = () => {
           Save in PDF
         </Button>
         <div className='text-xs mb-2 flex gap-2'>
-          <label htmlFor="exempted" className=''>Add Exempted Paragraph</label>
+          <label htmlFor="exempted" className=''>Add Exempted Paragraph:</label>
           <input type='checkbox' id='exempted' className='' checked={exemptedParagraph == true} onChange={() => setExemptedParagraph((prev) => !prev)} />
         </div>
         <div className='text-xs mb-2 flex gap-2'>
-          <label htmlFor="packingSlip" className=''>Packing Slip</label>
+          <label htmlFor="packingSlip" className=''>Packing Slip:</label>
           <input type='checkbox' id='packingSlip' className='' checked={packingSlip == true} onChange={() => setPackingSlip((prev) => !prev)} />
         </div>
-        { bill?.customer &&
+        {bill?.customer &&
           <div className='text-xs mb-2 flex gap-2'>
-          <label htmlFor="showPreviousBalance" className=''>Show Previous Balance</label>
-          <input type='checkbox' id='showPreviousBalance' className='' checked={showPreviousBalance == true} onChange={() => setShowPreviousBalance((prev) => !prev)} />
-        </div>
+            <label htmlFor="showPreviousBalance" className=''>Show Previous Balance:</label>
+            <input type='checkbox' id='showPreviousBalance' className='' checked={showPreviousBalance == true} onChange={() => setShowPreviousBalance((prev) => !prev)} />
+          </div>
         }
+
+        <div className='text-xs mb-2 flex items-center gap-2'>
+            <label htmlFor="" className=''>Change Bill Type:</label>
+            
+            <select className="p-2 rounded-sm" id="" onChange={(e) => setBillType(e.target.value)} value={billType}>
+              <option value="thermal">Thermal</option>
+              <option value="A4">A4</option>
+            </select>
+          </div>
 
       </div>
 
       {/* Render the bill content */}
-      {billId.at(0) === 'T' ?
+      {billType === 'thermal' ?
         <ViewBillThermal
           bill={bill}
           ref={componentRef}
