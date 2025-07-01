@@ -250,7 +250,7 @@ const SaleReturnAgainstBill = () => {
       )}
 
       {/* Selected Products */}
-      <div className="mb-4 max-h-72">
+      <div className="mb-4 max-h-72 overflow-y-auto scrollbar-thin">
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="bg-gray-100">
