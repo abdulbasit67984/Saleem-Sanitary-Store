@@ -52,7 +52,6 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                         <thead className='bg-gray-200'>
                             <tr>
                                 <th className="p-1 text-left">Item</th>
-                                <th className="p-1 text-left">Company</th>
                                 <th className="p-1 text-right">Qty</th>
                                 {!packingSlip && <th className="p-1 text-right">Price</th>}
                                 {!packingSlip && <th className="p-1 text-right">Total</th>}
@@ -61,8 +60,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                         <tbody>
                             {bill.billItems && bill.billItems.map((item, index) => (
                                 <tr key={index} className="border border-gray-600">
-                                    <td className="p-1">{commonFunction.truncateString(item.productId.productName, 16)}</td>
-                                    <td className="p-1">{commonFunction.truncateString(item.productId.companyId?.companyName, 16)}</td>
+                                    <td className="p-1">{commonFunction.truncateString(item.productId.productName, 21)}</td>
                                     <td className="p-1 text-right">{item.quantity}</td>
                                     {!packingSlip && <td className="p-1 text-right">{commonFunction.formatAsianNumber(item.billItemPrice)}</td>}
                                     {!packingSlip && <td className="p-1 text-right">
@@ -74,8 +72,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
 
                             {bill.extraItems && bill.extraItems.map((item, index) => (
                                 <tr key={index} className="border border-gray-600">
-                                    <td className="p-1">{commonFunction.truncateString(item.itemName, 16)}</td>
-                                    <td className="p-1"></td>
+                                    <td className="p-1">{commonFunction.truncateString(item.itemName, 21)}</td>
                                     <td className="p-1 text-right">{item.quantity}</td>
                                     {!packingSlip && <td className="p-1 text-right">{commonFunction.formatAsianNumber(item.salePrice)}</td>}
                                     {!packingSlip && <td className="p-1 text-right">
@@ -111,7 +108,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                 <div className='mt-3'>
                     <ul className='text-[8px] text-right'>
                         <li className='flex flex-row-reverse gap-1 pt-1'>
-                            <span>&#8592;</span> کوئی بھی آئیٹم واپس یا تبدیل ہو سکتی ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو
+                            <span>&#8592;</span> کوئی بھی آئیٹم واپس یا تبدیل ہو سکتا ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو
                         </li>
                         <li className='flex flex-row-reverse gap-1 pt-1'>
                             <span>&#8592;</span> کسی بھی آئٹم کی واپسی صرف بل یا رسید کی موجودگی میں ہی قابل قبول ہوگی

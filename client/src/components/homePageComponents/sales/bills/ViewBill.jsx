@@ -86,7 +86,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                             {bill?.billItems && bill?.billItems.map((item, index) => (
                                 <tr key={index} className="break-inside-avoid border-2">
                                     <td className="text-xs p-2">{index + 1}</td>
-                                    <td className="text-xs p-2">{commonFunction.truncateString(item.productId.productName, 23)}</td>
+                                    <td className="text-xs p-2">{commonFunction.truncateString(item.productId.productName, 30)}</td>
                                     <td className="text-xs p-2">{commonFunction.truncateString(item.productId?.companyId?.companyName, 13)}</td>
                                     <td className="text-xs p-2">{item.quantity}</td>
                                     {!packingSlip &&
@@ -107,7 +107,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                             {bill.extraItems && bill.extraItems.map((item, index) => (
                                 <tr key={index} className="text-xs break-inside-avoid border-2">
                                     <td className="text-xs p-2">{bill?.billItems.length + index + 1}</td>
-                                    <td className="text-xs p-2">{commonFunction.truncateString(item.itemName, 16)}</td>
+                                    <td className="text-xs p-2">{commonFunction.truncateString(item.itemName, 30)}</td>
                                     <td className="text-xs p-2"></td>
                                     <td className="text-xs p-2">{item.quantity}</td>
                                     {!packingSlip && <td className="text-xs p-2">{commonFunction.formatAsianNumber(item.salePrice)}</td>}
@@ -139,7 +139,7 @@ const ViewBill = React.forwardRef((props, ref) => {
 
                 {!packingSlip &&
                     <div className='mt-3'>
-                        <p className='text-[12px] text-right'>نوٹ:  کوئی بھی آئیٹم واپس یا تبدیل ہو سکتی ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو۔ چائنہ آئیٹمز کی واپسی نہیں ہوگی۔ کسی بھی آئٹم کی واپسی صرف بل یا رسید کی موجودگی میں ہی قابل قبول ہوگی۔ </p>
+                        <p className='text-[12px] text-right'>نوٹ:  کوئی بھی آئیٹم واپس یا تبدیل ہو سکتا ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو۔ چائنہ آئیٹمز کی واپسی نہیں ہوگی۔ کسی بھی آئٹم کی واپسی صرف بل یا رسید کی موجودگی میں ہی قابل قبول ہوگی۔ </p>
 
                     </div>
                 }
