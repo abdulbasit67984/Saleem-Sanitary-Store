@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   setSearchQuery,
@@ -67,6 +67,8 @@ const InvoiceComponent = () => {
     salePrice: 0,
     quantity: 1
   });
+
+  const tableContainerRef = useRef(null);
 
   const thermalColor = {
     th100: "bg-blue-100",
@@ -497,6 +499,11 @@ const InvoiceComponent = () => {
     }
   }, [searchQuery, allProducts, dispatch]);
 
+  useEffect(() => {
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollTop = tableContainerRef.current.scrollHeight;
+    }
+  }, [selectedItems]);
 
   return (!isLoading ?
     (<div className="w-full mx-auto p-2 bg-white rounded shadow-lg overflow-auto max-h-[90vh]">
@@ -872,7 +879,7 @@ const InvoiceComponent = () => {
 
       {/* Invoice Table */}
       <div>
-        <div className="overflow-auto  max-h-40 scrollbar-thin">
+        <div className="overflow-auto  max-h-40 scrollbar-thin" ref={tableContainerRef}>
           <table className="min-w-full bg-white border text-xs ">
             <thead className={`${billType === 'thermal' ?
               thermalColor.th300 :
