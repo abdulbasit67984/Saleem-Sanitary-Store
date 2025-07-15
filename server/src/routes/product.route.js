@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { registerProduct, getProducts, updateProduct, 
     registerCategory, getCategories, updateCategory,
-    registerType, getTypes, updateType
+    registerType, getTypes, updateType,
+    createBarcode, barcodePDF,
+    allProductsWithoutBarcode
 } from "../controllers/product.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 
@@ -20,6 +22,10 @@ router.route("/update-category").patch(verifyJWT, updateCategory)
 router.route("/add-type").post(verifyJWT, registerType)
 router.route("/get-types").get(verifyJWT, getTypes)
 router.route("/update-type").patch(verifyJWT, updateType)
+
+router.route("/image/:productId").get(verifyJWT, createBarcode)
+router.route("/barcode-pdf").post(verifyJWT, barcodePDF)
+router.route("/get-products-without-barcode").get(verifyJWT, allProductsWithoutBarcode)
 
 
 

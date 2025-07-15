@@ -10,6 +10,7 @@ import { Type } from "../models/product/type.model.js";
 import { Company } from "../models/company.model.js";
 import { IndividualAccount } from "../models/accounts/individualAccount.model.js";
 import { TransactionManager } from "../utils/TransactionManager.js";
+import { generateBarcodeImage, generateBarcodePDF } from '../utils/barcodeService.js';
 
 const registerCategory = asyncHandler(async (req, res) => {
 
@@ -246,7 +247,8 @@ const registerProduct = asyncHandler(async (req, res) => {
                     { categoryId },
                     { typeId },
                     { vendorCompanyId },
-                    { vendorSupplierId }
+                    { vendorSupplierId },
+                    { productCode }
                 ]
             });
 
@@ -277,9 +279,29 @@ const registerProduct = asyncHandler(async (req, res) => {
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
 
+            let finalProductCode = productCode;
+
+            if (!productCode) {
+                let isUnique = false;
+                let generatedCode;
+
+                while (!isUnique) {
+                    generatedCode = Math.floor(1000000000000 + Math.random() * 9000000000000).toString();
+
+                    const existing = await Product.findOne({ productCode: generatedCode, BusinessId });
+                    if (!existing) {
+                        isUnique = true;
+                    }
+                }
+
+                finalProductCode = generatedCode;
+            }
+
+            // console.log('finalProductCode', finalProductCode)
+
             const product = await Product.create({
                 BusinessId,
-                productCode,
+                productCode: finalProductCode,
                 productName: productNameCapitalized,
                 categoryId,
                 typeId,
@@ -348,7 +370,7 @@ const registerProduct = asyncHandler(async (req, res) => {
             );
         });
     } catch (error) {
-        throw new ApiError(500, `Transaction failed: ${error.message}`);
+        throw new ApiError(500, `${error.message}`);
     }
 });
 
@@ -642,6 +664,107 @@ const getProducts = asyncHandler(async (req, res) => {
 });
 
 
+const createBarcode = asyncHandler(async (req, res) => {
+
+    try {
+        const user = req.user;
+        const BusinessId = req.user.BusinessId;
+        // console.log(user.BusinessId._id)
+
+        if (!user) {
+            throw new ApiError(401, "Authorization Failed!");
+        }
+
+        const product = await Product.findById(req.params?.productId);
+        if (!product) {
+            throw new ApiError(404, "Product not found");
+        }
+
+        const barcodeText = product.productCode || product._id.toString();
+        const barcodeImage = await generateBarcodeImage(barcodeText);
+
+        res.set('Content-Type', 'image/png');
+        res.send(barcodeImage);
+    } catch (error) {
+        throw new ApiError(500, error.message || "Something went wrong!")
+    }
+
+})
+
+const barcodePDF = asyncHandler(async (req, res) => {
+
+    try {
+        const { productIds } = req.body;
+        const user = req.user;
+        const BusinessId = req.user.BusinessId;
+        // console.log(user.BusinessId._id)
+
+        if (!user) {
+            throw new ApiError(401, "Authorization Failed!");
+        }
+
+        const products = await Product.find({
+            _id: { $in: productIds },
+            $or: [
+                { productCode: { $exists: false } },
+                { productCode: null },
+                { productCode: '' }
+            ]
+        });
+
+        if (!products) {
+            throw new ApiError(404, "No products without barcodes found");
+        }
+
+        const pdf = await generateBarcodePDF(products);
+        // console.log("PDF Size:", pdf.length);
+
+
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': 'attachment; filename=barcodes.pdf'
+        });
+        res.send(pdf);
+    } catch (error) {
+        throw new ApiError(500, error.message || "Something went wrong!")
+    }
+
+})
+
+const allProductsWithoutBarcode = asyncHandler(async (req, res) => {
+
+    try {
+        const { barcodeExists, search } = req.query;
+        let query = {};
+        const user = req.user;
+        const BusinessId = req.user.BusinessId;
+        // console.log(user.BusinessId._id)
+
+        if (!user) {
+            throw new ApiError(401, "Authorization Failed!");
+        }
+
+        if (barcodeExists === 'false') {
+            query.$or = [
+                { productCode: { $exists: false } },
+                { productCode: null },
+                { productCode: '' }
+            ];
+        }
+
+        if (search) {
+            query.productName = { $regex: search, $options: 'i' };
+        }
+
+        const products = await Product.find(query).limit(50);
+        res.json(products);
+    } catch (error) {
+        throw new ApiError(500, error.message || "Something went wrong!")
+    }
+
+})
+
+
 
 
 export {
@@ -654,4 +777,7 @@ export {
     registerProduct,
     updateProduct,
     getProducts,
+    createBarcode,
+    barcodePDF,
+    allProductsWithoutBarcode
 }

@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import config from '../../../features/config';
 import Button from '../../Button';
@@ -40,6 +40,8 @@ const StockSearch = () => {
     const companyData = useSelector((state) => state.companies.companyData);
     const categoryData = useSelector((state) => state.categories.categoryData);
     const typeData = useSelector((state) => state.types.typeData);
+
+    const inputRef = useRef(null);
 
     const handleEdit = (id, name, product) => {
         setProductId(id)
@@ -110,6 +112,10 @@ const StockSearch = () => {
         }
     };
 
+    useEffect(() => {
+        inputRef.current?.focus();
+    }, []);
+
 
     useEffect(() => {
         if (searchQuery) {
@@ -163,6 +169,7 @@ const StockSearch = () => {
                                     labelClass="w-24 text-xs ml-4"
                                     value={searchQuery || ''}
                                     onChange={(e) => setSearchQuery(e.target.value)}
+                                    ref={inputRef}
                                 />
                             </div>
 

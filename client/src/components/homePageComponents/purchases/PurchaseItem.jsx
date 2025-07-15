@@ -1,7 +1,7 @@
 
 
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import config from "../../../features/config";
 import {
@@ -31,6 +31,7 @@ const PurchaseItem = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [newProduct, setNewProduct] = useState({
     productName: '',
+    productCode: '',
     categoryId: '',
     typeId: '',
     companyId: '',
@@ -73,6 +74,12 @@ const PurchaseItem = () => {
   const supplierData = useSelector((state) => state.suppliers.supplierData);
   const categoryData = useSelector((state) => state.categories.categoryData);
   const typeData = useSelector((state) => state.types.typeData);
+
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     if (searchQuery) {
@@ -243,6 +250,7 @@ const PurchaseItem = () => {
 
         // Reset the new product form
         setNewProduct({
+          productCode: '',
           productName: '',
           categoryId: '',
           typeId: '',
@@ -416,6 +424,7 @@ const PurchaseItem = () => {
                 }}
                 divClass="flex gap-2 text-xs items-center"
                 className="p-1"
+                ref={inputRef}
               />
 
               <Button
@@ -435,6 +444,7 @@ const PurchaseItem = () => {
                 labelClass="w-28"
                 divClass="flex gap-2 text-xs items-center"
                 className="p-1"
+                ref={inputRef}
               />
 
               <div className="flex items-center">

@@ -18,7 +18,7 @@ function FeaturesCategory() {
   };
 
   return navCategoryData ? (
-    <div className='h-screen w-1/6 bg-[#175367]'>
+    <div className='h-screen mt-3 rounded-r-md w-1/6 bg-primary'>
       <ul className='flex flex-col gap-1 pt-4 w-full justify-center px-4'>
         {navCategoryData.map((item, i) => 
         (
@@ -27,8 +27,8 @@ function FeaturesCategory() {
             className={`${!item.active ? 'cursor-not-allowed pointer-events-none' : ''}`}
             onClick={() => handleItemClick(i, item.slug)}
           >
-            <button className={` font-light  px-2 py-1 rounded ${item.active ? 'cursor-pointer ' : ''} duration-300 ${
-              activeIndex === i ? 'bg-white py-2 text-sm text-black' : `${item.active ? 'text-gray-200 text-xs' : 'text-gray-400 text-xs' }`
+            <button className={`    px-2 py-1 rounded ${item.active ? 'cursor-pointer ' : ''} duration-300 ${
+              activeIndex === i ? 'bg-white py-2 text-sm text-black' : `text-white ${item.active ? 'text-xs' : ' text-xs' }`
             }`}
             disabled={!item.active}
             >{item.name}

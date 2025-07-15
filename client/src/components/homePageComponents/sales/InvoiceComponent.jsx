@@ -68,6 +68,10 @@ const InvoiceComponent = () => {
     quantity: 1
   });
 
+  const inputRef = useRef(null);
+
+
+
   const tableContainerRef = useRef(null);
 
   const thermalColor = {
@@ -273,13 +277,13 @@ const InvoiceComponent = () => {
     const totalGst = 0
     // totalAmount * 0.18; // Assuming a GST rate of 18%
     const netAmount = totalAmount - totalDiscount + totalGst;
-    
+
     const totalExtraProductsQuantity = extraProducts.reduce((sum, item) => sum + Number((item.quantity || 0)), 0);
-    
+
     const totalExtraProductsGrossAmount = extraProducts.reduce((sum, item) => sum + ((item.salePrice * item.quantity)), 0);
-    
+
     const totalExtraProductsTotalAmount = Math.floor(totalExtraProductsGrossAmount)
-    
+
     const balance = (totalAmount + totalExtraProductsTotalAmount - flatDiscount + totalGst - paidAmount);
 
     dispatch(setTotalGrossAmount(totalGrossAmount + totalExtraProductsGrossAmount))
@@ -500,6 +504,38 @@ const InvoiceComponent = () => {
   }, [searchQuery, allProducts, dispatch]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 200); // small delay helps after render
+
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      // Only trigger when Enter is pressed
+      if (event.key === 'Enter' && searchQuery.trim() !== '') {
+        const product = allProducts.find(
+          (product) =>
+            product.productCode?.toLowerCase() === searchQuery.toLowerCase()
+        );
+
+        if (product) {
+          handleSelectProduct(product);
+          setTimeout(() => {
+            handleAddProduct();
+          }, 100);
+        }
+
+        // dispatch(setSearchQuery('')); // clear the input after adding
+      }
+    };
+
+    document.addEventListener('keypress', handleKeyPress);
+    return () => document.removeEventListener('keypress', handleKeyPress);
+  }, [searchQuery, allProducts, product, dispatch]);
+
+  useEffect(() => {
     if (tableContainerRef.current) {
       tableContainerRef.current.scrollTop = tableContainerRef.current.scrollHeight;
     }
@@ -582,7 +618,7 @@ const InvoiceComponent = () => {
               </Button>
               <Button
                 onClick={() => {
-                  dispatch(setExtraProducts([...extraProducts, {...extraProduct, id: extraProducts.length + 101}]))
+                  dispatch(setExtraProducts([...extraProducts, { ...extraProduct, id: extraProducts.length + 101 }]))
                   setShowAddExtraProductModal(false)
                 }}
                 className="px-2"
@@ -704,8 +740,25 @@ const InvoiceComponent = () => {
             className='w-44 text-xs p-1'
             value={searchQuery || ''}
             onChange={(e) => dispatch(setSearchQuery(e.target.value))}
-          // onChange={handleSearch}
+            ref={inputRef}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const product = allProducts.find(
+                  (product) =>
+                    product.productCode?.toLowerCase() === searchQuery.toLowerCase() ||
+                    product.productName?.toLowerCase() === searchQuery.toLowerCase()
+                );
 
+                if (product) {
+                  handleSelectProduct(product);
+                  setTimeout(() => {
+                    handleAddProduct();
+                  }, 100);
+                }
+
+                dispatch(setSearchQuery(''));
+              }
+            }}
           />
 
           <Input
@@ -755,7 +808,7 @@ const InvoiceComponent = () => {
             {quantityError && <p className="pl-2 text-red-500 text-xs">{quantityError}</p>}
           </Input>
 
-          
+
           <div className=' col-span-2'>
             <Button
               className={`px-4 w-40  ${billType === 'thermal' ? 'hover:bg-blue-800' : 'hover:bg-gray-700'}`}
@@ -802,7 +855,7 @@ const InvoiceComponent = () => {
           >
             {priceError && <p className="pl-2 text-red-500 text-xs">{priceError}</p>}
           </Input>
-          
+
           <div className='col-span-2'>
             <Button className={`w-40 px-4 ${billType === 'thermal' ? 'hover:bg-red-800' : 'hover:bg-gray-700'}`}
               bgColor={billType === 'thermal' ? 'bg-red-600' : A4Color.a4500}
@@ -826,7 +879,7 @@ const InvoiceComponent = () => {
         </div>
 
         {/* Search Result Table */}
-        {searchQueryProducts && searchQueryProducts.length > 0 && (
+        {searchQuery && (
           <div className="mt-2 -ml-2 overflow-auto absolute w-[81%] max-h-72 overflow-y-auto   scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 z-20">
             <table className={`min-w-full ${billType === 'thermal' ? thermalColor.th200 : A4Color.a4200} border text-xs`}>
               <thead className={`${billType === 'thermal' ? thermalColor.th300 : A4Color.a4300} sticky -top-0  border-b shadow-sm z-10`}>
@@ -843,7 +896,7 @@ const InvoiceComponent = () => {
                 </tr>
               </thead>
               <tbody>
-                {searchQueryProducts && searchQueryProducts.map((product, index) => (
+                {searchQueryProducts?.length ? searchQueryProducts.map((product, index) => (
                   <tr key={index} className={`${billType === 'thermal' ? 'hover:bg-blue-300' : 'hover:bg-gray-300'} border-t cursor-pointer hover:bg-gray-300`} onClick={() => {
                     handleSelectProduct(product);
                   }}>
@@ -870,7 +923,8 @@ const InvoiceComponent = () => {
                     <td className="px-1 py-1">{Math.ceil(product.productTotalQuantity / product.productPack)}</td>
 
                   </tr>
-                ))}
+                )) : <tr className='text-center w-full'>
+                  <td>No product found with name or code</td></tr>}
               </tbody>
             </table>
           </div>
@@ -976,7 +1030,7 @@ const InvoiceComponent = () => {
                         onClick={() => {
                           dispatch(removeExtraItem(index))
                           updateTotals()
-                        }} 
+                        }}
                       >
                         <span>Remove</span>
                       </button>

@@ -15,6 +15,9 @@ export default {
       },
       animation: {
         slideDown: 'slideDown o.75s ease-out'
+      },
+      colors: {
+        primary: '#0c9cdc'
       }
     },
   },

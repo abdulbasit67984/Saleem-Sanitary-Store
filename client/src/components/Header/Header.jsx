@@ -203,7 +203,7 @@ function Header() {
         },
         {
           name: 'Bar Code Printing',
-          slug: `/${primaryPath}/stock/bar-code-printing`,
+          slug: `/${primaryPath}/stock/barcode-printing`,
           active: isAdmin() || isOwner() || hasRight("Bar Code Printing"),
           isAdmin: isAdmin()
         },
@@ -349,9 +349,9 @@ function Header() {
   // return !authStatus ? (
   return authStatus ? (
     <>
-      <header className={`bg-[#19566b] shadow-md  h-12 w-full `}>
-        <Container>
-          <nav className='flex items-center  justify-end gap-3 pt-1 w-full'>
+      <header className={`bg-primary shadow-md  h-12 w-full `}>
+        <Container className={'shadow-lg z-50'}>
+          <nav className='flex items-center justify-end gap-3 pt-1 w-full'>
             {/* <Logo width='w-24 ' className='rounded-full opacity-90 ' /> */}
             <div className='flex items-center'>
               <Navbar data={navItems} currentUser={userData} />

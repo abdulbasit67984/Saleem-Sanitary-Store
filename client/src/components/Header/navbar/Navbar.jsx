@@ -38,7 +38,7 @@ function Navbar({ data, currentUser }) { // Keep currentUser prop if you use it 
         <>
             <nav className="relative">
                 <div>
-                    <ul className="flex items-center justify-center gap-4 text-white font-light">
+                    <ul className="flex items-center justify-center gap-4 text-white font-">
                         {navData.map((item, i) => {
                             // --- NEW FILTERING LOGIC ---
                             // If the item is marked as 'isAdmin' true,

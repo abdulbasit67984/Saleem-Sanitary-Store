@@ -56,6 +56,7 @@ import MagicUiAnimation from '../components/magicUI/magicUiAnimation.jsx';
 import Journal from '../components/homePageComponents/accounts/VendorJournalEntry.jsx';
 import ViewBill from '../components/homePageComponents/sales/bills/ViewBill.jsx';
 import PrintBill from '../components/homePageComponents/sales/bills/PrintBIll.jsx';
+import BarcodePrinting from '../components/homePageComponents/stock/BarcodePrinting.jsx';
 
 
 function Home() {
@@ -112,6 +113,8 @@ function Home() {
             return <AddItemType />;
           case 'stock-search':
             return <StockSearch />;
+          case 'barcode-printing':
+            return <BarcodePrinting />;
           case 'changed-sale-price-report':
             return <ChangedPriceReport />;
           case 'short-item-list':
@@ -183,7 +186,7 @@ function Home() {
   return (
     <div className='flex'>
       <FeaturesCategory />
-      <div className='w-5/6 bg-gray-100 p-4'>
+      <div className='w-5/6 bg-gray-100 p-4 overflow-auto max-h-svh'>
         {renderActiveFeature()}
       </div>
     </div>

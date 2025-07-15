@@ -10,15 +10,15 @@ export class Config {
             // baseURL: BASE_URL,
             baseURL: conf.appwriteUrl,
             withCredentials: true,
-            
+
         });
 
-        
+
         this.client.interceptors.response.use(
             response => response,
             async error => {
-                console.log("interceptor",error.response.request.status)
-                if (error.response?.request.status === 401 ) {
+                console.log("interceptor", error.response.request.status)
+                if (error.response?.request.status === 401) {
                     window.location.href = '/login';
                 }
                 return Promise.reject(error);
@@ -150,6 +150,48 @@ export class Config {
             }
         } catch (error) {
             console.error("Error in Creating Type:", error);
+            throw error;
+        }
+    }
+
+    async getProductsWithoutBarcode(search) {
+        try {
+            const response = await this.client.get(`/product/get-products-without-barcode?barcodeExists=false&search=${search}`,
+                {
+                    headers: {
+                        Authorization: ` Bearer ${authService.getAccessToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+            if (response.data) {
+                console.log("type: ", response.data)
+                return response.data;
+            }
+        } catch (error) {
+            console.error("Error in Creating Type:", error);
+            throw error;
+        }
+    }
+
+    async printBarcodes(productIds) {
+        try {
+            const response = await this.client.post(`product/barcode-pdf`,
+                productIds,
+                {
+                    headers: {
+                        Authorization: ` Bearer ${authService.getAccessToken()}`,
+                        'Content-Type': 'application/json'
+                    },
+                    responseType: 'blob',
+                });
+
+            if (response.data) {
+                console.log("pdfs: ", response.data)
+                return response.data;
+            }
+        } catch (error) {
+            console.error("Error in Creating PDF for barcodes:", error);
             throw error;
         }
     }
@@ -478,7 +520,7 @@ export class Config {
     async postBill(billId) {
         try {
             const response = await this.client.patch(`/bill/bill-posting`, JSON.stringify(
-                {billId: billId}
+                { billId: billId }
             ),
                 {
                     headers: {
@@ -936,14 +978,14 @@ export class Config {
                     }
                 }
             );
-    
+
             if (response.data) {
                 console.log("Last Bill No: ", response.data);
                 return response.data;
             } else {
                 return null;
             }
-    
+
         } catch (error) {
             console.error("Error in Fetching last bill no:", error);
             throw error;
@@ -975,7 +1017,7 @@ export class Config {
             throw error;
         }
     }
-    
+
     async fetchAllPurchases(filters = {}) {
         try {
             // Construct query string from filters object
@@ -1114,19 +1156,19 @@ export class Config {
         }
     }
 
-    async mergeAccounts({...data}) {
+    async mergeAccounts({ ...data }) {
         try {
             const response = await this.client.post(`/account/merge-accounts`,
                 JSON.stringify(
                     data
                 ),
-                    {
-                        headers: {
-                            Authorization: `Bearer ${authService.getAccessToken()}`,
-                            'Content-Type': 'application/json'
-                        }
+                {
+                    headers: {
+                        Authorization: `Bearer ${authService.getAccessToken()}`,
+                        'Content-Type': 'application/json'
                     }
-                )
+                }
+            )
             if (response.data) {
                 return response.data;
             } else {
@@ -1142,14 +1184,14 @@ export class Config {
     async getInventoryDetails() {
         try {
             const response = await this.client.get(`/account/get-inventory-data`,
-                
-                    {
-                        headers: {
-                            Authorization: `Bearer ${authService.getAccessToken()}`,
-                            'Content-Type': 'application/json'
-                        }
+
+                {
+                    headers: {
+                        Authorization: `Bearer ${authService.getAccessToken()}`,
+                        'Content-Type': 'application/json'
                     }
-                )
+                }
+            )
             if (response.data) {
                 console.log(response.data.data)
                 return response.data.data;
@@ -1162,9 +1204,9 @@ export class Config {
             throw error;
         }
     }
-    
 
-    async openCloseAccountBalance({endpoint: endpoint, formData}) {
+
+    async openCloseAccountBalance({ endpoint: endpoint, formData }) {
         console.log('opening account balance called')
         console.log('endpoint', endpoint)
         try {
@@ -1172,19 +1214,19 @@ export class Config {
                 JSON.stringify(
                     formData
                 ),
-                    {
-                        headers: {
-                            Authorization: `Bearer ${authService.getAccessToken()}`,
-                            'Content-Type': 'application/json'
-                        }
+                {
+                    headers: {
+                        Authorization: `Bearer ${authService.getAccessToken()}`,
+                        'Content-Type': 'application/json'
                     }
-                )
+                }
+            )
             if (response.data) {
                 return response.data;
             } else {
                 return null;
             }
-    
+
         } catch (error) {
             console.error("Error in opening account balance:", error);
             throw error;
@@ -1231,7 +1273,7 @@ export class Config {
             } else {
                 return null;
             }
-    
+
         } catch (error) {
             console.error("Error in Merging bills:", error);
             throw error;
