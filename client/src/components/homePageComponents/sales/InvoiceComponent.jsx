@@ -952,7 +952,7 @@ const InvoiceComponent = () => {
             <tbody>
               {selectedItems && selectedItems?.map((item, index) => {
                 const grossAmount = (item.salePrice1 * (item.billItemUnit / item.productPack + item.quantity));
-                const netAmount = (grossAmount * (1 - item.discount / 100)).toFixed(2);
+                const netAmount = (grossAmount * (1 - item.discount / 100))?.toFixed(2);
 
                 return (
                   <tr key={index} className={`border-t ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}>
@@ -991,11 +991,11 @@ const InvoiceComponent = () => {
                       <input
                         type="text"
                         className={`p-1 rounded w-16 text-xs ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} bg-white`}
-                        value={(item.salePrice1)?.toFixed(2) || ''}
+                        value={item.salePrice1?.toFixed(2) || ''}
                         onChange={(e) => handleItemChange(index, "salePrice1", parseFloat(e.target.value))}
                       />
                     </td>
-                    <td className=" px-1">{grossAmount.toFixed(2)}</td>
+                    <td className=" px-1">{grossAmount?.toFixed(2)}</td>
                     <td className=" px-1">
                       <input
                         type="text"
@@ -1020,7 +1020,7 @@ const InvoiceComponent = () => {
               {/* extra products */}
               {extraProducts && extraProducts?.map((item, index) => {
                 const grossAmount = (parseFloat(item.salePrice) * parseFloat(item.quantity));
-                const netAmount = (grossAmount).toFixed(2);
+                const netAmount = (grossAmount)?.toFixed(2);
 
                 return (
                   <tr key={index} className={`border-t ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}>
@@ -1029,7 +1029,7 @@ const InvoiceComponent = () => {
                     <td className=" px-1">{item.quantity}</td>
                     <td className=" px-1"></td>
                     <td className=" px-1">{item.salePrice}</td>
-                    <td className=" px-1">{grossAmount.toFixed(2)}</td>
+                    <td className=" px-1">{grossAmount?.toFixed(2)}</td>
                     <td className=" px-1"></td>
                     <td className=" px-1">{netAmount}</td>
                     <td className=" px-1">
@@ -1074,7 +1074,7 @@ const InvoiceComponent = () => {
               divClass="flex items-center"
               labelClass="w-40"
               className='w-24 text-xs p-1'
-              value={totalAmount && ((totalGrossAmount - totalAmount).toFixed(2)) || 0}
+              value={totalAmount && ((totalGrossAmount - totalAmount)?.toFixed(2)) || 0}
               readOnly
             />
           </div>
@@ -1086,7 +1086,7 @@ const InvoiceComponent = () => {
               divClass="flex items-center"
               labelClass="w-40"
               className='w-24 text-xs p-1'
-              value={totalAmount && totalAmount.toFixed(2) || 0}
+              value={totalAmount && totalAmount?.toFixed(2) || 0}
               readOnly
             />
           </div>
@@ -1163,7 +1163,7 @@ const InvoiceComponent = () => {
               divClass="flex items-center"
               labelClass="w-40"
               className='w-24 text-xs p-1'
-              value={(totalAmount && (totalAmount - flatDiscount + totalGst - paidAmount).toFixed(2)) || 0}
+              value={(totalAmount && (totalAmount - flatDiscount + totalGst - paidAmount)?.toFixed(2)) || 0}
               onChange={(e) => dispatch(setIsPaid(totalAmount === 0 ? 'paid' : 'unpaid'))}
               readOnly
             />
