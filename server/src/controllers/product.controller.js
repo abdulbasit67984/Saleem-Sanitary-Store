@@ -248,8 +248,7 @@ const registerProduct = asyncHandler(async (req, res) => {
                     { productPurchasePrice },
                     { categoryId },
                     { typeId },
-                    { vendorCompanyId },
-                    { vendorSupplierId },
+                    { companyId },
                     { productCode }
                 ]
             });
