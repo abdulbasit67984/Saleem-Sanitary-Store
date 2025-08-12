@@ -19,7 +19,6 @@ const ViewBill = React.forwardRef((props, ref) => {
         <div className=' h-[28rem] shadow-lg overflow-y-auto scrollbar-thin relative'>
             <div ref={ref} className="view-bill p-4 pt-8 bg-white" >
 
-                <img src={paymentQR} alt="" className='absolute h-28 right-10'/>
 
                 {/* Business Information */}
                 <div className="flex justify-center">
@@ -142,14 +141,19 @@ const ViewBill = React.forwardRef((props, ref) => {
                 </div>
                 {/* Totals Section */}
                 {!packingSlip &&
-                    <div className='flex  justify-end'>
-                        <div className=" mb-4 text-l w-5/12">
-                            <p className='font-semibold'><span className='inline-block font-medium w-44'>Total Gross Amount:</span> {bill && commonFunction.formatAsianNumber(bill.totalAmount)}</p>
-                            <p className='font-semibold'><span className='inline-block font-medium w-44'>Discount Amount:</span> {bill && commonFunction.formatAsianNumber(bill.flatDiscount)}</p>
-                            <p className='font-semibold'><span className='inline-block font-medium w-44'>Paid Amount:</span> {bill && commonFunction.formatAsianNumber(bill.paidAmount)}</p>
-                            <p className='font-bold'><span className='inline-block font-medium w-44'>Bill Balance:</span> {bill && commonFunction.formatAsianNumber(bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount)}</p>
-                            {showPreviousBalance && <p className='font-bold'><span className='inline-block font-medium w-44'>Previous Balance:</span><span className='underline'> {previousBalance && commonFunction.formatAsianNumber(previousBalance - (bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount))}</span></p>}
-                            {showPreviousBalance && <p className='font-bold'><span className='inline-block font-medium w-44'>Total Balance:</span> {previousBalance && commonFunction.formatAsianNumber(previousBalance)}</p>}
+                    <div className='grid grid-cols-2 '>
+                        <div className='flex justify-start pl-5'>
+                            <img src={paymentQR} alt="" className='absolute h-32' />
+                        </div>
+                        <div className='flex justify-end pr-5'>
+                            <div className=" mb-4 text-l border-2 p-3">
+                                <p className='font-semibold'><span className='inline-block font-medium w-44'>Total Gross Amount:</span> {bill && commonFunction.formatAsianNumber(bill.totalAmount)}</p>
+                                <p className='font-semibold'><span className='inline-block font-medium w-44'>Discount Amount:</span> {bill && commonFunction.formatAsianNumber(bill.flatDiscount)}</p>
+                                <p className='font-semibold'><span className='inline-block font-medium w-44'>Paid Amount:</span> {bill && commonFunction.formatAsianNumber(bill.paidAmount)}</p>
+                                <p className='font-bold'><span className='inline-block font-medium w-44'>Bill Balance:</span> {bill && commonFunction.formatAsianNumber(bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount)}</p>
+                                {showPreviousBalance && <p className='font-bold'><span className='inline-block font-medium w-44'>Previous Balance:</span><span className='underline'> {previousBalance && commonFunction.formatAsianNumber(previousBalance - (bill?.totalAmount - bill?.flatDiscount - bill?.paidAmount))}</span></p>}
+                                {showPreviousBalance && <p className='font-bold'><span className='inline-block font-medium w-44'>Total Balance:</span> {previousBalance && commonFunction.formatAsianNumber(previousBalance)}</p>}
+                            </div>
                         </div>
                     </div>
                 }
