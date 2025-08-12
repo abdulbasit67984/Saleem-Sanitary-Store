@@ -56,6 +56,28 @@ const StockRegistrationForm = () => {
     }
   }, [companyId, purchasePrice, companyData]);
 
+  const quantityUnit = watch('quantityUnit');
+
+  useEffect(() => {
+    if (quantityUnit === 'kg') {
+      setValue('productPack', 1000);
+      setValue('packUnit', 'grams');
+    } else if (quantityUnit === 'ft') {
+      setValue('productPack', 12);
+      setValue('packUnit', 'inches');
+    } else if (quantityUnit === 'ton') {
+      setValue('productPack', 1000);
+      setValue('packUnit', 'kg');
+    } else if (quantityUnit === 'meter') {
+      setValue('productPack', 100);
+      setValue('packUnit', 'cm');
+    } else if (quantityUnit === 'yard') {
+      setValue('productPack', 3);
+      setValue('packUnit', 'ft');
+    }
+  }, [quantityUnit, setValue]);
+
+
   const onSubmit = async (data) => {
     setLoading(true);
 
@@ -78,10 +100,25 @@ const StockRegistrationForm = () => {
       const response = await config.registerStock(finalData);
       // console.log(response.data)
       if (response && response.data) {
+        setLoading(false)
+        setSuccessMessage(true)
+        reset()
         const products = await config.fetchAllProducts()
         if (products && products.data)
           dispatch(setAllProducts(products.data))
-        setSuccessMessage(true)
+        // setValue('productName', '');
+        // setValue('productTotalQuantity', '');
+        // setValue('categoryId', '');
+        // setValue('typeId', '');
+        // setValue('companyId', '');
+        // setValue('salePrice1', '');
+        // setValue('salePrice2', '');
+        // setValue('salePrice3', '');
+        // setValue('salePrice4', '');
+        // setValue('vendorSupplierId', '');
+        // setValue('vendorCompanyId', '');
+        // setValue('productPurchasePrice', '');
+        // setValue('packUnit', '');
       }
 
       // }
@@ -244,14 +281,15 @@ const StockRegistrationForm = () => {
               <div className="mb-2 grid grid-cols-2 gap-2">
 
 
-                <div className="mb-2">
+                <div className="">
 
-                  <label className="block text-gray-700 text-xs"><input type="radio" name="supplier" defaultChecked id=""
-                    onClick={() => {
-                      setVendor('supplier')
-                      setValue('vendorCompanyId', '');
-                    }}
-                  /> Vendor Supplier: </label>
+                  <label className="flex gap-1 text-gray-700 text-xs">
+                    <input type="radio" name="supplier" defaultChecked id=""
+                      onClick={() => {
+                        setVendor('supplier')
+                        setValue('vendorCompanyId', '');
+                      }}
+                    /> Vendor Supplier: </label>
                   <select
 
                     disabled={vendor !== 'supplier'}
@@ -297,16 +335,25 @@ const StockRegistrationForm = () => {
 
 
               {/* Pack */}
-              <div className="">
+              <div className="flex items-center gap-2">
 
                 <div className="mb-2">
-                  <label className="block text-gray-700 text-xs">Pack / Unit:</label>
+                  <label className="block text-gray-700 text-xs">Units:</label>
                   <input
                     type="text"
                     {...register('productPack', { required: 'Pack is required' })}
                     className="w-full px-2 py-1 border rounded-md text-xs"
                     defaultValue={1}
                   />
+                </div>
+                <div className=''>
+                  <select name="" id="" className='px-2 py-1 text-xs'
+                    {...register('packUnit')}>
+                    <option value="">Select Unit</option>
+                    {['pcs', 'kg', 'grams', 'ft', 'inches', 'cm'].map((unit, i) => (
+                      <option key={i} value={unit}>{unit.toUpperCase()}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -354,13 +401,24 @@ const StockRegistrationForm = () => {
               </div>
 
               {/* Total Quantity */}
-              <div className="mb-2">
-                <label className="block text-gray-700 text-xs">Total Quantity: <span className='text-red-500 pr-2'>*</span></label>
-                <input
-                  type="text"
-                  {...register('productTotalQuantity', { required: 'Total quantity is required' })}
-                  className="w-full px-2 py-1 border rounded-md text-xs"
-                />
+              <div className='flex items-center gap-2'>
+                <div className="mb-2">
+                  <label className="block text-gray-700 text-xs">Total Quantity: <span className='text-red-500 pr-2'>*</span></label>
+                  <input
+                    type="text"
+                    {...register('productTotalQuantity', { required: 'Total quantity is required' })}
+                    className="w-full px-2 py-1 border rounded-md text-xs"
+                  />
+                </div>
+                <div className=''>
+                  <select name="" id="" className='px-2 py-1 text-xs'
+                    {...register('quantityUnit')}>
+                    <option value="">Select Unit</option>
+                    {['pcs', 'pack', 'kg', 'ton','meter', 'yard','ft'].map((unit, i) => (
+                      <option key={i} value={unit}>{unit.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -368,7 +426,7 @@ const StockRegistrationForm = () => {
           <div className='w-full flex justify-center'>
             <button
               type="submit"
-              className=" bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-700 text-xs"
+              className=" bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/60 text-xs"
             >
               Register Item
             </button>

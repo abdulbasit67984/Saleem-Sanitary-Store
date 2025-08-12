@@ -332,7 +332,7 @@ function Header() {
     {
       name: 'Register Business',
       slug: `/${primaryPath}/register-business`,
-      active: isAdmin(),
+      active: isAdmin() || isOwner(),
       isAdmin: true
     },
     {

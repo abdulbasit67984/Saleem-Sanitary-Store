@@ -26,7 +26,7 @@ function App() {
     if (token) {
       try {
         const decodedToken = jwtDecode (token);
-        console.log("decoded token: " , decodedToken);
+        // console.log("decoded token: " , decodedToken);
         dispatch(setCurrentUser(decodedToken));
         const primaryPath = (decodedToken?.BusinessId ? decodedToken.BusinessId.businessName : decodedToken?.username)?.replace(/ /g, '-')
         const path = primaryPath ? primaryPath : "user"

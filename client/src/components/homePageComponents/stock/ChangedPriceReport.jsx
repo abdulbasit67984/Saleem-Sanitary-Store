@@ -8,8 +8,8 @@ const ChangedPriceReport = () => {
   const allProducts = useSelector((state) => state.saleItems.allProducts);
   const [expandedRows, setExpandedRows] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Toggle expanded row
   const toggleRow = (productId) => {
     setExpandedRows((prev) => ({
       ...prev,
@@ -17,7 +17,6 @@ const ChangedPriceReport = () => {
     }));
   };
 
-  // Extract products with price changes
   const changedPriceProducts =
     allProducts
       ?.filter((product) =>
@@ -34,9 +33,34 @@ const ChangedPriceReport = () => {
         ),
       })) || [];
 
-  // Pagination Logic
-  const totalPages = Math.ceil(changedPriceProducts.length / ITEMS_PER_PAGE);
-  const paginatedProducts = changedPriceProducts.slice(
+  // Helper: Highlight search term in text
+  const highlightMatch = (text, term) => {
+    if (!term) return text;
+    const regex = new RegExp(`(${term})`, "gi");
+    return text.split(regex).map((part, i) =>
+      regex.test(part) ? (
+        <mark key={i} className="bg-yellow-200">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
+  // Filter by search term across productName, type, category, company
+  const filteredProducts = changedPriceProducts.filter((product) => {
+    const lower = searchTerm.toLowerCase();
+    return (
+      product.productName.toLowerCase().includes(lower) ||
+      product.type.toLowerCase().includes(lower) ||
+      product.category.toLowerCase().includes(lower) ||
+      product.company.toLowerCase().includes(lower)
+    );
+  });
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filteredProducts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -47,8 +71,22 @@ const ChangedPriceReport = () => {
         Changed Price Report
       </h2>
 
-      {changedPriceProducts.length === 0 ? (
-        <p className="text-gray-500">No price changes recorded.</p>
+      {/* Search Input */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search by product name, type, category, or company..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="px-4 py-2 border border-gray-300 rounded-md w-full text-sm"
+        />
+      </div>
+
+      {filteredProducts.length === 0 ? (
+        <p className="text-gray-500">No matching products found.</p>
       ) : (
         <div className="overflow-x-auto max-h-96 scrollbar-thin">
           <table className="w-full border text-xs border-gray-200 rounded-md">
@@ -64,21 +102,27 @@ const ChangedPriceReport = () => {
             <tbody>
               {paginatedProducts.map((product) => (
                 <React.Fragment key={product.productId}>
-                  {/* Product Row */}
                   <tr
-                    className="border-b cursor-pointer hover:bg-gray-100 "
+                    className="border-b cursor-pointer hover:bg-gray-100"
                     onClick={() => toggleRow(product.productId)}
                   >
-                    <td className="px-4 py-2">{product.productName}</td>
-                    <td className="px-4 py-2">{product.type}</td>
-                    <td className="px-4 py-2">{product.category}</td>
-                    <td className="px-4 py-2">{product.company}</td>
+                    <td className="px-4 py-2">
+                      {highlightMatch(product.productName, searchTerm)}
+                    </td>
+                    <td className="px-4 py-2">
+                      {highlightMatch(product.type, searchTerm)}
+                    </td>
+                    <td className="px-4 py-2">
+                      {highlightMatch(product.category, searchTerm)}
+                    </td>
+                    <td className="px-4 py-2">
+                      {highlightMatch(product.company, searchTerm)}
+                    </td>
                     <td className="px-4 py-2 text-center">
                       {expandedRows[product.productId] ? "▼" : "▶"}
                     </td>
                   </tr>
 
-                  {/* Expanded Row - Price Change History */}
                   {expandedRows[product.productId] && (
                     <tr className="bg-gray-300">
                       <td colSpan="5">
@@ -108,7 +152,9 @@ const ChangedPriceReport = () => {
                                   <td className="px-4 py-2 text-green-500 font-medium">
                                     {status.newPrice}
                                   </td>
-                                  <td className="px-4 py-2">{status.remainingQuantity}</td>
+                                  <td className="px-4 py-2">
+                                    {status.remainingQuantity}
+                                  </td>
                                   <td className="px-4 py-2">
                                     {status.changedByDetails.firstname +
                                       " " +
@@ -133,7 +179,7 @@ const ChangedPriceReport = () => {
       {totalPages > 1 && (
         <div className="flex justify-between items-center mt-4 text-sm">
           <Button
-            className={`px-4 py-2  rounded-md ${
+            className={`px-4 py-2 rounded-md ${
               currentPage === 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-300"
             }`}
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}

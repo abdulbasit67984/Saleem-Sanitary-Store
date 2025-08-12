@@ -61,19 +61,29 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                             {bill.billItems && bill.billItems.map((item, index) => (
                                 <tr key={index} className="border border-gray-600">
                                     <td className="p-1">{commonFunction.truncateString(item.productId.productName, 21)}</td>
-                                    <td className="p-1 text-right">{item.quantity}</td>
-                                    {!packingSlip && <td className="p-1 text-right">{commonFunction.formatAsianNumber(item.billItemPrice)}</td>}
+                                    <td className="p-1 text-center pl-8">
+                                        <div>
+                                            {(item.quantity + item.billItemUnit / item.billItemPack) < 1 ? (item.billItemUnit) : (item.quantity + item.billItemUnit / item.billItemPack) }
+                                            <span> {(item.quantity + item.billItemUnit / item.billItemPack) < 1 ? (item.productId.packUnit)?.toUpperCase() || 'PCS' : (item.productId.quantityUnit)?.toUpperCase() || 'PCS' }</span>
+                                        </div>
+                                    </td>
+                                    {!packingSlip && 
+                                    <td className="p-1 text-right">
+                                        {(item.quantity + item.billItemUnit / item.billItemPack) < 1 ? commonFunction.formatAsianNumber(((item.quantity + item.billItemUnit / item.billItemPack) * item.billItemPrice) -
+                                            (((item.quantity + item.billItemUnit / item.billItemPack) * item.billItemPrice) * item.billItemDiscount / 100)) : commonFunction.formatAsianNumber(item.billItemPrice)}
+                                    </td>
+                                    }
                                     {!packingSlip && <td className="p-1 text-right">
-                                        {commonFunction.formatAsianNumber((item.quantity * item.billItemPrice) -
-                                            ((item.quantity * item.billItemPrice) * item.billItemDiscount / 100))}
+                                        {commonFunction.formatAsianNumber(((item.quantity + item.billItemUnit / item.billItemPack) * item.billItemPrice) -
+                                            (((item.quantity + item.billItemUnit / item.billItemPack) * item.billItemPrice) * item.billItemDiscount / 100))}
                                     </td>}
                                 </tr>
                             ))}
 
                             {bill.extraItems && bill.extraItems.map((item, index) => (
                                 <tr key={index} className="border border-gray-600">
-                                    <td className="p-1">{commonFunction.truncateString(item.itemName, 21)}</td>
-                                    <td className="p-1 text-right">{item.quantity}</td>
+                                    <td className="p-1">{commonFunction.truncateString(item.itemName, 16)}</td>
+                                    <td className="p-1 text-right">{item.quantity} PCS</td>
                                     {!packingSlip && <td className="p-1 text-right">{commonFunction.formatAsianNumber(item.salePrice)}</td>}
                                     {!packingSlip && <td className="p-1 text-right">
                                         {commonFunction.formatAsianNumber((item.quantity * item.salePrice))}
@@ -105,7 +115,11 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                     </div>
                 </div>}
 
-                <div className='mt-3'>
+                <div className='text-center font-bold text-xs pb-2 pt-4'>
+                    <p>𝕋ℍ𝔸ℕ𝕂 𝕐𝕆𝕌 𝔽𝕆ℝ 𝕊ℍ𝕆ℙℙ𝕀ℕ𝔾 ℍ𝔼ℝ𝔼 ♥</p>
+                </div>
+
+                <div className=''>
                     <ul className='text-[8px] text-right'>
                         <li className='flex flex-row-reverse gap-1 pt-1'>
                             <span>&#8592;</span> کوئی بھی آئیٹم واپس یا تبدیل ہو سکتا ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو

@@ -8,22 +8,25 @@ import { useDispatch, useSelector } from 'react-redux';
 import Input from '../../Input';
 import {
     setAllProducts
-} from '../../../store/slices/products/productsSlice'
+} from '../../../store/slices/products/productsSlice';
+import ButtonLoader from '../../ButtonLoader';
 
 const StockSearch = () => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [isButtonLoading, setIsButtonLoading] = useState(false);
+    const [isStockUpdated, setIsStockUpdated] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [isEdit, setIsEdit] = useState(false);
+    const [error, setError] = useState('');
+    const [productId, setProductId] = useState('');
+    const [product, setProduct] = useState(null);
+    const [productName, setProductName] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [deleteId, setDeleteId] = useState('');
 
-    const [isLoading, setIsLoading] = useState(false)
-    const [isButtonLoading, setIsButtonLoading] = useState(false)
-    const [isStockUpdated, setIsStockUpdated] = useState(false)
-    const [successMessage, setSuccessMessage] = useState('')
-    const [isEdit, setIsEdit] = useState(false)
-    const [error, setError] = useState('')
-    const [productId, setProductId] = useState('')
-    const [product, setProduct] = useState(null)
-    const [productName, setProductName] = useState('')
-    const [searchQuery, setSearchQuery] = useState('')
-    const [searchQueryProducts, setSearchQueryProducts] = useState('')
-
+    const [filteredProducts, setFilteredProducts] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 400;
 
     const {
         register,
@@ -33,22 +36,20 @@ const StockSearch = () => {
         formState: { errors },
     } = useForm();
 
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
 
-    const allProducts = useSelector(state => state.saleItems.allProducts)
-
-    const companyData = useSelector((state) => state.companies.companyData);
-    const categoryData = useSelector((state) => state.categories.categoryData);
-    const typeData = useSelector((state) => state.types.typeData);
+    const allProducts = useSelector(state => state.saleItems.allProducts);
+    const companyData = useSelector(state => state.companies.companyData);
+    const categoryData = useSelector(state => state.categories.categoryData);
+    const typeData = useSelector(state => state.types.typeData);
 
     const inputRef = useRef(null);
 
     const handleEdit = (id, name, product) => {
-        setProductId(id)
-        setIsEdit(true)
-        setProductName(name)
-        setProduct(product)
-        // console.log(id)
+        setProductId(id);
+        setIsEdit(true);
+        setProductName(name);
+        setProduct(product);
 
         setValue('productId', id);
         setValue('productCode', product.productCode || '');
@@ -63,52 +64,80 @@ const StockSearch = () => {
         setValue('companyId', product.companyDetails?.[0]?._id || '');
         setValue('productDiscountPercentage', product.productDiscountPercentage || '');
         setValue('productPack', product.productPack || '');
+        setValue('quantityUnit', product.quantityUnit || '');
+        setValue('packUnit', product.packUnit || '');
         setValue('productUnit', product.productUnit || '');
         setValue('productPurchasePrice', product.productPurchasePrice || '');
         setValue('productTotalQuantity', product.productTotalQuantity / product.productPack || '');
-    }
+    };
 
     const handleUpdateProduct = async (data) => {
-        console.log(data);
-        setIsButtonLoading(true)
+        setIsButtonLoading(true);
 
-        // console.log("Raw Data:", data);
-
-        // Filter out empty string values
         const cleanedData = Object.fromEntries(
             Object.entries(data).filter(([_, value]) => value !== "")
         );
 
-        // console.log("Cleaned Data:", cleanedData);
-        // If no data to update, return error message
         if (cleanedData.productId === undefined) {
-            setError("No product ID found!")
-            return
+            setError("No product ID found!");
+            return;
         }
 
         if (Object.keys(cleanedData).length === 0) {
-            setError("No data added to update!")
-            return
+            setError("No data added to update!");
+            return;
         }
 
         try {
             const response = await config.updateProduct(cleanedData);
             if (response) {
-                setSuccessMessage(response.message)
-                console.log("comp res: ", response.message)
-                const allProductsBefore = await config.fetchAllProducts()
+                setSuccessMessage(response.message);
+                setIsLoading(false);
+                setIsStockUpdated(true);
+                setIsButtonLoading(false);
+                setIsEdit(false);
+                reset();
+
+                const allProductsBefore = await config.fetchAllProducts();
                 if (allProductsBefore.data) {
                     dispatch(setAllProducts(allProductsBefore.data));
                 }
-                setIsEdit(false)
-                reset()
             }
         } catch (error) {
-            console.log("error updating Product:", error)
+            console.log("error updating Product:", error);
         } finally {
-            setIsLoading(false)
-            setIsStockUpdated(true)
-            setIsButtonLoading(false)
+            setIsLoading(false);
+            setIsStockUpdated(true);
+            setIsButtonLoading(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        setIsButtonLoading(true);
+        setDeleteId(id);
+
+        try {
+            const response = await config.deleteProduct(id);
+            if (response) {
+                setSuccessMessage(response.message);
+                setIsButtonLoading(false);
+                setSearchQuery('');
+                setDeleteId('');
+                setIsLoading(false);
+                setIsStockUpdated(true);
+
+                const allProductsBefore = await config.fetchAllProducts();
+                if (allProductsBefore.data) {
+                    dispatch(setAllProducts(allProductsBefore.data));
+                }
+            }
+        } catch (error) {
+            console.log("error deleting Product:", error);
+        } finally {
+            setIsLoading(false);
+            setIsStockUpdated(true);
+            setDeleteId('');
+            setIsButtonLoading(false);
         }
     };
 
@@ -116,117 +145,154 @@ const StockSearch = () => {
         inputRef.current?.focus();
     }, []);
 
-
     useEffect(() => {
+        let results = allProducts;
         if (searchQuery) {
-            const results = allProducts?.filter(
+            results = allProducts?.filter(
                 (product) =>
                     product.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     product.productCode?.toLowerCase().includes(searchQuery.toLowerCase())
             );
-            const top200Products = results.slice(0, 250)
-            setSearchQueryProducts(top200Products);
         }
+        setFilteredProducts(results);
+        setCurrentPage(1);
     }, [searchQuery, allProducts]);
 
-    return !isEdit ? (!isLoading ? (
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+
+    const exportToCSV = () => {
+        const headers = [
+            "Code", "Name", "Type", "Pack", "Company", "Vendor", "product Discount Percentage", "Category", "product Purchase Price", "Sale Price1", "Sale Price2", "Sale Price3", "Sale Price4", "Total Qty", "status"
+        ];
+
+        const rows = currentProducts.map(product => [
+            product.productCode,
+            product.productName,
+            product.typeDetails[0]?.typeName,
+            product.productPack,
+            product.companyDetails[0]?.companyName,
+            product.vendorSupplierDetails[0]?.supplierName || product.vendorCompanyDetails[0]?.companyName,
+            product.productDiscountPercentage,
+            product.categoryDetails[0]?.productName,
+            product.productPurchasePrice,
+            product.salePriceDetails[0]?.salePrice1,
+            product.salePriceDetails[0]?.salePrice2,
+            product.salePriceDetails[0]?.salePrice3,
+            product.salePriceDetails[0]?.salePrice4,
+            Math.ceil(product.productTotalQuantity / product.productPack),
+            product.status
+        ]);
+
+        const csvContent =
+            "data:text/csv;charset=utf-8," +
+            [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "products_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    return !isEdit ? (
         <div className='bg-white rounded-lg'>
-            <div className='w-full flex items-center'>
-                {isStockUpdated && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20">
-                        <div className="bg-white p-6 rounded shadow-lg text-center relative">
-                            <span className='absolute top-0 pt-1 right-2'>
-                                <button className='hover:text-red-700'
-                                    onClick={() => {
-                                        setIsStockUpdated(false)
-                                        setIsButtonLoading(false)
-                                        setSuccessMessage('')
-                                    }}>&#10008;</button>
-                            </span>
-                            <h2 className="text-lg font-thin p-4">{successMessage}</h2>
-                        </div>
+            <div className="w-full px-5 py-5">
+                <h2 className="text-lg text-center pt-2 font-semibold mb-2">Search for Stock</h2>
+                <div className="text-xs text-red-500 mb-2 text-center">
+                    {error && <p>{error}</p>}
+                    {errors.productName && <p>Product Name is required.</p>}
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                    <Input
+                        label='Search product:'
+                        placeholder='Search by Name / Code'
+                        divClass="gap-2 items-center"
+                        className='text-xs p-1.5 w-72'
+                        labelClass="w-24 text-xs"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        ref={inputRef}
+                    />
+                    <button
+                        onClick={exportToCSV}
+                        className="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded text-xs"
+                    >
+                        Export CSV
+                    </button>
+                </div>
+                {currentProducts && currentProducts.length > 0 &&
+                    <div className="overflow-auto max-h-80 scrollbar-thin rounded">
+                        <table className="min-w-full bg-white border text-xs">
+                            <thead className="sticky -top-1 border-b shadow-sm bg-gray-300 z-10">
+                                <tr>
+                                    <th className="py-2 px-1 text-left">Code</th>
+                                    <th className="py-2 px-1 text-left">Name</th>
+                                    <th className="py-2 px-1 text-left">Type</th>
+                                    <th className="py-2 px-1 text-left">Pack</th>
+                                    <th className="py-2 px-1 text-left">Company</th>
+                                    <th className="py-2 px-1 text-left">Vendor</th>
+                                    <th className="py-2 px-1 text-left">Category</th>
+                                    <th className="py-2 px-1 text-left">Sale Price</th>
+                                    <th className="py-2 px-1 text-left">Total Qty</th>
+                                    <th className="py-2 px-1 text-left"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {currentProducts.map((product, index) => (
+                                    <tr key={index} className="border-t hover:bg-gray-100">
+                                        <td className="px-1 py-1">{product.productCode}</td>
+                                        <td className="px-1 py-1">{product.productName}</td>
+                                        <td className="px-1 py-1">{product.typeDetails[0]?.typeName}</td>
+                                        <td className="px-1 py-1">{product.productPack}</td>
+                                        <td className="px-1 py-1">{product.companyDetails[0]?.companyName}</td>
+                                        <td className="px-1 py-1">{product.vendorSupplierDetails[0]?.supplierName || product.vendorCompanyDetails[0]?.companyName}</td>
+                                        <td className="px-1 py-1">{product.categoryDetails[0]?.productName}</td>
+                                        <td className="px-1 py-1">{product.salePriceDetails[0]?.salePrice1}</td>
+                                        <td className="px-1 py-1">{Math.ceil(product.productTotalQuantity / product.productPack)}</td>
+                                        <td className="py-1 px-2 flex gap-2">
+                                            <button
+                                                className="bg-red-500 hover:bg-red-700 text-white py-1 px-2 rounded-full"
+                                                onClick={() => handleDelete(product._id)}
+                                            >
+                                                {(isButtonLoading && product._id === deleteId) ?
+                                                    <ButtonLoader /> : 'Delete'}
+                                            </button>
+                                            <button
+                                                className="bg-gray-500 hover:bg-gray-700 text-white py-1 px-2 rounded-full"
+                                                onClick={() => handleEdit(product._id, product.productName, product)}
+                                            >Edit</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
-                )}
-                <div className="w-full px-5  py-5 bg-white rounded ">
-                    <h2 className="text-lg text-center pt-2 font-semibold mb-2">Search for Stock</h2>
-
-                    {/* Error Message Below the Heading */}
-                    <div className="text-xs text-red-500 mb-2 text-center">
-                        {error && <p>{error}</p>}
-                        {errors.productName && <p>Category Name is required.</p>}
-
-                    </div>
-
-                    <div className="space-y-2 text-xs">
-
-                        <div className='flex justify-start gap-6'>
-                            <div className="flex items-center">
-                                <Input
-                                    label='Select a product:'
-                                    placeholder='Search by Name / Item code'
-                                    divClass="gap-2 items-center"
-                                    className='text-xs p-1.5 w-72 mr-72 ml-4'
-                                    labelClass="w-24 text-xs ml-4"
-                                    value={searchQuery || ''}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    ref={inputRef}
-                                />
-                            </div>
-
-                        </div>
-
-                    </div>
-
+                }
+                <div className="flex justify-center gap-3 mt-2 text-xs">
+                    <button
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-2 py-1 border rounded hover:bg-gray-200"
+                    >Previous</button>
+                    <span className="self-center">
+                        Page {currentPage} of {Math.ceil(filteredProducts.length / itemsPerPage)}
+                    </span>
+                    <button
+                        onClick={() =>
+                            setCurrentPage((prev) =>
+                                prev < Math.ceil(filteredProducts.length / itemsPerPage)
+                                    ? prev + 1 : prev)}
+                        disabled={currentPage === Math.ceil(filteredProducts.length / itemsPerPage)}
+                        className="px-2 py-1 border rounded hover:bg-gray-200"
+                    >Next</button>
                 </div>
             </div>
-            {/* {error && <p className="text-red-600 mt-2 mb-1 text-center text-sm">{error}</p>} */}
-
-
-
-            {searchQueryProducts && searchQueryProducts.length > 0 &&
-                <div className="overflow-auto max-h-64 mb-4 scrollbar-thin rounded">
-                    <table className="min-w-full bg-white border text-xs">
-                        <thead className="sticky -top-1 border-b shadow-sm bg-gray-300 z-10">
-                            <tr>
-                                <th className="py-2 px-1 text-left">Code</th>
-                                <th className="py-2 px-1 text-left">Name</th>
-                                <th className="py-2 px-1 text-left">Type</th>
-                                <th className="py-2 px-1 text-left">Pack</th>
-                                <th className="py-2 px-1 text-left">Company</th>
-                                <th className="py-2 px-1 text-left">Vendor</th>
-                                <th className="py-2 px-1 text-left">Category</th>
-                                <th className="py-2 px-1 text-left">Sale Price</th>
-                                <th className="py-2 px-1 text-left">Total Qty</th>
-                                <th className="py-2 px-1 text-left"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {searchQueryProducts && searchQueryProducts.map((product, index) => (
-                                <tr key={index} className="border-t cursor-pointer hover:bg-gray-300" >
-                                    <td className="px-1 py-1">{product.productCode}</td>
-                                    <td className="px-1 py-1">{product.productName}</td>
-                                    <td className="px-1 py-1">{product.typeDetails[0]?.typeName}</td>
-                                    <td className="px-1 py-1">{product.productPack}</td>
-                                    <td className="px-1 py-1">{product.companyDetails[0]?.companyName}</td>
-                                    <td className="px-1 py-1">{product.vendorSupplierDetails[0]?.supplierName || product.vendorCompanyDetails[0]?.companyName}</td>
-                                    <td className="px-1 py-1">{product.categoryDetails[0]?.productName}</td>
-                                    <td className="px-1 py-1">{product.salePriceDetails[0]?.salePrice1}</td>
-                                    <td className="px-1 py-1">{Math.ceil(product.productTotalQuantity / product.productPack)}</td>
-                                    <td className="py-1 px-2">
-                                        <button
-                                            className="bg-gray-500 hover:bg-gray-700 text-white py-1 px-2 rounded-full"
-                                            onClick={() => handleEdit(product._id, product.productName, product)}
-                                        >Edit</button>
-                                    </td>
-
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>}
         </div>
-    ) : <Loader message="Loading Data Please Wait...." mt="" h_w="h-10 w-10 border-t-2 border-b-2" />)
-        :
+    ) :
         <div className='w-full px-4 flex items-center'>
             {isStockUpdated && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20">
@@ -383,7 +449,7 @@ const StockSearch = () => {
 
                                 {/* Pack */}
 
-                                <div className="mb-2 grid grid-cols-2 gap-2">
+                                <div className="mb-2 grid grid-cols-2 gap-2 items-center">
                                     <div className="mb-2">
                                         <label className="block text-gray-700 text-xs">Pack:</label>
                                         <input
@@ -392,13 +458,13 @@ const StockSearch = () => {
                                             className="w-full px-2 py-1 border rounded-md text-xs"
                                         />
                                     </div>
-                                    <div className="mb-2">
-                                        <label className="block text-gray-700 text-xs">Unit:</label>
-                                        <input
-                                            type="text"
-                                            {...register('productUnit')}
-                                            className="w-full px-2 py-1 border rounded-md text-xs"
-                                        />
+                                    <div className=''>
+                                        <select name="" id="" className='px-2 py-1 text-xs'
+                                            {...register('packUnit')}>
+                                            {['pcs', 'kg', 'grams', 'ft', 'inches', 'cm'].map((unit, i) => (
+                                                <option key={i} value={unit}>{unit.toUpperCase()}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 
@@ -413,31 +479,41 @@ const StockSearch = () => {
                                 </div>
 
                                 {/* Total Quantity */}
-                                <div className="mb-2">
-                                    <label className="block text-gray-700 text-xs">Total Quantity</label>
-                                    <input
-                                        type="text"
-                                        {...register('productTotalQuantity')}
-                                        className="w-full px-2 py-1 border rounded-md text-xs"
-                                    />
+                                <div className='mb-2 grid grid-cols-2 gap-2 items-center'>
+                                    <div className="mb-2">
+                                        <label className="block text-gray-700 text-xs">Total Quantity</label>
+                                        <input
+                                            type="text"
+                                            {...register('productTotalQuantity')}
+                                            className="w-full px-2 py-1 border rounded-md text-xs"
+                                        />
+                                    </div>
+                                    <div className=''>
+                                        <select name="" id="" className='px-2 py-1 text-xs'
+                                            {...register('quantityUnit')}>
+                                            {['pcs', 'pack', 'kg', 'ton', 'meter', 'yard', 'ft'].map((unit, i) => (
+                                                <option key={i} value={unit}>{unit.toUpperCase()}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
+
                             </div>
                         </div>
 
                         <div className='w-full flex justify-center'>
                             <button
                                 type="submit"
-                                className=" bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-700 text-xs"
+                                className=" bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/80 text-xs"
                             >
-                                Update Details
+                                {isButtonLoading ?
+                                    <ButtonLoader /> : 'Update Details'}
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
-
-
 };
 
 export default StockSearch;

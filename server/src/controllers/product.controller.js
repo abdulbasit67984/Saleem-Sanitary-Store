@@ -220,6 +220,8 @@ const registerProduct = asyncHandler(async (req, res) => {
         productDiscountPercentage,
         productPack,
         productUnit,
+        quantityUnit,
+        packUnit,
         productPurchasePrice,
         status,
         productTotalQuantity
@@ -312,7 +314,9 @@ const registerProduct = asyncHandler(async (req, res) => {
                 vendorCompanyId,
                 productDiscountPercentage,
                 productPack,
+                quantityUnit,
                 productUnit,
+                packUnit,
                 productPurchasePrice: purchasePrice,
                 status,
                 productTotalQuantity: productTotalQuantity * productPack
@@ -374,10 +378,85 @@ const registerProduct = asyncHandler(async (req, res) => {
     }
 });
 
+const deleteProduct = asyncHandler(async (req, res) => {
+    const { productId } = req.params;
+
+    if (!productId) {
+        throw new ApiError(400, "Product ID is required!");
+    }
+
+    const user = req.user;
+    if (!user) {
+        throw new ApiError(401, "Authorization Failed!");
+    }
+
+    const BusinessId = user.BusinessId;
+    const transactionManager = new TransactionManager();
+
+    try {
+        await transactionManager.run(async (transaction) => {
+            const product = await Product.findOne({ _id: productId, BusinessId });
+
+            if (!product) {
+                throw new ApiError(404, "Product not found!");
+            }
+
+            const salePrices = await SalePrice.findById(product.salePricesId);
+            const statusOfPrices = await StatusOfPrice.find({ productId });
+
+            // Save original inventory account balance for rollback
+            const inventoryAccount = await IndividualAccount.findOne({
+                BusinessId,
+                individualAccountName: "Inventory",
+            });
+
+            if (!inventoryAccount) {
+                throw new ApiError(400, "Inventory account not found!");
+            }
+
+            const originalInventoryBalance = inventoryAccount.accountBalance;
+            inventoryAccount.accountBalance -= Number(product.productPurchasePrice) * Number(product.productTotalQuantity / product.productPack);
+            transaction.addOperation(
+                async () => await inventoryAccount.save(),
+                async () => {
+                    inventoryAccount.accountBalance = originalInventoryBalance;
+                    await inventoryAccount.save();
+                }
+            );
+
+            // Delete related data
+            transaction.addOperation(
+                async () => await SalePrice.deleteOne({ _id: product.salePricesId }),
+                async () => salePrices && await salePrices.save()
+            );
+
+            for (const status of statusOfPrices) {
+                transaction.addOperation(
+                    async () => await StatusOfPrice.deleteOne({ _id: status._id }),
+                    async () => await status.save()
+                );
+            }
+
+            // Delete the product itself
+            transaction.addOperation(
+                async () => await Product.deleteOne({ _id: product._id }),
+                async () => await product.save()
+            );
+
+            return res.status(200).json(
+                new ApiResponse(200, {}, "Product deleted successfully!")
+            );
+        });
+    } catch (error) {
+        throw new ApiError(500, `${error.message}`);
+    }
+});
+
+
 const updateProduct = asyncHandler(async (req, res) => {
     const {
         productId, productCode, productName, categoryId, typeId, companyId,
-        productExpiryDate, productDiscountPercentage, productPack,
+        productExpiryDate, productDiscountPercentage, productPack, quantityUnit, packUnit,
         salePrice1, salePrice2, salePrice3, salePrice4,
         productPurchasePrice, productTotalQuantity
     } = req.body;
@@ -509,6 +588,8 @@ const updateProduct = asyncHandler(async (req, res) => {
             if (productExpiryDate && productExpiryDate !== oldProduct.productExpiryDate) updatedFields.productExpiryDate = productExpiryDate;
             if (productDiscountPercentage !== undefined && productDiscountPercentage !== oldProduct.productDiscountPercentage) updatedFields.productDiscountPercentage = productDiscountPercentage;
             if (productPack !== undefined && productPack !== oldProduct.productPack) updatedFields.productPack = productPack;
+            if (quantityUnit !== undefined && quantityUnit !== oldProduct.quantityUnit) updatedFields.quantityUnit = quantityUnit;
+            if (packUnit !== undefined && packUnit !== oldProduct.packUnit) updatedFields.packUnit = packUnit;
 
             if (Object.keys(updatedFields).length > 0) {
                 Object.assign(oldProduct, updatedFields);
@@ -522,7 +603,7 @@ const updateProduct = asyncHandler(async (req, res) => {
             return res.status(200).json(new ApiResponse(200, oldProduct, "Product updated successfully"));
         });
     } catch (error) {
-        throw new ApiError(500, `Transaction failed: ${error.message}`);
+        throw new ApiError(500, `${error.message}`);
     }
 });
 
@@ -639,6 +720,8 @@ const getProducts = asyncHandler(async (req, res) => {
                 productExpiryDate: 1,
                 productDiscountPercentage: 1,
                 productPack: 1,
+                quantityUnit: 1,
+                packUnit: 1,
                 productPurchasePrice: 1,
                 status: 1,
                 productTotalQuantity: 1,
@@ -765,6 +848,45 @@ const allProductsWithoutBarcode = asyncHandler(async (req, res) => {
 })
 
 
+const getExpiryReport = asyncHandler(async (req, res) => {
+    try {
+        const user = req.user;
+
+        if (!user) {
+            throw new ApiError(401, "Authorization Failed!");
+        }
+
+        const BusinessId = user.BusinessId;
+
+        // Optional: allow filtering by days until expiry
+        const days = parseInt(req.query.days || "30", 10);
+        const today = new Date();
+        const futureDate = new Date();
+        futureDate.setDate(today.getDate() + days);
+
+        // Find all products that have an expiry date within the next X days
+        const expiringProducts = await Product.find({
+            BusinessId,
+            productExpiryDate: {
+                $gte: today,
+                $lte: futureDate,
+            }
+        })
+        .populate("typeId", "typeName")
+        .populate("companyId", "companyName")
+        .sort({ productExpiryDate: 1 })
+        .lean();
+
+        return res.status(200).json(
+            new ApiResponse(200, expiringProducts, `Expiry report generated for next ${days} days`)
+        );
+    } catch (error) {
+        console.error("Expiry Report Error:", error);
+        throw new ApiError(500, error.message);
+    }
+});
+
+
 
 
 export {
@@ -776,8 +898,10 @@ export {
     updateType,
     registerProduct,
     updateProduct,
+    deleteProduct,
     getProducts,
     createBarcode,
     barcodePDF,
-    allProductsWithoutBarcode
+    allProductsWithoutBarcode,
+    getExpiryReport
 }

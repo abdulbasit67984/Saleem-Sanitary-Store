@@ -58,6 +58,8 @@ const InvoiceComponent = () => {
   const [dueDate, setDueDate] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
 
+  const [addBalanceToDiscount, setAddBalanceToDiscount] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState('');
 
   const [showAddExtraProductModal, setShowAddExtraProductModal] = useState(false);
@@ -82,10 +84,10 @@ const InvoiceComponent = () => {
   }
 
   const A4Color = {
-    a4100: "bg-gray-100",
-    a4200: "bg-gray-200",
-    a4300: "bg-gray-300",
-    a4500: "bg-gray-500",
+    a4100: "bg-primary/20",
+    a4200: "bg-primary/30",
+    a4300: "bg-primary/50",
+    a4500: "bg-primary/80",
   }
 
   //bill states
@@ -187,7 +189,7 @@ const InvoiceComponent = () => {
           salePrice1: productPrice,
           quantity: productQuantity,
           discount: productDiscount,
-          billItemUnit: productUnits
+          billItemUnit: 0
         };
 
         console.log('updatedItems', selectedItems)
@@ -272,8 +274,10 @@ const InvoiceComponent = () => {
   const updateTotals = () => {
     const totalQty = selectedItems.reduce((sum, item) => sum + Number((item.quantity || 0)), 0);
     const totalDiscount = selectedItems.reduce((sum, item) => sum + (item.salePrice1 * item.quantity * (item.discount || 0) / 100), 0);
-    const totalGrossAmount = selectedItems.reduce((sum, item) => sum + ((item.salePrice1 / item.productPack * item.billItemUnit * item.quantity)), 0);
-    const totalAmount = Math.floor(totalGrossAmount - totalDiscount);
+    const totalGrossAmount = selectedItems.reduce((sum, item) => sum + ((item.salePrice1 * (item.billItemUnit / item.productPack + item.quantity))), 0);
+
+
+    const totalAmount = (totalGrossAmount - totalDiscount);
     const totalGst = 0
     // totalAmount * 0.18; // Assuming a GST rate of 18%
     const netAmount = totalAmount - totalDiscount + totalGst;
@@ -286,11 +290,13 @@ const InvoiceComponent = () => {
 
     const balance = (totalAmount + totalExtraProductsTotalAmount - flatDiscount + totalGst - paidAmount);
 
+
     dispatch(setTotalGrossAmount(totalGrossAmount + totalExtraProductsGrossAmount))
     dispatch(setTotalQty(totalQty + totalExtraProductsQuantity))
     // dispatch(setFlatDiscount(totalDiscount));
     dispatch(setTotalAmount(totalAmount + totalExtraProductsTotalAmount));
     dispatch(setTotalGst(totalGst));
+    console.log('balance', balance)
     dispatch(setIsPaid(balance === 0 ? 'paid' : 'unpaid'));
   };
 
@@ -319,17 +325,17 @@ const InvoiceComponent = () => {
           billItemUnit: item.billItemUnit,
         }))
 
-        console.log('first', description,
-          'billType:', billType,
-          billPaymentType,
-          'customer:', customerId,
-          billItems,
-          'flatDiscount:', flatDiscount || 0,
-          'billStatus:', isPaid,
-          'totalAmount:', totalAmount || 0,
-          'paidAmount:', paidAmount || 0,
-          dueDate,
-          'extraItems:', extraProducts)
+        // console.log('first', description,
+        //   'billType:', billType,
+        //   billPaymentType,
+        //   'customer:', customerId,
+        //   billItems,
+        //   'flatDiscount:', flatDiscount || 0,
+        //   'billStatus:', isPaid,
+        //   'totalAmount:', totalAmount || 0,
+        //   'paidAmount:', paidAmount || 0,
+        //   dueDate,
+        //   'extraItems:', extraProducts)
 
         const response = await config.createInvoice({
           description,
@@ -338,7 +344,7 @@ const InvoiceComponent = () => {
           customer: customerId,
           billItems,
           flatDiscount: flatDiscount || 0,
-          billStatus: isPaid,
+          billStatus: parseInt(totalAmount - paidAmount - flatDiscount) === 0 ? 'paid' : 'unpaid',
           totalAmount: totalAmount || 0,
           paidAmount: paidAmount || 0,
           dueDate,
@@ -366,18 +372,9 @@ const InvoiceComponent = () => {
         setIsInvoiceGenerated(true);
 
       } catch (error) {
-        const htmlString = error.response?.data;
+        console.error('Failed to generate bill', error.response?.data?.message)
 
-        // Parse the HTML string into a DOM object
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlString, 'text/html');
-
-        const preContent = doc.querySelector('pre').innerHTML.replace(/<br\s*\/?>/gi, '\n');
-
-        // Extract only the first line (the error message)
-        const errorMessage = preContent.split('\n')[0]; // Get the first line
-
-        setBillError(errorMessage)
+        setBillError(error.response?.data?.message)
       } finally {
         setIsLoading(false)
 
@@ -437,6 +434,8 @@ const InvoiceComponent = () => {
       document.removeEventListener('keypress', handleKeyPress);
     };
   }, [product]);
+
+
 
 
   // useEffect(()=> {
@@ -952,38 +951,47 @@ const InvoiceComponent = () => {
             </thead>
             <tbody>
               {selectedItems && selectedItems?.map((item, index) => {
-                const grossAmount = (item.salePrice1 / item.productPack * item.billItemUnit * item.quantity);
+                const grossAmount = (item.salePrice1 * (item.billItemUnit / item.productPack + item.quantity));
                 const netAmount = (grossAmount * (1 - item.discount / 100)).toFixed(2);
 
                 return (
                   <tr key={index} className={`border-t ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}>
                     <td className=" px-1">{index + 1}</td>
                     <td className=" px-1">{item.productName}</td>
-                    <td className=" px-1">
-                      <Input
-                        type="number"
-                        className={`p-1 rounded w-16 text-xs ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}
-                        value={item.quantity || ''}
-                        onChange={(e) => handleItemChange(index, "quantity", parseInt(e.target.value))}
-                      />
+                    <td className=" px-1 flex items-start">
+                      <div className='flex items-center gap-1 bg-white rounded px-1'>
+                        <Input
+                          type="number"
+                          step="any"
+                          className={`p-1 rounded w-16 text-xs ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}
+                          value={item.quantity || ''}
+                          onChange={(e) => handleItemChange(index, "quantity", parseFloat(e.target.value))}
+                        />
+                        <span>{item.quantityUnit?.toUpperCase() || 'PCS'}</span>
+                      </div>
                     </td>
-                    <td className=" px-1">
-                      <Input
-                        type="number"
-                        className={`p-1 rounded w-16 text-xs ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}
-                        value={item.billItemUnit || ''}
-                        max={item.productPack}
-                        onChange={(e) => {
-                          if (e.target.value > item.productPack || e.target.value < 1) return;
-                          handleItemChange(index, "billItemUnit", parseInt(e.target.value))
-                        }}
-                      />
+                    <td className=" px-1 ">
+                      <div className='bg-white w-28 rounded'>
+                        <div className='flex items-center justify-start w-20 gap-1 bg-white'>
+                          <Input
+                            type="number"
+                            className={`p-1 rounded w-16 text-xs ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}
+                            value={item.billItemUnit || ''}
+                            max={item.productPack}
+                            onChange={(e) => {
+                              if (e.target.value > item.productPack || e.target.value < 0) return;
+                              handleItemChange(index, "billItemUnit", parseInt(e.target.value))
+                            }}
+                          />
+                          <span>{item.packUnit?.toUpperCase() || 'PCS'}</span>
+                        </div>
+                      </div>
                     </td>
-                    <td className=" px-1">
+                    <td className=" px-1 ">
                       <input
                         type="text"
-                        className={`p-1 rounded w-16 text-xs ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}
-                        value={(item.salePrice1 / item.productPack * item.billItemUnit).toFixed(2) || ''}
+                        className={`p-1 rounded w-16 text-xs ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} bg-white`}
+                        value={(item.salePrice1).toFixed(2) || ''}
                         onChange={(e) => handleItemChange(index, "salePrice1", parseFloat(e.target.value))}
                       />
                     </td>
@@ -1114,19 +1122,10 @@ const InvoiceComponent = () => {
               labelClass="w-40"
               className='w-24 text-xs p-1'
               value={paidAmount || 0}
-              onChange={(e) => dispatch(setPaidAmount(parseFloat(e.target.value)))}
-            />
-          </div>
-
-          {/* previous balance */}
-          <div className="col-span-1">
-            <Input
-              label='Previous Balance:'
-              divClass="flex items-center"
-              labelClass="w-40"
-              className='w-24 text-xs p-1'
-              value={previousBalance || 0}
-              readOnly
+              onChange={(e) => {
+                dispatch(setPaidAmount(parseFloat(e.target.value) || 0));
+                dispatch(setFlatDiscount(0));
+              }}
             />
           </div>
 
@@ -1142,6 +1141,21 @@ const InvoiceComponent = () => {
             />
           </div>
 
+          <div className="col-span-1">
+            <Input
+              label='Add remaining balance to Discount:'
+              type='checkbox'
+              divClass="flex items-center"
+              labelClass="w-52"
+              className='w-24 text-xs p-1'
+              checked={flatDiscount !== 0}
+              onChange={(e) => {
+                e.target.checked ? dispatch(setFlatDiscount((totalAmount + totalGst - paidAmount)))
+                  : dispatch(setFlatDiscount(0))
+              }}
+            />
+          </div>
+
           {/* Balance */}
           <div className="col-span-1">
             <Input
@@ -1150,6 +1164,7 @@ const InvoiceComponent = () => {
               labelClass="w-40"
               className='w-24 text-xs p-1'
               value={(totalAmount && (totalAmount - flatDiscount + totalGst - paidAmount).toFixed(2)) || 0}
+              onChange={(e) => dispatch(setIsPaid(totalAmount === 0 ? 'paid' : 'unpaid'))}
               readOnly
             />
           </div>

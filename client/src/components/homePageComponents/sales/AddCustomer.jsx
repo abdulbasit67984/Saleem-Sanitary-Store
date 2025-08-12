@@ -29,7 +29,7 @@ const AddCustomer = () => {
 
   const onSubmit = async (data) => {
     // console.log(data);
-    // setIsLoading(true)
+    setIsLoading(true)
 
     // console.log("Raw Data:", data);
 
@@ -60,6 +60,8 @@ const AddCustomer = () => {
       reset()
     } catch (error) {
     console.log("error adding customer:", error)
+  } finally {
+    setIsLoading(false)
   }
 };
 

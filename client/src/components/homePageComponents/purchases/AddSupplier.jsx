@@ -27,7 +27,7 @@ const AddSupplier = () => {
 
     const onSubmit = async (data) => {
         // console.log(data);
-        // setIsLoading(true)
+        setIsLoading(true)
 
         // console.log("Raw Data:", data);
 
@@ -50,6 +50,8 @@ const AddSupplier = () => {
           }
         } catch (error) {
           console.log("error adding supplier:", error)
+        } finally {
+            setIsLoading(false)
         }
     };
 

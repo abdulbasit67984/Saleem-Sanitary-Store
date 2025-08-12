@@ -1,175 +1,169 @@
-/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
 import { LineChart, Line, PieChart, Pie, BarChart, Bar, Tooltip, Legend, CartesianGrid, XAxis, YAxis, Cell, ResponsiveContainer } from "recharts";
-import { FaChartLine, FaBox, FaDollarSign, FaStar } from "react-icons/fa";
 import config from "../../../features/config";
 import Loader from "../../../pages/Loader";
 import functions from "../../../features/functions";
 
 const Dashboard = () => {
+  const [filter, setFilter] = useState("monthly"); // default filter
   const [salesData, setSalesData] = useState([]);
   const [stockData, setStockData] = useState([]);
   const [barData, setBarData] = useState([]);
   const [totalSales, setTotalSales] = useState(0);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [avgSales, setAvgSales] = useState(0);
-  const [totalStock, setTotalStock] = useState(0);
-  const [topProduct, setTopProduct] = useState("");
-  const [loading, setLoading] = useState(false)
+  const [topProduct, setTopProduct] = useState({});
+  const [leastProduct, setLeastProduct] = useState("");
+  const [outOfStock, setOutOfStock] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchDashboardData = async (selectedFilter = "monthly") => {
+    setLoading(true);
+    try {
+      const response = await config.getDashboardData(selectedFilter);
+      const {
+        salesData,
+        stockData,
+        categoryData,
+        totalSales,
+        totalRevenue,
+        avgSales,
+        topProduct,
+        leastProduct,
+        outOfStock
+      } = response.data;
+
+      setSalesData(salesData);
+      setStockData(stockData);
+      setBarData(categoryData);
+      setTotalSales(totalSales);
+      setTotalRevenue(totalRevenue);
+      setAvgSales(avgSales);
+      setTopProduct(topProduct || "N/A");
+      setLeastProduct(leastProduct || "N/A");
+      setOutOfStock(outOfStock || []);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      try {
-        // Fetch dashboard data from the backend
-        const response = await config.getDashboardData();
-        const {
-          salesData,
-          stockData,
-          categoryData,
-          totalSales,
-          totalRevenue,
-          avgSales,
-          topProduct,
-        } = response.data;
+    fetchDashboardData(filter);
+  }, [filter]);
 
-        const topStockData = stockData
-          .sort((a, b) => b.value - a.value) // Sort in descending order by stock value
-          .slice(0, 6);
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#B771E5", "#D84040", "#78C841", "#FF9B2F", "#B4E50D", "#FB4141"];
 
-        console.log('salesData', salesData)
+  return loading ? (
+    <Loader message="Loading Dashboard Data Please Wait..." mt="" h_w="h-10 w-10 border-t-2 border-b-2" />
+  ) : (
+    <div className="container mx-auto px-4 py-8 overflow-y-auto">
+      {/* Filter Dropdown */}
+      <div className="mb-6">
+        <label className="mr-2 font-semibold text-sm">Select Filter:</label>
+        <select
+          className="border rounded px-2 py-1 text-sm"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        >
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="6months">Last 6 Months</option>
+          <option value="yearly">Yearly</option>
+        </select>
+      </div>
 
-        // Update state with fetched data
-        setSalesData(salesData);
-        setStockData(topStockData);
-        setBarData(categoryData);
-        setTotalSales(totalSales);
-        setTotalRevenue(totalRevenue);
-        setAvgSales(avgSales);
-        setTopProduct(topProduct);
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Total Sales */}
+        <KPI title="Total Sales" value={functions.formatAsianNumber(totalSales)} color="blue" />
+        <KPI title="Total Revenue" value={functions.formatAsianNumber(totalRevenue)} color="green" />
+        <KPI title="Avg Sales" value={functions.formatAsianNumber(avgSales)} color="yellow" />
+        <KPI title="Top Product" value={`${topProduct?.productName}`} color="purple" />
+      </div>
 
-    fetchDashboardData();
-  }, []);
 
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#B771E5", "#D84040"];
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Sales Chart */}
+        <ChartCard title="Sales Report">
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={salesData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="sales" stroke="#A0C878" strokeWidth={2} />
+              <Line type="monotone" dataKey="purchases" stroke="#D84040" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
 
-  return loading ?
-    <Loader message="Loading Dashboard Data Please Wait...." mt="" h_w="h-10 w-10 border-t-2 border-b-2" />
-    : (
-      <div className="container mx-auto px-4 py-8">
+        {/* Stock Pie */}
+        <ChartCard title="Stock Report">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Tooltip />
+              <Legend />
+              <Pie data={stockData} dataKey="productTotalQuantity" nameKey="productName" cx="50%" cy="50%" outerRadius={100} label>
+                {stockData?.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
 
-        {/* KPI Cards - Modern Design */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Total Sales */}
-          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <FaChartLine className="text-blue-500 text-2xl" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-gray-600">Total Sales</h2>
-                <p className="text-2xl font-bold text-gray-800">{totalSales && functions.formatAsianNumber(totalSales)}</p>
-              </div>
-            </div>
-          </div>
+        {/* Category Chart */}
+        <ChartCard title="Category Report">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={barData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="category" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="quantity" fill="#82ca9d" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
 
-          {/* Total Revenue */}
-          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-green-100 rounded-full">
-                <FaDollarSign className="text-green-500 text-2xl" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-gray-600">Total Revenue</h2>
-                <p className="text-2xl font-bold text-gray-800">{totalRevenue && functions.formatAsianNumber(totalRevenue)}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Avg Sales */}
-          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <FaChartLine className="text-yellow-500 text-2xl" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-gray-600">Avg Sales / Month</h2>
-                <p className="text-2xl font-bold text-gray-800">{avgSales && functions.formatAsianNumber(avgSales)}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Top Product */}
-          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-purple-100 rounded-full">
-                <FaStar className="text-purple-500 text-2xl" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-gray-600">Top Product</h2>
-                <p className="text-2xl font-bold text-gray-800">{topProduct}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Charts Section - Responsive and Modern */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Sales Report */}
-          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Sales Report</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="sales" stroke="#A0C878" strokeWidth={2} />
-                <Line type="monotone" dataKey="purchases" stroke="#D84040" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Stock Report */}
-          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Stock Report</h2>
-            <ResponsiveContainer width="100%" height={400}>
-              <PieChart>
-                <Tooltip />
-                <Legend />
-                <Pie data={stockData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
-                  {stockData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Category Report */}
-          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Category Report</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={barData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="quantity" fill="#82ca9d" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Additional KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8">
+        <KPI title="Least Sold Product" value={leastProduct?.productName} color="red" />
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <h2 className="text-sm font-semibold text-gray-600 mb-2">Out of Stock Products</h2>
+          <ol className="text-sm text-gray-700  pl-5 max-h-32 overflow-y-auto">
+            {outOfStock.length > 0 ? (
+              outOfStock?.map((item, i) => <li key={i}>{item.productName}</li>)
+            ) : (
+              <li>No products are out of stock</li>
+            )}
+          </ol>
         </div>
       </div>
-    );
+    </div>
+  );
 };
+
+// Reusable KPI component
+const KPI = ({ title, value, color }) => (
+  <div className={`bg-white p-6 rounded-lg shadow-lg`}>
+    <h2 className="text-sm font-semibold text-gray-600">{title}</h2>
+    <p className={`text-2xl font-bold text-${color}-800`}>{value}</p>
+  </div>
+);
+
+// Reusable Chart Card component
+const ChartCard = ({ title, children }) => (
+  <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <h2 className="text-lg font-semibold text-gray-800 mb-4">{title}</h2>
+    {children}
+  </div>
+);
 
 export default Dashboard;

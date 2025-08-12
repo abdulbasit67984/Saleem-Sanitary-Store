@@ -35,6 +35,7 @@ import {
   ChangedPriceReport,
   StockSearch,
   ShortItemList,
+  ExpiryReport,
   //accounts
   Posting,
   OpeningAndAdjustmentBalance,
@@ -52,10 +53,10 @@ import {
   Rights
 }
   from '../components/index.js';
-import MagicUiAnimation from '../components/magicUI/magicUiAnimation.jsx';
+import MagicUiAnimation from '../components/magicUI/MagicUiAnimation.jsx';
 import Journal from '../components/homePageComponents/accounts/VendorJournalEntry.jsx';
 import ViewBill from '../components/homePageComponents/sales/bills/ViewBill.jsx';
-import PrintBill from '../components/homePageComponents/sales/bills/PrintBIll.jsx';
+import PrintBill from '../components/homePageComponents/sales/bills/PrintBill.jsx';
 import BarcodePrinting from '../components/homePageComponents/stock/BarcodePrinting.jsx';
 
 
@@ -119,6 +120,8 @@ function Home() {
             return <ChangedPriceReport />;
           case 'short-item-list':
             return <ShortItemList />;
+          case 'expiry-report':
+            return <ExpiryReport />;
           default:
             return <MagicUiAnimation text='Stock Management' />;
         }

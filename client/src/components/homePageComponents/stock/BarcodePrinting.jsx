@@ -1,194 +1,232 @@
-import React, { useState, useRef } from 'react';
-import { Button, Box, Grid, Typography, Checkbox, Paper, TextField } from '@mui/material';
-import PrintIcon from '@mui/icons-material/Print';
-import SearchIcon from '@mui/icons-material/Search';
-import { ReactToPrint } from 'react-to-print';
-import axios from 'axios';
-import config from '../../../features/config';
-import authService from '../../../features/auth';
-import conf from '../../../conf/conf';
+/* eslint-disable no-unused-vars */
+// BarcodePrintEnhanced.jsx
+import React, { useState, useEffect } from "react";
+import Barcode from "react-barcode";
+import Button from "../../../components/Button";
+import { useSelector } from "react-redux";
+
+const mockProducts = [
+  { id: 1, name: "Pepsi 500ml", productCode: "1404729582032", price: 60 },
+  { id: 2, name: "Sprite 1L", productCode: "SPR1L", price: 80 },
+  { id: 3, name: "Coke 250ml", productCode: "COK250", price: 45 },
+];
 
 const BarcodePrinting = () => {
-    const [products, setProducts] = useState([]);
-    const [selectedProducts, setSelectedProducts] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const printRef = useRef();
+  const [search, setSearch] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState([]);
+  const [labelSize, setLabelSize] = useState("half");
+  const [searchQueryProducts, setSearchQueryProducts] = useState([]);
+  
+  const allProducts = useSelector(state => state.saleItems.allProducts)
 
-    
+  const filtered = mockProducts.filter(
+    (p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.productCode.toLowerCase().includes(search.toLowerCase())
+  );
 
-    const fetchProductsWithoutBarcodes = async () => {
-        setIsLoading(true);
-        try {
-            const response = await config.getProductsWithoutBarcode(searchTerm);
-            console.log('response', response)
-            setProducts(response);
-            setSelectedProducts([]);
-        } catch (error) {
-            console.error('Error fetching products:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const handleSelectProduct = (product) => {
+    setSearch('');
+    setSelectedProduct([product]);
+  };
 
-    const handleSelectProduct = (productId) => {
-        setSelectedProducts(prev =>
-            prev.includes(productId)
-                ? prev.filter(id => id !== productId)
-                : [...prev, productId]
+  useEffect(() => {
+      if (search.length > 2) {
+        const results = allProducts.filter(
+          (product) =>
+            product.productName?.toLowerCase().includes(search.toLowerCase()) ||
+            product.productCode?.toLowerCase().includes(search.toLowerCase())
         );
-    };
+        setSearchQueryProducts(results);
+        console.log('results', results)
+      } else {
+        setSearchQueryProducts([]);
+      }
+    }, [search, allProducts]);
 
-    const handleSelectAll = () => {
-        if (selectedProducts.length === products.length) {
-            setSelectedProducts([]);
-        } else {
-            setSelectedProducts(products.map(p => p._id));
-        }
-    };
+//   const toggleSelection = (product) => {
+//     setSelectedProducts((prev) =>
+//       prev.find((p) => p.id === product.id)
+//         ? prev.filter((p) => p.id !== product.id)
+//         : [...prev, product]
+//     );
+//   };
 
-    const handlePrint = async () => {
-        if (selectedProducts.length === 0) return;
+  const handlePrint = () => {
+    const width = labelSize === "half" ? "40mm" : "60mm";
+    const printWindow = window.open("", "_blank", "width=600,height=800");
 
-        try {
-            const token = authService.getAccessToken();
-            const response = await axios.post(
-                `${conf.appwriteUrl}/product/barcode-pdf`,
-                { productIds: selectedProducts },
-                {
-                    responseType: 'blob',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+    if (!printWindow) return;
 
-            const blob = new Blob([response.data], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
+    const labels = selectedProduct
+      .map(
+        (p) => `
+        <div class="label">
+          <svg id="barcode-${p.productCode}"></svg>
+          <div class="info">
+            <strong>${p.productName}</strong><br />
+            
+          </div>
+        </div>`
+      )
+      .join("");
 
-            // Open the PDF in a new tab for user to print
-            const printWindow = window.open(url);
-            if (printWindow) {
-                printWindow.focus();
-                printWindow.print();
+    printWindow.document.write(`
+      <html>
+        <head>
+          <style>
+            @media print {
+              body {
+                margin: 0;
+                padding: 0;
+              }
             }
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-        }
-    };
+            body {
+              font-family: sans-serif;
+              padding: 10px;
+            }
+            .label {
+              width: ${width};
+              text-align: center;
+              margin: 10px auto;
+              padding: 8px 0;
+              border-bottom: 1px dashed #ccc;
+            }
+            .info {
+              font-size: 12px;
+              margin-top: 4px;
+            }
+            svg {
+              width: 100%;
+              height: 40px;
+            }
+          </style>
+        </head>
+        <body>
+          ${labels}
+          <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+          <script>
+            ${selectedProduct
+              .map(
+                (p) =>
+                  `JsBarcode("#barcode-${p.productCode}", "${p.productCode}", {
+                    format: "CODE128",
+                    width: 2,
+                    height: 40,
+                    displayValue: false,
+                    margin: 0
+                  });`
+              )
+              .join("\n")}
+            window.onload = () => {
+              window.print();
+              window.onafterprint = () => window.close();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
+  return (
+    <div className=" mx-auto p-4 border rounded shadow bg-white">
+      <h2 className="text-xl font-semibold mb-4">Multi Barcode Printer</h2>
 
-    return (
-        <div className='overflow-y-auto'>
-            <Box sx={{ p: 3 }}>
-                <Typography variant="h4" gutterBottom>
-                    Barcode Printing
-                </Typography>
+      <input
+        type="text"
+        placeholder="Search products..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full border p-2 rounded mb-3"
+      />
 
-                <Paper sx={{ p: 3, mb: 3 }}>
-                    <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                fullWidth
-                                label="Search Products"
-                                variant="outlined"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && fetchProductsWithoutBarcodes()}
-                                InputProps={{
-                                    endAdornment: <SearchIcon />
-                                }}
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={fetchProductsWithoutBarcodes}
-                                disabled={isLoading}
-                                fullWidth
-                            >
-                                {isLoading ? 'Loading...' : 'Find Products Without Barcodes'}
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </Paper>
+      {searchQueryProducts && searchQueryProducts.length > 0 && (
+          <div className="overflow-auto max-h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 z-20">
+            <table className="min-w-full bg-gray-200 border text-xs">
+              <thead className='sticky -top-0 border-b shadow-sm bg-gray-300 z-10'>
+                <tr>
+                  <th className="py-2 px-1 text-left">Code</th>
+                  <th className="py-2 px-1 text-left">Name</th>
+                  <th className="py-2 px-1 text-left">Type</th>
+                  <th className="py-2 px-1 text-left">Category</th>
+                  <th className="py-2 px-1 text-left">Company</th>
+                  <th className="py-2 px-1 text-left">Supplier</th>
+                  <th className="py-2 px-1 text-left">Sale Price</th>
+                  <th className="py-2 px-1 text-left">Status</th>
+                  <th className="py-2 px-1 text-left">Total Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                {searchQueryProducts?.map((product, index) => (
+                  <tr key={index} className="border-t cursor-pointer hover:bg-gray-300" onClick={() => handleSelectProduct(product)}>
+                    <td className="px-1 py-1">{product.productCode}</td>
+                    <td className="px-1 py-1">{product.productName}</td>
+                    <td className="px-1 py-1">{(product.typeDetails[0]?.typeName)}</td>
+                    <td className="px-1 py-1">{(product.categoryDetails[0]?.categoryName)}</td>
+                    <td className="px-1 py-1">{(product.companyDetails[0]?.companyName)}</td>
+                    <td className="px-1 py-1">{
+                      product.vendorCompanyDetails.length > 0 ? product.vendorCompanyDetails[0].companyName : product.vendorSupplierDetails[0]?.supplierName
+                    }</td>
+                    <td className="px-1 py-1">{(product.salePriceDetails[0]?.salePrice1)}</td>
+                    <td className="px-1 py-1">{product.status ? "active" : "inactive"}</td>
+                    <td className="px-1 py-1">{product.productTotalQuantity / product.productPack}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-                {products.length > 0 && (
-                    <Paper sx={{ p: 3, mb: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                            <Typography variant="h6">
-                                Products Without Barcodes ({products.length})
-                            </Typography>
-                            <Box>
-                                <Checkbox
-                                    checked={selectedProducts.length === products.length && products.length > 0}
-                                    indeterminate={selectedProducts.length > 0 && selectedProducts.length < products.length}
-                                    onChange={handleSelectAll}
-                                />
-                                <span>Select All</span>
-                            </Box>
-                        </Box>
+      <ul className="max-h-40 overflow-auto border rounded p-2 mb-4">
+        {selectedProduct.map((product) => (
+          <li
+            key={product.id}
+            className={`cursor-pointer p-2 border-b ${
+              selectedProduct.find((p) => p.id === product.id)
+                ? "bg-blue-100"
+                : ""
+            }`}
+            // onClick={() => toggleSelection(product)}
+          >
+            <div className="flex justify-between">
+              <span>{product.productName}</span>
+            </div>
+            <div className="text-xs text-gray-500">{product.productCode}</div>
+          </li>
+        ))}
+      </ul>
 
-                        <Grid container spacing={2}>
-                            {products.map((product) => (
-                                <Grid item xs={12} sm={6} md={4} key={product._id}>
-                                    <Paper sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
-                                        <Checkbox
-                                            checked={selectedProducts.includes(product._id)}
-                                            onChange={() => handleSelectProduct(product._id)}
-                                        />
-                                        <Box sx={{ ml: 2 }}>
-                                            <Typography variant="body1">{product.productName}</Typography>
-                                            <Typography variant="body2" color="textSecondary">
-                                                SKU: {product.sku || 'N/A'}
-                                            </Typography>
-                                        </Box>
-                                    </Paper>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </Paper>
-                )}
+      <div className="flex gap-3 items-center mb-4">
+        <label className="font-medium">Label Size:</label>
+        <select
+          value={labelSize}
+          onChange={(e) => setLabelSize(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="half">Half (40mm)</option>
+          <option value="threefourth">3/4 (60mm)</option>
+        </select>
+      </div>
 
-                {selectedProducts.length > 0 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<PrintIcon />}
-                            onClick={handlePrint}
-                        >
-                            Print Selected Barcodes ({selectedProducts.length})
-                        </Button>
-                    </Box>
-                )}
+      {/* <div className="flex items-center gap-2 mb-4">
+        <input
+          type="checkbox"
+          checked={includeDate}
+          onChange={() => setIncludeDate(!includeDate)}
+        />
+        <label>Include Date</label>
+      </div> */}
 
-                {/* Hidden component for printing */}
-                <div style={{ display: 'none' }}>
-                    <div ref={printRef}>
-                        {selectedProducts.map((productId) => {
-                            const product = products.find(p => p._id === productId);
-                            if (!product) return null;
-
-                            return (
-                                <div key={productId} style={{ margin: '20px', display: 'inline-block' }}>
-                                    <img
-                                        src={`/api/barcode/image/${productId}`}
-                                        alt={`Barcode for ${product.productName}`}
-                                        style={{ width: '200px', height: '100px' }}
-                                    />
-                                    <div style={{ textAlign: 'center', marginTop: '5px' }}>
-                                        {product.productName.substring(0, 20)}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </Box>
-        </div>
-    );
+      <Button
+        onClick={handlePrint}
+        disabled={selectedProduct.length === 0}
+        className="w-full"
+      >
+        Print Selected Barcodes
+      </Button>
+    </div>
+  );
 };
 
 export default BarcodePrinting;

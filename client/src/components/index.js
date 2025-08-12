@@ -25,6 +25,7 @@ import AddItemCategory from "./homePageComponents/stock/AddItemCategory";
 import AddItemType from "./homePageComponents/stock/AddItemType";
 import StockSearch from "./homePageComponents/stock/StockSearch";
 import ShortItemList from "./homePageComponents/stock/ShortItemList";
+import ExpiryReport from "./homePageComponents/stock/ExpiryReport";
 
 //sales
 import InvoiceComponent from "./homePageComponents/sales/InvoiceComponent";
@@ -110,6 +111,7 @@ export {
     ChangedPriceReport,
     StockSearch,
     ShortItemList,
+    ExpiryReport,
     //accounts
     Posting,
     OpeningAndAdjustmentBalance,

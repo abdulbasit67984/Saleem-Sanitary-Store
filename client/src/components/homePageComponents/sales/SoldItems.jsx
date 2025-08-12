@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import config from '../../../features/config';
 import { setBillData, setBill, setBillNo, setSearchBillFilters } from '../../../store/slices/bills/billSlice';
@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import UpdateBill from './bills/UpdateBill';
 import Button from '../../Button';
 import Input from '../../Input';
+import ButtonLoader from '../../ButtonLoader';
 import functions from "../../../features/functions"
 
 const ITEMS_PER_PAGE = 200; // Adjust as needed
@@ -19,6 +20,7 @@ function SoldItems() {
   const [remainingBalance, setRemainingBalance] = useState(0);
   const [validationMessage, setValidationMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isButtonLoading, setIsButtonLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [billId, setBillId] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,12 +39,23 @@ function SoldItems() {
 
   const dispatch = useDispatch();
   const customerData = useSelector((state) => state.customers.customerData)
-  const { 
+  const {
     billData,
     billNo,
     searchBillFilters
   } = useSelector((state) => state.bills);
   const navigate = useNavigate();
+
+
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 200); // small delay helps after render
+
+    return () => clearTimeout(timer);
+  }, [isLoading]);
 
   useEffect(() => {
     fetchAllBills();
@@ -51,6 +64,7 @@ function SoldItems() {
 
   const fetchAllBills = async () => {
     try {
+      setIsButtonLoading(true)
       const start = new Date(searchBillFilters.startDate);
       start.setHours(0, 0, 0, 0); // Set to the start of the day
       const end = new Date(searchBillFilters.endDate);
@@ -75,6 +89,7 @@ function SoldItems() {
       console.error('Error fetching bills:', error);
     } finally {
       setIsLoading(false);
+      setIsButtonLoading(false)
     }
   };
 
@@ -91,20 +106,20 @@ function SoldItems() {
   };
 
   const handleDateChange = (e) => {
-        const { name, value } = e.target;
-        dispatch(setSearchBillFilters({ ...searchBillFilters, [name]: value }));
-        setValidationMessage("");
-    };
+    const { name, value } = e.target;
+    dispatch(setSearchBillFilters({ ...searchBillFilters, [name]: value }));
+    setValidationMessage("");
+  };
 
   const handleCheckboxChange = (e) => {
-        const { name, value, checked } = e.target;
-        const currentValues = searchBillFilters[name];
-        const newValues = checked
-            ? [...currentValues, value]
-            : currentValues.filter((item) => item !== value);
+    const { name, value, checked } = e.target;
+    const currentValues = searchBillFilters[name];
+    const newValues = checked
+      ? [...currentValues, value]
+      : currentValues.filter((item) => item !== value);
 
-        dispatch(setSearchBillFilters({ ...searchBillFilters, [name]: newValues }));
-    };
+    dispatch(setSearchBillFilters({ ...searchBillFilters, [name]: newValues }));
+  };
 
   const handleRetrieve = () => {
     if (searchBillFilters.startDate && searchBillFilters.endDate && new Date(searchBillFilters.endDate) < new Date(searchBillFilters.startDate)) {
@@ -135,10 +150,10 @@ function SoldItems() {
   }
 
   useEffect(() => {
-      if (billNo && billNo.length >= 5) {
-        fetchBill(billNo);
-      }
-    }, [billNo]);
+    if (billNo && billNo.length >= 5) {
+      fetchBill(billNo);
+    }
+  }, [billNo]);
 
   const fetchBill = async (billNo) => {
     try {
@@ -236,10 +251,10 @@ function SoldItems() {
           </div>
           <div className='flex items-center justify-center'>
             <button
-              className="bg-gray-600 hover:bg-gray-800 duration-200 text-white p-2 rounded"
+              className="bg-primary hover:bg-primary/70 duration-200 text-white p-2 rounded"
               onClick={handleRetrieve}
             >
-              Retrieve
+              {isButtonLoading ? <ButtonLoader /> : 'Retrieve'}
             </button>
           </div>
         </div>
@@ -252,6 +267,7 @@ function SoldItems() {
             className="w-72 text-xs p-1"
             value={billNo && billNo || ''}
             // disabled={bill}
+            ref={inputRef}
             onChange={(e) => dispatch(setBillNo(e.target.value))}
           />
         </div>
@@ -303,7 +319,7 @@ function SoldItems() {
                     <td className="py-1 px-2">
                       {bill.isPosted ? <span className='p-2'>Bill Posted</span> : (!(bill.billStatus === "paid") ? (
                         <button
-                          className="bg-gray-600 hover:bg-gray-800 duration-200 text-white p-2 rounded"
+                          className="bg-primary hover:bg-primary/60 duration-200 text-white p-2 rounded"
                           onClick={() => handleBillPayment(bill.billNo)}
                         >
                           Add Payment
@@ -313,7 +329,7 @@ function SoldItems() {
                     {/* button to edit bill */}
                     <td>
                       {bill.isPosted ? <span className=''> Posted</span> : <button
-                        className="bg-gray-600 hover:bg-gray-800 duration-200 text-white p-2 rounded"
+                        className="bg-primary hover:bg-primary/60 duration-200 text-white p-2 rounded"
                         onClick={() => {
                           setBillId(bill.billNo)
                           setIsEditing(true)

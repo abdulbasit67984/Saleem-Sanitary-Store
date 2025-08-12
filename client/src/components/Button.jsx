@@ -4,9 +4,9 @@ import React from "react";
 export default function Button({
     children,
     type = "button",
-    bgColor = "bg-[#175367] hover:bg-[#1a4452] ",
+    bgColor = "bg-primary hover:bg-primary/60 ",
     textColor = "text-white",
-    className = "text-white bg-[#175367]",
+    className = "text-white bg-primary",
     ...props
 }) {
     return (

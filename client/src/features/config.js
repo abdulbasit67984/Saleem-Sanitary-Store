@@ -174,6 +174,26 @@ export class Config {
         }
     }
 
+    async getExpiryReport(days) {
+        try {
+            const response = await this.client.get(`/product/expiry-report?days=${days}`,
+                {
+                    headers: {
+                        Authorization: ` Bearer ${authService.getAccessToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+            if (response.data) {
+                console.log("expiryReport: ", response.data)
+                return response.data;
+            }
+        } catch (error) {
+            console.error("Error in expiry report:", error);
+            throw error;
+        }
+    }
+
     async printBarcodes(productIds) {
         try {
             const response = await this.client.post(`product/barcode-pdf`,
@@ -234,6 +254,26 @@ export class Config {
             }
         } catch (error) {
             console.error("Error in Fetching types:", error);
+            throw error;
+        }
+    }
+
+    async deleteProduct(id) {
+        try {
+            const response = await this.client.delete(`/product/${id}`,
+                {
+                    headers: {
+                        Authorization: ` Bearer ${authService.getAccessToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+            if (response.data) {
+                console.log(response.data)
+                return response.data;
+            }
+        } catch (error) {
+            console.error("Error in deleting product:", error);
             throw error;
         }
     }
@@ -1134,27 +1174,32 @@ export class Config {
             throw error;
         }
     }
-    async getDashboardData() {
-        try {
-            const response = await this.client.get(`/dashboard/get-dashboardData`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${authService.getAccessToken()}`
-                    }
-                });
-
-            if (response.data) {
-                console.log("dashboard data: ", response.data)
-                return response.data;
-            } else {
-                return null;
+    async getDashboardData(filterType = "monthly") {
+    try {
+        const response = await this.client.get(
+            `/dashboard/get-dashboardData`,
+            {
+                headers: {
+                    Authorization: `Bearer ${authService.getAccessToken()}`
+                },
+                params: {
+                    filter: filterType  // filterType could be: daily, weekly, monthly, 6months, yearly
+                }
             }
+        );
 
-        } catch (error) {
-            console.error("Error in fetching dashboard data:", error);
-            throw error;
+        if (response.data) {
+            console.log("dashboard data: ", response.data);
+            return response.data;
+        } else {
+            return null;
         }
+    } catch (error) {
+        console.error("Error in fetching dashboard data:", error);
+        throw error;
     }
+}
+
 
     async mergeAccounts({ ...data }) {
         try {
