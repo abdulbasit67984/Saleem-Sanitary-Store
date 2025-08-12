@@ -147,7 +147,7 @@ const InvoiceComponent = () => {
         dispatch(setProductPrice(product.salePriceDetails[0].salePrice1))
       )
     }
-    dispatch(setProduct(product));
+    dispatch(setProduct(Number(product)));
   };
 
   const handleItemChange = (index, key, value) => {
