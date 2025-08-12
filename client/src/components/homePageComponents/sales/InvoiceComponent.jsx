@@ -991,7 +991,7 @@ const InvoiceComponent = () => {
                       <input
                         type="text"
                         className={`p-1 rounded w-16 text-xs ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} bg-white`}
-                        value={(item.salePrice1).toFixed(2) || ''}
+                        value={(item.salePrice1)?.toFixed(2) || ''}
                         onChange={(e) => handleItemChange(index, "salePrice1", parseFloat(e.target.value))}
                       />
                     </td>
