@@ -252,7 +252,7 @@ const InvoiceComponent = () => {
         setPriceError(`minimum price is ${product.productPurchasePrice}`);
       }
 
-      dispatch(setProductPrice(value));
+      // dispatch(setProductPrice(value));
     } else {
       setPriceError('Price must be a number.');
     }
