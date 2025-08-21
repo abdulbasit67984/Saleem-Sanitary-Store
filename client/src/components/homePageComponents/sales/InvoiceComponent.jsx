@@ -991,8 +991,14 @@ const InvoiceComponent = () => {
                       <input
                         type="text"
                         className={`p-1 rounded w-16 text-xs ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} bg-white`}
-                        value={item.salePrice1?.toFixed(2) || ''}
-                        onChange={(e) => handleItemChange(index, "salePrice1", parseFloat(e.target.value))}
+                        value={
+                          typeof item.salePrice1 === "number" && !isNaN(item.salePrice1)
+                            ? item.salePrice1.toFixed(2)
+                            : ""
+                        }
+                        onChange={(e) =>
+                          handleItemChange(index, "salePrice1", parseFloat(e.target.value) || 0)
+                        }
                       />
                     </td>
                     <td className=" px-1">{grossAmount?.toFixed(2)}</td>
