@@ -107,8 +107,8 @@ const Dashboard = () => {
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Tooltip />
-              <Legend />
-              <Pie data={stockData} dataKey="productTotalQuantity" nameKey="productName" cx="50%" cy="50%" outerRadius={100} label>
+              {/* <Legend /> */}
+              <Pie data={stockData} dataKey="totalQuantity" nameKey="productName" cx="50%" cy="50%" outerRadius={100} label>
                 {stockData?.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
