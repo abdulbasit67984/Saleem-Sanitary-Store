@@ -1175,30 +1175,30 @@ export class Config {
         }
     }
     async getDashboardData(filterType = "monthly") {
-    try {
-        const response = await this.client.get(
-            `/dashboard/get-dashboardData`,
-            {
-                headers: {
-                    Authorization: `Bearer ${authService.getAccessToken()}`
-                },
-                params: {
-                    filter: filterType  // filterType could be: daily, weekly, monthly, 6months, yearly
+        try {
+            const response = await this.client.get(
+                `/dashboard/get-dashboardData`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${authService.getAccessToken()}`
+                    },
+                    params: {
+                        filter: filterType  // filterType could be: daily, weekly, monthly, 6months, yearly
+                    }
                 }
-            }
-        );
+            );
 
-        if (response.data) {
-            console.log("dashboard data: ", response.data);
-            return response.data;
-        } else {
-            return null;
+            if (response.data) {
+                console.log("dashboard data: ", response.data);
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error in fetching dashboard data:", error);
+            throw error;
         }
-    } catch (error) {
-        console.error("Error in fetching dashboard data:", error);
-        throw error;
     }
-}
 
 
     async mergeAccounts({ ...data }) {
@@ -1296,6 +1296,27 @@ export class Config {
 
         } catch (error) {
             console.error("Error in fetching previous Balance:", error);
+            throw error;
+        }
+    }
+
+    async getIncomeStatement(filter) {
+        try {
+            const response = await this.client.get(`/account/get-income-statement?${filter}`, {
+                headers: {
+                    Authorization: `Bearer ${authService.getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.data) {
+                console.log(response.data)
+                return response.data;
+            } else {
+                return null;
+            }
+
+        } catch (error) {
+            console.error("Error in generating income statement:", error);
             throw error;
         }
     }

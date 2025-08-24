@@ -17,6 +17,7 @@ function SoldItems() {
   const [totalSales, setTotalSales] = useState(0);
   const [totalQuantity, setTotalQuantity] = useState(0);
   const [totalFlatDiscount, setTotalFlatDiscount] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
   const [remainingBalance, setRemainingBalance] = useState(0);
   const [validationMessage, setValidationMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -95,14 +96,16 @@ function SoldItems() {
 
   const calculateTotals = (data) => {
     const totalSaleCounter = data.reduce((acc, item) => acc + Number(item.totalAmount), 0);
+    const totalRevenue = data.reduce((acc, item) => acc + Number(item.billRevenue), 0);
     const totalQtyCounter = data.reduce((acc, item) => acc + Number(item.totalQuantity), 0);
     const totalDiscountCounter = data.reduce((acc, item) => acc + Number(item.flatDiscount), 0);
-    const totalRemainingBalance = data.reduce((acc, item) => acc + Number(item.totalAmount - item.paidAmount), 0);
+    const totalRemainingBalance = data.reduce((acc, item) => acc + Number(item.totalAmount - item.paidAmount - item.flatDiscount), 0);
 
-    setTotalSales(totalSaleCounter);
+    setTotalSales(totalSaleCounter-totalDiscountCounter);
     setTotalQuantity(totalQtyCounter);
     setTotalFlatDiscount(totalDiscountCounter);
     setRemainingBalance(totalRemainingBalance);
+    setTotalRevenue(totalRevenue);
   };
 
   const handleDateChange = (e) => {
@@ -382,7 +385,7 @@ function SoldItems() {
         )}
 
         {/* Section 3: Total Calculations */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
           <div className="border p-2 rounded">
             <label className="block mb-1">Total No of Bills:</label>
             <input
@@ -416,6 +419,15 @@ function SoldItems() {
               type="text"
               className="border p-1 rounded w-full"
               value={`${remainingBalance && functions.formatAsianNumber(remainingBalance)}`}
+              readOnly
+            />
+          </div>
+          <div className="border p-2 rounded">
+            <label className="block mb-1">Total Revenue:</label>
+            <input
+              type="text"
+              className="border p-1 rounded w-full"
+              value={`${totalSales && functions.formatAsianNumber(totalRevenue)}`}
               readOnly
             />
           </div>

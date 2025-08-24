@@ -1,124 +1,162 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useReactToPrint } from "react-to-print";
+import { useEffect, useState } from "react";
+import { saveAs } from "file-saver";
 import config from "../../../features/config";
-import { useSelector } from "react-redux";
 
-const IncomeStatement = () => {
-  const [accounts, setAccounts] = useState([]);
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [totalExpenses, setTotalExpenses] = useState(0);
-  const printRef = useRef();
+export default function IncomeStatement() {
+  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
 
-  const userData = useSelector((state) => state.auth.userData)
+  const [data, setData] = useState(null);
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await config.getIncomeStatement(
+        `startDate=${fromDate}&endDate=${toDate}`
+      );
+
+      if (res) {
+        setData(res.data);
+      } else {
+        setError("No data available for the selected range.");
+        setData(null);
+      }
+    } catch (err) {
+      console.error("Error fetching income statement:", err);
+      setError("Failed to fetch income statement. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch account data
-    const fetchAccounts = async () => {
-      try {
-        const response = await config.getAccounts();
-        const data = response.data
-        if (response && response.data)
-          console.log('data', data)
-        setAccounts(response.data);
+    fetchData();
+  }, [fromDate, toDate]);
 
-        // Calculate totals
-        let revenueTotal = 0;
-        let expenseTotal = 0;
+  const exportToCSV = () => {
+    if (!data) return;
 
-        data.forEach(account => {
-          if (account.accountName === "Revenue") {
-            account.subCategories.forEach(sub => {
-              sub.individualAccounts.forEach(ind => {
-                revenueTotal += ind.accountBalance;
-              });
-            });
-          }
-          if (account.accountName === "Expense") {
-            account.subCategories.forEach(sub => {
-              sub.individualAccounts.forEach(ind => {
-                expenseTotal += ind.accountBalance;
-              });
-            });
-          }
-        });
+    let csv = "Section,Account,Amount\n";
 
-        setTotalRevenue(revenueTotal);
-        setTotalExpenses(expenseTotal);
-      } catch (error) {
-        console.error("Error fetching accounts:", error);
-      }
-    };
+    // Revenue
+    csv += `Revenue,Total Revenue,${data.revenue}\n`;
 
-    fetchAccounts();
-  }, []);
+    // Expenses
+    data.expenses.forEach((exp) => {
+      csv += `Expense,${exp.accountName},${exp.totalExpense}\n`;
+    });
+    csv += `Expense,Total Expenses,${data.totalExpenses}\n`;
 
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-    documentTitle: "Income Statement",
-  });
+    // Net Profit
+    csv += `Net Profit,,${data.netProfit}\n`;
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, `income_statement_${fromDate}_to_${toDate}.csv`);
+  };
 
   return (
-    <div className="p-6 bg-white shadow-md rounded-md">
-      <div className="flex justify-between items-center mb-4">
-
-        <h2 className="text-xl font-bold">Income Statement</h2>
-        <button
-          onClick={handlePrint}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-        >
-          Print
-        </button>
-      </div>
-      
-      <div className="max-h-96 overflow-auto scrollbar-thin">
-        <div ref={printRef} className="p-6 border border-gray-300 bg-gray-50 rounded-md ">
-          <h1 className=" font-bold text-center mb-4">
-            {userData.BusinessId?.businessName}
-          </h1>
-          <h2 className=" font-bold text-center mb-4">Income Statement</h2>
-          <h3 className="  text-center mb-4">
-            {new Date().toLocaleDateString()}
-          </h3>
-
-          <div className="mb-4">
-            <h3 className=" font-semibold border-b pb-2">Revenue</h3>
-            <ul>
-              {accounts
-                .filter(acc => acc.accountName === "Revenue")
-                .flatMap(acc => acc.subCategories)
-                .flatMap(sub => sub.individualAccounts)
-                .map(ind => (
-                  <li key={ind._id} className="flex justify-between px-4 py-2 text-sm">
-                    <span>{ind.individualAccountName}</span>
-                    <span>{ind.accountBalance.toFixed(2)}</span>
-                  </li>
-                ))}
-            </ul>
+    <div className="p-6 bg-white shadow-md rounded-2xl">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+        <h2 className="text-xl font-semibold">Income Statement</h2>
+        <div className="flex items-center gap-2">
+          <div>
+            <label className="text-sm">From:</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="ml-1 px-2 py-1 border rounded"
+            />
+          </div>
+          <div>
+            <label className="text-sm">To:</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="ml-1 px-2 py-1 border rounded"
+            />
           </div>
 
-          <div className="mb-4">
-            <h3 className=" font-semibold border-b pb-2">Expenses</h3>
-            <ul>
-              {accounts
-                .filter(acc => acc.accountName === "Expense")
-                .flatMap(acc => acc.subCategories)
-                .flatMap(sub => sub.individualAccounts)
-                .map(ind => (
-                  <li key={ind._id} className="flex justify-between px-4 py-2 text-sm">
-                    <span>{ind.individualAccountName}</span>
-                    <span>-{ind.accountBalance.toFixed(2)}</span>
-                  </li>
-                ))}
-            </ul>
-          </div>
-
-          <div className="mt-4 font-bold text-lg text-right">
-            <span className={`${(totalRevenue-totalExpenses) > 0 ? 'text-green-600' : 'text-red-500'}`}>Net Income: {totalRevenue - totalExpenses}</span>
-          </div>
+          <button
+            className="px-4 py-1 rounded bg-green-600 text-white"
+            onClick={exportToCSV}
+          >
+            Export CSV
+          </button>
         </div>
       </div>
+
+      {/* Body */}
+      {loading ? (
+        <p>Loading...</p>
+      ) : error ? (
+        <p className="text-red-600">{error}</p>
+      ) : (
+        data && (
+          <div>
+            {/* Revenue */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium">Revenue</h3>
+              <p className="text-green-600 font-bold text-lg">
+                Rs. {data.revenue.toLocaleString()}
+              </p>
+            </div>
+
+            {/* Expenses */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium">Expenses</h3>
+              <table className="w-full text-sm mt-2 border border-gray-300 rounded-lg overflow-hidden">
+                <thead>
+                  <tr className="bg-gray-100 text-left">
+                    <th className="p-2 border">Account</th>
+                    <th className="p-2 border">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.expenses.length > 0 ? (
+                    data.expenses.map((exp) => (
+                      <tr key={exp.accountId}>
+                        <td className="p-2 border">{exp.accountName}</td>
+                        <td className="p-2 border">
+                          Rs. {exp.totalExpense.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={2} className="p-2 text-center">
+                        No expenses found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <p className="mt-2 font-semibold">
+                Total Expenses: Rs. {data.totalExpenses.toLocaleString()}
+              </p>
+            </div>
+
+            {/* Net Profit */}
+            <div>
+              <h3 className="text-lg font-medium">Net Profit</h3>
+              <p
+                className={`font-bold text-lg ${
+                  data.netProfit >= 0 ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                Rs. {data.netProfit.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        )
+      )}
     </div>
   );
-};
-
-export default IncomeStatement;
+}

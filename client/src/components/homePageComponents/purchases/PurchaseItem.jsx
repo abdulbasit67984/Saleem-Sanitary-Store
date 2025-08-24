@@ -436,6 +436,17 @@ const PurchaseItem = () => {
             // New Product Fields
             <div className="grid grid-cols-3 gap-2 text-xs mt-2">
               <Input
+                label="Product Code:"
+                placeholder="Enter Product Code"
+                name="productCode"
+                value={newProduct.productCode}
+                onChange={handleNewProductChange}
+                labelClass="w-28"
+                divClass="flex gap-2 text-xs items-center"
+                className="p-1"
+                ref={inputRef}
+              />
+              <Input
                 label="Product Name: (Required)"
                 placeholder="Enter Product Name"
                 name="productName"
