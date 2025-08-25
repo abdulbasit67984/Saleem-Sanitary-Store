@@ -37,6 +37,7 @@ import { useForm } from 'react-hook-form';
 // import { saveQuotation } from '../../../utils/quotationStorage';
 import QuotationComponent from './quotation/QuotationComponent';
 import QuotationList from './quotation/QuotationList';
+import { extractErrorMessage } from '../../../utils/extractErrorMessage';
 
 
 const InvoiceComponent = () => {
@@ -378,9 +379,9 @@ const InvoiceComponent = () => {
         setIsInvoiceGenerated(true);
 
       } catch (error) {
-        console.error('Failed to generate bill', error.response?.data?.message)
-
-        setBillError(error.response?.data?.message)
+        console.error('Failed to generate bill', error.response.data)
+        const errorMessage = extractErrorMessage(error)
+        setBillError(errorMessage)
       } finally {
         setIsLoading(false)
 

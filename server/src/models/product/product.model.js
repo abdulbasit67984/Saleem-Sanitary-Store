@@ -82,7 +82,6 @@ ProductSchema.statics.allocatePurchasePrice = async function (productId, require
 
     const statusRecords = await StatusOfPrice.find({
         productId: productId,
-        remainingQuantity: { $gt: 0 }
     }).sort({ createdAt: 1 });
 
     const quantityWithUnits = requiredQuantity * itemUnits;
@@ -94,13 +93,16 @@ ProductSchema.statics.allocatePurchasePrice = async function (productId, require
     for (const record of statusRecords) {
         if (remainingRequiredQuantity <= 0) break;
 
-        const usedQuantity = Math.min(record.remainingQuantity, remainingRequiredQuantity);
+        const usedQuantity = record.remainingQuantity <= 0 ? 0 : Math.min(record.remainingQuantity, remainingRequiredQuantity);
+        // console.log('usedQuantity', usedQuantity)
+        // console.log('statusRecords', statusRecords)
+        
         totalCost += usedQuantity * parseFloat(record.newPrice) / parseFloat(product.productPack);
         remainingRequiredQuantity -= usedQuantity;
-
+        
         const originalRemainingQuantity = record.remainingQuantity;
         record.remainingQuantity -= usedQuantity;
-
+        
         transaction.addOperation(
             async () => await record.save(),
             async () => {
@@ -108,30 +110,29 @@ ProductSchema.statics.allocatePurchasePrice = async function (productId, require
                 await record.save();
             }
         );
+        // console.log('totalCost', totalCost)
     }
 
     // Handle negative stock by creating a virtual negative entry
     if (remainingRequiredQuantity > 0) {
-        const latestPrice = statusRecords.length > 0
-            ? parseFloat(statusRecords[statusRecords.length - 1].newPrice)
-            : 0;
+        const latestPrice = parseFloat(statusRecords[statusRecords.length - 1].newPrice)
+        // console.log('latestPrice', latestPrice)
 
         const negativeCost = remainingRequiredQuantity * latestPrice / parseFloat(product.productPack);
         totalCost += negativeCost;
 
-        // Optionally: Record a negative status if you want to track it in DB
-        const StatusOfPrice = mongoose.model('StatusOfPrice');
-        const negativeStatus = new StatusOfPrice({
-            productId,
-            oldPrice: latestPrice,
-            newPrice: latestPrice,
-            remainingQuantity: -remainingRequiredQuantity,
-            changedBy: transaction.userId || null // pass userId in transaction context if needed
-        });
+        // console.log('negativeCost', negativeCost)
+        // console.log('statusRecords[statusRecords.length - 1]', statusRecords[statusRecords.length - 1])
+
+        const originalRemainingQuantity = statusRecords[statusRecords.length - 1].remainingQuantity;
+        statusRecords[statusRecords.length - 1].remainingQuantity -= remainingRequiredQuantity
 
         transaction.addOperation(
-            async () => await negativeStatus.save(),
-            async () => await StatusOfPrice.deleteOne({ _id: negativeStatus._id })
+            async () => await statusRecords[statusRecords.length - 1].save(),
+            async () => {
+                statusRecords[statusRecords.length - 1].remainingQuantity = originalRemainingQuantity;
+                await statusRecords[statusRecords.length - 1].save();
+            }
         );
     }
 

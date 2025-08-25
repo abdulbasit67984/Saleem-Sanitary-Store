@@ -473,6 +473,7 @@ const StockSearch = () => {
                                     <label className="block text-gray-700 text-xs">Purchase Price</label>
                                     <input
                                         type="text"
+                                        readOnly
                                         {...register('productPurchasePrice')}
                                         className="w-full px-2 py-1 border rounded-md text-xs"
                                     />

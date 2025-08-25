@@ -87,7 +87,7 @@ const registerBill = asyncHandler(async (req, res) => {
             for (const item of billItems) {
                 const { productId, quantity, billItemPack } = item;
 
-                console.log('item', item)
+                // console.log('item', item)
 
                 const purchaseCost = await Product.allocatePurchasePrice(productId, quantity, billItemPack, transaction);
                 if (typeof purchaseCost !== "number" || isNaN(purchaseCost)) {
@@ -106,7 +106,7 @@ const registerBill = asyncHandler(async (req, res) => {
 
                 const originalProductQuantity = product.productTotalQuantity; // Capture original value for rollback
                 product.productTotalQuantity -= (quantity * billItemPack);
-                console.log('quantity, billItemPack', quantity, billItemPack)
+                // console.log('quantity, billItemPack', quantity, billItemPack)
 
                 // if (product.productTotalQuantity < 0) {
                 //     throw new ApiError(400, `Insufficient stock for product: ${product.productName}`);
@@ -173,10 +173,19 @@ const registerBill = asyncHandler(async (req, res) => {
                 throw new ApiError(400, "Accounts Receivable account not found!");
             }
 
+            console.log('extraItems', extraItems)
+            console.log('first', Number(extraItems[0].salePrice))
+
+            const totalExtraItemsAmount = extraItems.reduce(
+                (sum, item) => sum + (Number(item?.salePrice || 0) * Number(item?.quantity || 0)),
+                0
+            );
+            // console.log('totalExtraItemsAmount', totalExtraItemsAmount)
+
             const originalInventoryBalance = inventoryAccount.accountBalance;
             inventoryAccount.accountBalance -= totalPurchaseAmount;
 
-            const salesRevenue = totalAmount - flatDiscount - totalPurchaseAmount;
+            const salesRevenue = totalAmount - flatDiscount - totalPurchaseAmount - Number(totalExtraItemsAmount);
             const originalSalesRevenueBalance = salesRevenueAccount.accountBalance;
             salesRevenueAccount.accountBalance += salesRevenue;
 
@@ -290,7 +299,7 @@ const registerBill = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        
+
         if (error instanceof ApiError) {
             throw error;
         }
@@ -373,7 +382,7 @@ const mergeBills = asyncHandler(async (req, res) => {
                 parentBill.flatDiscount += childBills.reduce((sum, b) => sum + (b.flatDiscount || 0), 0);
                 parentBill.totalPurchaseAmount += childBills.reduce((sum, b) => sum + (b.totalPurchaseAmount || 0), 0);
                 let remainingAmount = parentBill.totalAmount - parentBill.paidAmount - parentBill.flatDiscount
-                parentBill.billStatus = (remainingAmount) <= 0 ? 'paid' : (parentBill.paidAmount > 0 ? 'partiallypaid' : 'unpaid' )
+                parentBill.billStatus = (remainingAmount) <= 0 ? 'paid' : (parentBill.paidAmount > 0 ? 'partiallypaid' : 'unpaid')
                 parentBill.description = `Merged bill containing ${childBills.length + 1} bills`;
 
                 transaction.addOperation(
@@ -433,7 +442,7 @@ const mergeBills = asyncHandler(async (req, res) => {
                     billPaymentType: firstChildBill.billPaymentType,
                     billItems: allBillItems,
                     flatDiscount,
-                    billStatus: (remainingAmount) <= 0 ? 'paid' : (paidAmount > 0 ? 'partiallypaid' : 'unpaid' ),
+                    billStatus: (remainingAmount) <= 0 ? 'paid' : (paidAmount > 0 ? 'partiallypaid' : 'unpaid'),
                     totalAmount,
                     paidAmount,
                     totalPurchaseAmount,
@@ -451,10 +460,10 @@ const mergeBills = asyncHandler(async (req, res) => {
             // Update all child bills to point to the parent
             for (const childBill of childBills) {
                 const originalChildBill = { ...childBill.toObject() };
-                
+
                 childBill.mergedInto = parentBill._id;
                 childBill.description = `Bill merged into ${parentBill.billNo}`
-                
+
                 transaction.addOperation(
                     async () => await childBill.save(),
                     async () => {
@@ -467,7 +476,7 @@ const mergeBills = asyncHandler(async (req, res) => {
             }
 
 
-            res.status(200).json(new ApiResponse(200, { 
+            res.status(200).json(new ApiResponse(200, {
                 mergedBill: parentBill,
                 mergedCount: childBills.length
             }, "Bills merged successfully!"));
@@ -806,14 +815,14 @@ const getSingleBill = asyncHandler(async (req, res) => {
         if (!user) {
             throw new ApiError(401, "Authorization Failed!");
         }
-    
+
         const BusinessId = user.BusinessId;
-    
+
         // Validate bill number
         if (!billNo) {
             throw new ApiError(400, "Bill number is required!");
         }
-    
+
         // Find the bill and populate all required details
         const bill = await Bill.findOne({ BusinessId, billNo })
             .populate({
@@ -847,11 +856,11 @@ const getSingleBill = asyncHandler(async (req, res) => {
                 ],
             })
             .lean(); // Convert Mongoose document to plain JS object for easier manipulation
-    
+
         if (!bill) {
             throw new ApiError(404, `No bill found with the number ${billNo}`);
         }
-    
+
         // Respond with the bill details
         return res.status(200).json(
             new ApiResponse(200, bill, "Bill retrieved successfully!")
@@ -931,7 +940,7 @@ const billPayment = asyncHandler(async (req, res) => {
 
             customerIndividualAccount.accountBalance -= (amountPaid + flatDiscount);
 
-            if(customerIndividualAccount.mergedInto !== null){
+            if (customerIndividualAccount.mergedInto !== null) {
                 const mergedIntoAccount = await IndividualAccount.findById(customerIndividualAccount.mergedInto);
                 mergedIntoAccount.accountBalance -= (amountPaid + flatDiscount);
                 await mergedIntoAccount.save();
