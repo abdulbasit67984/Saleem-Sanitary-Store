@@ -143,7 +143,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                 {!packingSlip &&
                     <div className='grid grid-cols-2 '>
                         <div className='flex justify-start pl-5'>
-                            <img src={paymentQR} alt="" className='absolute h-32' />
+                            <img src={paymentQR} alt="" className=' h-32' />
                         </div>
                         <div className='flex justify-end pr-5'>
                             <div className=" mb-4 text-l border-2 p-3">
