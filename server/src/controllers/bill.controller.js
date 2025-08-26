@@ -173,10 +173,10 @@ const registerBill = asyncHandler(async (req, res) => {
                 throw new ApiError(400, "Accounts Receivable account not found!");
             }
 
-            console.log('extraItems', extraItems)
-            console.log('first', Number(extraItems[0].salePrice))
+            // console.log('extraItems', extraItems)
+            // console.log('first', Number(extraItems[0].salePrice))
 
-            const totalExtraItemsAmount = extraItems.reduce(
+            const totalExtraItemsAmount = extraItems?.reduce(
                 (sum, item) => sum + (Number(item?.salePrice || 0) * Number(item?.quantity || 0)),
                 0
             );
