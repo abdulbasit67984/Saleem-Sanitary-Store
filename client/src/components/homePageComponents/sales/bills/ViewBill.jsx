@@ -46,7 +46,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                     </div>
                 </div>
 
-                <div className='w-full flex justify-center'><div className='border-b-2 border-black my-5 w-4/5'></div></div>
+                <div className='w-full flex justify-center'><div className='border-b-2 border-gray-700 my-5 w-4/5'></div></div>
 
                 {/* Invoice and Customer Information */}
                 <div className="flex justify-between mb-4">
