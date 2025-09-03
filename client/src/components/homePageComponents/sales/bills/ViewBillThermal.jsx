@@ -2,6 +2,7 @@
 import React from 'react';
 import Logo from '../../../Logo';
 import commonFunction from '../../../../features/functions';
+import thermalBillLogo from '../../../../assets/thermalBillLogo.jpg'
 
 // ViewBill component wrapped in forwardRef
 const ViewBillThermal = React.forwardRef((props, ref) => {
@@ -146,7 +147,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                     </div>
                 }
                 <div className='flex justify-center mt-3'>
-                    <Logo width='w-10 h-10' className='rounded-full opacity-90 hue-rotate-180' />
+                    <img src={thermalBillLogo} className='h-10 w-10' alt="" />
 
                 </div>
                 <div className='text-center text-[9px]'>Software by Pandas. 📞 03103480229 🌐 www.pandas.com.pk</div>
