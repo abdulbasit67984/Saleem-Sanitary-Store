@@ -41,9 +41,6 @@ const ViewBill = React.forwardRef((props, ref) => {
                         <p className="text-sm text-left ml-4 "><span className='font-bold'>Phone</span> &#128382;: {bill?.BusinessId?.owner?.mobileno?.map((num, i) => <span className='px-1' key={i}>{num}</span>)} | <span className='font-bold'>Address</span> &#10003;: {bill?.BusinessId?.businessRegion}</p>
                         <h3 className="text-xl font-bold mt-4 text-left ml-52">{packingSlip ? 'Packing Slip' : 'Sale Invoice'}</h3>
                     </div>
-                    <div>
-                        <img className='absolute right-0 bottom-0 h-10 w-48' src={billDesign} alt="" />
-                    </div>
                 </div>
 
                 <div className='w-full flex justify-center'><div className='border-b-2 my-5 w-4/5'></div></div>
