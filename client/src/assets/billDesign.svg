@@ -5,10 +5,9 @@
 <ellipse cx="4149.08" cy="963.637" rx="4149.08" ry="963.637" transform="matrix(0.99667 -0.0815356 -0.0815356 -0.99667 -4538.9 1210.44)" fill="#FFFAFA"/>
 <ellipse cx="4149.08" cy="952.828" rx="4149.08" ry="952.828" transform="matrix(0.999672 -0.0256227 -0.0256227 -0.999672 -4691.61 967.23)" fill="white" fill-opacity="0.45"/>
 </g>
-<rect x="0.577465" y="-0.577465" width="2518.36" height="829.772" transform="matrix(1 0 0 -1 0.241333 829.772)" stroke="black" stroke-width="1.15493"/>
 <defs>
 <clipPath id="clip0_137_3">
-<rect width="2519.52" height="830.927" transform="matrix(1 0 0 -1 0.241333 830.927)" fill="white"/>
+<rect width="2519.52" height="830.927" fill="white" transform="matrix(1 0 0 -1 0.241333 830.927)"/>
 </clipPath>
 </defs>
 </svg>
