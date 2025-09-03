@@ -4,6 +4,7 @@ import Logo from '../../../Logo';
 import paymentQR from '../../../../assets/paymentQR.jpg'
 import commonFunction from '../../../../features/functions';
 // import { useSelector } from 'react-redux';
+import billLogo from '../../../../assets/billLogo.jpg'
 
 // ViewBill component wrapped in forwardRef
 const ViewBill = React.forwardRef((props, ref) => {
@@ -23,11 +24,22 @@ const ViewBill = React.forwardRef((props, ref) => {
                 {/* Business Information */}
                 <div className="flex justify-center">
 
-                    <div className='text-center'>
-                        <h2 className="text-2xl font-bold pb-2">{bill?.BusinessId?.businessName}</h2>
-                        <p className="text-sm">{bill?.storeAddress}</p>
-                        <p className="text-sm"><span className='font-bold'>Phone</span> &#128382;: {bill?.BusinessId?.owner?.mobileno?.map((num, i) => <span className='px-1' key={i}>{num}</span>)} | <span className='font-bold'>Address</span> &#10003;: {bill?.BusinessId?.businessRegion}</p>
-                        <h3 className="text-xl font-bold mt-4">{packingSlip ? 'Packing Slip' : 'Sale Invoice'}</h3>
+                    <div className='ml-5'>
+                        <img src={billLogo} alt="" className='w-36' />
+                    </div>
+
+                    <div className='text-center w-full'>
+                        <div className='flex pl-4'>
+                            
+                            <div className='flex items-end justify-center ml-5'>
+                                <span className='text-xl font-bold pb-5'>NEW</span>
+                                <span className='text-4xl font-extrabold pb-2 pr-2'>SALEEM </span> <h2 className="text-xl font-bold pb-2"> SANITARY TRADERS</h2>
+                                <span className='text-xs pb-6 pl-2'>RTM 294967</span>
+                            </div>
+                        </div>
+                        <p className="text-sm ">{bill?.storeAddress}</p>
+                        <p className="text-sm text-left ml-10 "><span className='font-bold'>Phone</span> &#128382;: {bill?.BusinessId?.owner?.mobileno?.map((num, i) => <span className='px-1' key={i}>{num}</span>)} | <span className='font-bold'>Address</span> &#10003;: {bill?.BusinessId?.businessRegion}</p>
+                        <h3 className="text-xl font-bold mt-4 text-left ml-10">{packingSlip ? 'Packing Slip' : 'Sale Invoice'}</h3>
                     </div>
                     <div></div>
                 </div>
