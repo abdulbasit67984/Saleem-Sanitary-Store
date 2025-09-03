@@ -147,7 +147,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                     </div>
                 }
                 <div className='flex justify-center mt-3'>
-                    <img src={thermalBillLogo} className='h-10 w-10' alt="" />
+                    <img src={thermalBillLogo} className='h-10 my-2' alt="" />
 
                 </div>
                 <div className='text-center text-[9px]'>Software by Pandas. 📞 03103480229 🌐 www.pandas.com.pk</div>
