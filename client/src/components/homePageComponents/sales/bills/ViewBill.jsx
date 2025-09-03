@@ -32,9 +32,8 @@ const ViewBill = React.forwardRef((props, ref) => {
                         <div className='flex pl-4'>
                             
                             <div className='flex items-end justify-center ml-5'>
-                                <span className='text-xl font-bold pb-5'>NEW</span>
+                                <span className='text-xl font-bold pb-4 pr-2'>NEW</span>
                                 <span className='text-4xl font-extrabold pb-2 pr-2'>SALEEM </span> <h2 className="text-xl font-bold pb-2"> SANITARY TRADERS</h2>
-                                <span className='text-xs pb-6 pl-2'>RTM 294967</span>
                             </div>
                         </div>
                         <p className="text-sm ">{bill?.storeAddress}</p>
