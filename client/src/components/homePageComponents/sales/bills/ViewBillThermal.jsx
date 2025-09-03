@@ -21,14 +21,14 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                 {/* Business Information */}
                 <div className="text-center mb-2">
 
-                    <h2 className="text-sm mt-2 font-bold">{bill?.BusinessId?.businessName}</h2>
-                    <p className="text-[10px]">{bill?.BusinessId?.businessRegion}</p>
-                    <p className="text-[10px]">{bill?.BusinessId?.owner?.mobileno?.map((num, i) => <span className='px-1' key={i}>{num}</span>)}</p>
-                    <h3 className="text-[10px] font-semibold mt-2">Sale Receipt</h3>
+                    <h2 className="text-[15px] mt-2 font-bold">{bill?.BusinessId?.businessName}</h2>
+                    <p className="text-[11px]">{bill?.BusinessId?.businessRegion}</p>
+                    <p className="text-[11px]">{bill?.BusinessId?.owner?.mobileno?.map((num, i) => <span className='px-1' key={i}>{num}</span>)}</p>
+                    <h3 className="text-[11px] font-semibold mt-2">Sale Receipt</h3>
                 </div>
 
                 {/* Invoice and Customer Information */}
-                <div className="mb-2 text-[10px]">
+                <div className="mb-2 text-[11px]">
                     <p><span className='font-semibold pr-1'>Receipt No:</span> {bill.billNo}</p>
                     <p><span className='font-semibold pr-1'>Date:</span>{
                         bill.createdAt &&
@@ -48,7 +48,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
 
                 {/* Items Section */}
                 <div className="my-4">
-                    <table className="w-full text-[10px] border border-gray-600">
+                    <table className="w-full text-[11px] border border-gray-600">
                         <thead className='bg-gray-200'>
                             <tr>
                                 <th className="p-1 text-left">Item</th>
@@ -120,7 +120,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                 </div>
 
                 <div className=''>
-                    <ul className='text-[8px] text-right'>
+                    <ul className='text-[9px] text-right'>
                         <li className='flex flex-row-reverse gap-1 pt-1'>
                             <span>&#8592;</span> کوئی بھی آئیٹم واپس یا تبدیل ہو سکتا ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو
                         </li>
@@ -135,7 +135,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
 
                 {/* Footer Section */}
                 {props.exemptedParagraph == true &&
-                    <div className="text-justify mt-1 text-[8px] pb-5">
+                    <div className="text-justify mt-1 text-[9px] pb-5">
                         <h4 className='text-center text-[10px] py-2 font-bold'>:ضروری ہدایات</h4>
                         <ul>
                             {exemptedParagraph?.map((paragraph, i) => (
@@ -149,7 +149,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                     <Logo width='w-10 h-10' className='rounded-full opacity-90 hue-rotate-180' />
 
                 </div>
-                <div className='text-center text-[8px]'>Software by Pandas. 📞 03103480229 🌐 www.pandas.com.pk</div>
+                <div className='text-center text-[9px]'>Software by Pandas. 📞 03103480229 🌐 www.pandas.com.pk</div>
             </div>
         </div>
     );
