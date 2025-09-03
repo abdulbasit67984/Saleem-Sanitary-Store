@@ -26,7 +26,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                 <div className="flex justify-center relative">
 
                     <div className='ml-5'>
-                        <img src={billLogo} alt="" className='w-36' />
+                        <img src={billLogo} alt="" className='w-40' />
                     </div>
 
                     <div className='text-center w-full z-20'>
@@ -42,7 +42,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                         <h3 className="text-xl font-bold mt-4 text-left ml-52">{packingSlip ? 'Packing Slip' : 'Sale Invoice'}</h3>
                     </div>
                     <div>
-                        <img className='absolute right-0 bottom-0 h-10 z-10 ' src={billDesign} alt="" />
+                        <img className='absolute right-0 bottom-0 h-32 z-10 ' src={billDesign} alt="" />
                     </div>
                 </div>
 
