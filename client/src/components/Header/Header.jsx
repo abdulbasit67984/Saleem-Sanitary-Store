@@ -72,7 +72,13 @@ function Header() {
           isAdmin: isAdmin()
         },
         {
-          name: 'Sold Item Reports',
+          name: 'Sale Report',
+          slug: `/${primaryPath}/sales/sale-reports`,
+          active: isAdmin() || isOwner() || hasRight("Sale Report"),
+          isAdmin: isAdmin()
+        },
+        {
+          name: 'Bill Reports',
           slug: `/${primaryPath}/sales/sold-item`,
           active: isAdmin() || isOwner() || hasRight("Sold Item Reports"),
           isAdmin: isAdmin()
@@ -333,13 +339,13 @@ function Header() {
       name: 'Register Business',
       slug: `/${primaryPath}/register-business`,
       active: isAdmin() || isOwner(),
-      isAdmin: true
+      isAdmin: isAdmin()
     },
     {
       name: 'Add Roles',
       slug: `/${primaryPath}/add-role`,
-      active: isAdmin(),
-      isAdmin: true
+      active: isAdmin() || isOwner(),
+      isAdmin: isAdmin()
     }
 
   ]
