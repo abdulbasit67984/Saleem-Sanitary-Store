@@ -1242,52 +1242,42 @@ const adjustAccountBalance = asyncHandler(async (req, res) => {
 
 const getTotalInventory = asyncHandler(async (req, res) => {
     const user = req.user;
-
-    if (!user) {
-        throw new ApiError(401, "Authorization Failed!");
-    }
-
+    if (!user) throw new ApiError(401, "Authorization Failed!");
 
     const BusinessId = user.BusinessId;
-    const transactionManager = new TransactionManager();
 
     try {
-        await transactionManager.run(async (transaction) => {
+        const products = await Product.find({ BusinessId });
 
-            // Aggregate all products and calculate the sum of (productPurchasePrice * productTotalQuantity)
-            const inventoryValueResult = await Product.aggregate([
-                {
-                    $project: {
-                        _id: 1,
-                        purchaseValueOfPacks: {
-                            $cond: {
-                                if: { $eq: ['$productPack', 0] },
-                                then: 0, // If productPack is 0, the value contribution is 0
-                                else: {
-                                    $multiply: [
-                                        '$productPurchasePrice',
-                                        { $divide: ['$productTotalQuantity', '$productPack'] },
-                                    ],
-                                },
-                            },
-                        },
-                    },
-                },
-                {
-                    $group: {
-                        _id: null,
-                        totalInventoryValueOfPacks: { $sum: '$purchaseValueOfPacks' },
-                    },
-                },
-            ]);
+        let totalInventoryValue = 0;
 
-            let totalInventoryValue = 0;
-            if (inventoryValueResult.length > 0) {
-                totalInventoryValue = inventoryValueResult[0].totalInventoryValueOfPacks;
-            }
+        products.forEach(product => {
+            const { productName, productTotalQuantity, productPack, productPurchasePrice } = product;
 
-            res.status(200).json(new ApiResponse(200, { totalInventoryValue }, "Inventory details fetched successfully!"));
+            // avoid divide by zero
+            const packs = productPack && productPack > 0
+                ? productTotalQuantity / productPack
+                : 0;
+
+            const purchaseValue = packs * productPurchasePrice;
+
+            console.log(`
+        Product: ${productName}
+        Total Quantity: ${productTotalQuantity}
+        Pack Size: ${productPack}
+        Purchase Price (per pack): ${productPurchasePrice}
+        Packs: ${packs}
+        Purchase Value: ${purchaseValue}
+      `);
+
+            totalInventoryValue += purchaseValue;
         });
+
+        console.log("TOTAL INVENTORY VALUE:", totalInventoryValue);
+
+        res.status(200).json(
+            new ApiResponse(200, { totalInventoryValue }, "Inventory details fetched successfully!")
+        );
     } catch (error) {
         throw new ApiError(500, `${error.message}`);
     }
@@ -1358,9 +1348,9 @@ const getIncomeStatement = asyncHandler(async (req, res) => {
         // Build date filter (optional)
         let dateFilter = {};
         if (startDate && endDate) {
-            dateFilter = { 
-                $gt: new Date(new Date(startDate).setHours(0,0,0,0)), 
-                $lte: new Date(new Date(endDate).setHours(23,59,59,999)) 
+            dateFilter = {
+                $gt: new Date(new Date(startDate).setHours(0, 0, 0, 0)),
+                $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
             };
         }
 

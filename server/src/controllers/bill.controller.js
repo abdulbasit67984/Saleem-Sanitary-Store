@@ -43,7 +43,7 @@ const registerBill = asyncHandler(async (req, res) => {
 
             const BusinessId = user.BusinessId;
 
-            if (!billType || !billItems || !billItems.length || !totalAmount) {
+            if (!billType || !totalAmount) {
                 throw new ApiError(400, "Required fields are missing!");
             }
 

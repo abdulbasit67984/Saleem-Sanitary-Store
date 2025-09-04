@@ -61,7 +61,7 @@ const AccountReceivables = () => {
         setReceivables(data);
 
         const total = data.reduce(
-          (sum, item) => sum + ((item.bill.totalAmount - item.bill.paidAmount - item.bill.flatDiscount) || 0),
+          (sum, item) => sum + ((item?.bill?.totalAmount - item?.bill?.paidAmount - item?.bill?.flatDiscount) || 0),
           0
         );
         setTotalReceivables(total);
