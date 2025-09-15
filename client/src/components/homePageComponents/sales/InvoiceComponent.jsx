@@ -53,6 +53,7 @@ const InvoiceComponent = () => {
   const [productUnitError, setProductUnitError] = useState('');
   const [priceError, setPriceError] = useState('');
   const [billNo, setBillNo] = useState(0)
+  const [viewBillNo, setViewBillNo] = useState(0)
   const [description, setDescription] = useState('')
   const [billType, setBillType] = useState('thermal')
   const [billPaymentType, setBillPaymentType] = useState('cash')
@@ -83,7 +84,20 @@ const InvoiceComponent = () => {
 
   const inputRef = useRef(null);
 
+  const buttonRef = useRef(null);
 
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (isInvoiceGenerated && e.key === "Enter") {
+        handleViewBill(viewBillNo);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [isInvoiceGenerated, viewBillNo]);
 
   const tableContainerRef = useRef(null);
 
@@ -380,7 +394,9 @@ const InvoiceComponent = () => {
           dispatch(setExtraProducts([]))
         }
 
+        setViewBillNo(billNo)
         setIsInvoiceGenerated(true);
+        fetchLastBillNo(billType)
 
       } catch (error) {
         console.error('Failed to generate bill', error.response.data)
@@ -469,7 +485,6 @@ const InvoiceComponent = () => {
     customer.customerName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-
   const componentRef = useRef();
 
   // print hook
@@ -545,7 +560,10 @@ const InvoiceComponent = () => {
           dispatch(setProduct({}))
           dispatch(setCustomer(null));
           dispatch(setExtraProducts([]))
+
         }
+        setViewBillNo(billNo)
+        fetchLastBillNo(billType)
 
       } catch (error) {
         console.error('Failed to generate bill', error.response.data)
@@ -561,7 +579,7 @@ const InvoiceComponent = () => {
 
       try {
         setIsLoading(true)
-        const response = await config.fetchSingleBill(billId)
+        const response = await config.fetchSingleBill(billNo)
 
         if (response.data) {
           setBill(response.data);
@@ -615,20 +633,21 @@ const InvoiceComponent = () => {
   // }, [dispatch, customerIndex, customerData])
 
 
-  useEffect(() => {
-
-    const fetchLastBillNo = async (billType) => {
-      setIsLoading(true)
-      try {
-        const response = await config.getLastBillNo(billType)
-        // console.log("resp", response.data.nextBillNo);
-        if (response) setBillNo(response.data.nextBillNo)
-      } catch (error) {
-        console.log(error)
-      } finally {
-        setIsLoading(false)
-      }
+  const fetchLastBillNo = async (billType) => {
+    setIsLoading(true)
+    try {
+      const response = await config.getLastBillNo(billType)
+      // console.log("resp", response.data.nextBillNo);
+      if (response) setBillNo(response.data.nextBillNo)
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+
+  useEffect(() => {
 
     fetchLastBillNo(billType)
   }, [billType])
@@ -723,7 +742,7 @@ const InvoiceComponent = () => {
             </span>
             <h2 className={`${billError && 'text-red-500'} text-lg font-thin mb-4`}>{billError ? billError : 'Invoice generated successfully!'}</h2>
             {isInvoiceGenerated &&
-              <Button className='px-4 text-xs' onClick={() => handleViewBill(billNo)}>
+              <Button className='px-4 text-xs' onClick={() => handleViewBill(viewBillNo)}>
                 View Invoice
               </Button>}
           </div>
@@ -820,6 +839,7 @@ const InvoiceComponent = () => {
       </div>
 
 
+
       {/* Invoice Information */}
       <div className="mb-2">
         <div className="grid grid-cols-3 gap-2 text-xs">
@@ -860,6 +880,7 @@ const InvoiceComponent = () => {
               <p className='text-xs text-white'>Clear Invoice</p>
             </Button>
           </div>
+
 
           {/* <div className='grid grid-cols-2'> */}
           <label className="ml-1 flex items-center">
@@ -971,16 +992,18 @@ const InvoiceComponent = () => {
 
 
           <div className='col-span-2 flex items-center'>
-            <QuotationComponent
-              selectedItems={selectedItems}
-              totalAmount={totalAmount}
-            />
+            <div className={`w-full rounded-md ${billType === 'thermal' ? "bg-purple-500" : A4Color.a4100}`}>
+              <QuotationComponent
+                selectedItems={selectedItems}
+                totalAmount={totalAmount}
+              />
+            </div>
           </div>
 
           <div className='col-span-2 flex items-center'>
             <Button
               className="px-4 w-40 hover:bg-emerald-800"
-              bgColor="bg-emerald-700"
+              bgColor={billType === 'thermal' ? "bg-emerald-700" : A4Color.a4500}
               onClick={() => setShowQuotationListModal(true)}
             >
               <p className="text-xs text-white">Quotation List</p>
@@ -1129,7 +1152,7 @@ const InvoiceComponent = () => {
 
             <Button
               className={`w-40 px-4 ${billType === 'thermal' ? 'hover:bg-green-800' : 'hover:bg-gray-700'}`}
-              bgColor={billType === 'thermal' ? 'bg-green-600' : A4Color.a4500}
+              bgColor={billType === 'thermal' ? 'bg-green-600' : 'bg-primary'}
               onClick={generateInvoice}
             >
               <p className='text-xs text-white'>Generate Invoice</p>
@@ -1142,7 +1165,7 @@ const InvoiceComponent = () => {
         {searchQuery && (
           <div className="mt-2 -ml-2 overflow-auto absolute w-[81%] max-h-72 overflow-y-auto bg-white   scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 z-20">
             <table className={`min-w-full ${billType === 'thermal' ? thermalColor.th200 : A4Color.a4200} border text-xs`}>
-              <thead className={`${billType === 'thermal' ? thermalColor.th300 : 'bg-primary'} sticky -top-0 text-white  border-b shadow-sm z-10`}>
+              <thead className={`bg-primary sticky -top-0 text-white  border-b shadow-sm z-10`}>
                 <tr>
                   <th className="py-2 px-1 text-left">Code</th>
                   <th className="py-2 px-1 text-left">Name</th>
@@ -1195,9 +1218,7 @@ const InvoiceComponent = () => {
       <div>
         <div className="overflow-auto  max-h-40 scrollbar-thin" ref={tableContainerRef}>
           <table className="min-w-full bg-white border text-xs ">
-            <thead className={`${billType === 'thermal' ?
-              thermalColor.th300 :
-              A4Color.a4300} sticky -top-0  border-b shadow-sm z-10`}>
+            <thead className={`bg-primary/80 sticky text-white -top-0  border-b shadow-sm z-10`}>
               <tr className={` border-b`}>
                 <th className="py-2 px-1 text-left">S No</th>
                 <th className="py-2 px-1 text-left">Name</th>
@@ -1216,7 +1237,7 @@ const InvoiceComponent = () => {
                 const netAmount = (grossAmount * (1 - item.discount / 100)).toFixed(2);
 
                 return (
-                  <tr key={index} className={`border-t ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}>
+                  <tr key={index} className={`border-t bg-primary/20`}>
                     <td className=" px-1">{index + 1}</td>
                     <td className=" px-1">{item.productName}</td>
                     <td className=" px-1 flex items-start">
@@ -1290,7 +1311,7 @@ const InvoiceComponent = () => {
                 const netAmount = (grossAmount).toFixed(2);
 
                 return (
-                  <tr key={index} className={`border-t ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}>
+                  <tr key={index} className={`border-t bg-primary/20`}>
                     <td className=" px-1">{selectedItems.length + index + 1}</td>
                     <td className=" px-1">{item.itemName}</td>
                     <td className=" px-1">{item.quantity}</td>
@@ -1320,7 +1341,7 @@ const InvoiceComponent = () => {
 
 
       {/* Totals Section */}
-      <div className={`mt-4 p-2 border-t border-gray-300 ${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100}`}>
+      <div className={`mt-4 p-2 border-t border-gray-300 bg-primary/30`}>
         <div className="grid grid-cols-3 gap-2 text-xs">
           <div className="col-span-1">
 
