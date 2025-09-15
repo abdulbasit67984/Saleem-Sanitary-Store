@@ -25,7 +25,7 @@ const DirectSaleReturn = () => {
 
   const [productSearch, setProductSearch] = useState('');
   const [product, setProduct] = useState(null);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -54,6 +54,7 @@ const DirectSaleReturn = () => {
         ...product,
         quantity,
         returnPrice: product.salePriceDetails[0]?.salePrice1 || 0,
+        billItemUnit: 0,
       };
       dispatch(setSelectedItems([...selectedItems, newItem]));
       console.log(selectedItems);
@@ -70,6 +71,31 @@ const DirectSaleReturn = () => {
     dispatch(setSelectedItems(updatedItems));
   };
 
+  const handleItemUnitsChange = (index, newUnits) => {
+      const item = selectedItems[index];
+      if (!item) return;
+  
+      // sanitize
+      if (isNaN(newUnits)) newUnits = 0;
+      // console.log('item', item)
+  
+      if (newUnits > item?.maxUnits) {
+        // set to max and show error
+        const updatedItems = selectedItems.map((it, i) =>
+          i === index ? { ...it, billItemUnit: item.maxUnits } : it
+        );
+        dispatch(setSelectedItems(updatedItems));
+  
+
+        return;
+      }
+  
+      const updatedItems = selectedItems.map((it, i) =>
+        i === index ? { ...it, billItemUnit: newUnits } : it
+      );
+      dispatch(setSelectedItems(updatedItems));
+    };
+
   const handlePriceChange = (index, newPrice) => {
     const updatedItems = selectedItems.map((item, i) =>
       i === index ? { ...item, returnPrice: newPrice } : item
@@ -78,7 +104,7 @@ const DirectSaleReturn = () => {
   };
 
   const handleCalculateTotal = () => {
-    const total = selectedItems.reduce((sum, item) => sum + item.returnPrice * item.quantity, 0);
+    const total = selectedItems.reduce((sum, item) => sum + item.returnPrice * (item.billItemUnit / item.productPack + item.quantity), 0);
     dispatch(setTotalReturnAmount(total));
   };
 
@@ -104,6 +130,7 @@ const DirectSaleReturn = () => {
         productId: item._id, 
         quantity: parseInt( item.quantity),
         returnPrice: item.returnPrice,
+        billItemUnit: item.billItemUnit
 
       }));
        console.log('returnItems', returnItems)
@@ -240,7 +267,8 @@ const DirectSaleReturn = () => {
             <tr className="bg-gray-100">
               <th className="p-2 border text-left">Product</th>
               <th className="p-2 border text-left">Quantity</th>
-              <th className="p-2 border text-left">Price</th>
+              <th className="p-2 border text-left">Units</th>
+              <th className="p-2 border text-left">Price/Pack</th>
               <th className="p-2 border text-left">Total</th>
               <th className="p-2 border text-left">Action</th>
             </tr>
@@ -253,9 +281,12 @@ const DirectSaleReturn = () => {
                   <input type="number" value={item.quantity} className="border p-1 w-16" onChange={(e) => handleQuantityChange(index, e.target.value)} />
                 </td>
                 <td className="p-2 text-left">
+                  <input type="number" value={item.billItemUnit} className="border p-1 w-16" onChange={(e) => handleItemUnitsChange(index, e.target.value)} />
+                </td>
+                <td className="p-2 text-left">
                 <input type="number" value={item.returnPrice} className="border p-1 w-16" onChange={(e) => handlePriceChange(index, e.target.value)} />
                 </td>
-                <td className="p-2 text-left">{(item.returnPrice * item.quantity).toFixed(2)}</td>
+                <td className="p-2 text-left">{(item.returnPrice * (item.billItemUnit / item.productPack + item.quantity)).toFixed(2)}</td>
                 <td className="p-2 text-left">
                   <Button onClick={handleDelete}>Remove</Button>
                 </td>
@@ -283,7 +314,7 @@ const DirectSaleReturn = () => {
             label="Total Return Amount"
             labelClass="w-32"
             className='w-48 text-xs p-1'
-            value={totalReturnAmount}
+            value={Number(totalReturnAmount)?.toFixed(2)}
             readOnly
           />
         </div>

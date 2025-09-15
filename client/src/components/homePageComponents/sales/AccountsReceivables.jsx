@@ -89,6 +89,10 @@ const AccountReceivables = () => {
     });
   }
 
+  const viewBill = (billId) => {
+    navigate(`/${primaryPath}/sales/view-bill/${billId}`);
+  }
+
 
   // Fetch account receivables on component mount
   useEffect(() => {
@@ -161,7 +165,11 @@ const AccountReceivables = () => {
               receivable.bill?.billStatus !== 'paid' && !receivable.bill?.isPosted).map((receivable, index) => (
 
                 <React.Fragment key={receivable.bill.billNo}>
-                  <tr key={index} className={`border-t hover:cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-gray-100'}`}>
+                  <tr
+                    key={index}
+                    onClick={() => viewBill(receivable.bill.billNo)}
+                    className={`border-t hover:cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-gray-100'}`}
+                  >
                     <td className="py-2 px-2 text-center">{index + 1}</td>
                     <td className="py-2 px-2 text-center">
                       {receivable.customer.customerName || 'N/A'}
@@ -209,32 +217,30 @@ const AccountReceivables = () => {
       </div>
 
       {totalPages > 1 && (
-              <div className="flex justify-between items-center mt-4 text-sm">
-                <Button
-                  className={`px-4 py-2  rounded-md ${
-                    currentPage === 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-300"
-                  }`}
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-      
-                <span className="text-gray-700">
-                  Page {currentPage} of {totalPages}
-                </span>
-    
-                <Button
-                  className={`px-4 py-2 rounded-md ${
-                    currentPage === totalPages ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-300"
-                  }`}
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
+        <div className="flex justify-between items-center mt-4 text-sm">
+          <Button
+            className={`px-4 py-2  rounded-md ${currentPage === 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-300"
+              }`}
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+
+          <span className="text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <Button
+            className={`px-4 py-2 rounded-md ${currentPage === totalPages ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-300"
+              }`}
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
 
       <div className="w-full text-sm flex justify-end mt-3">
         <div className="border p-2 rounded">

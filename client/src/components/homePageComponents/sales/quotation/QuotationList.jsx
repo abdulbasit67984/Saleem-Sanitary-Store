@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 // src/components/QuotationList.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 import {
     getQuotations,
     deleteQuotation,
@@ -14,6 +15,20 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
     const [query, setQuery] = useState("");
     const [selected, setSelected] = useState(new Set());
     const [preview, setPreview] = useState(null); // quotation to preview
+
+    const previewRef = useRef(); // for printing preview
+    const listRef = useRef();    // optional: for printing list
+
+    // react-to-print hook
+    const handlePrintPreview = useReactToPrint({
+        content: () => previewRef.current,
+        documentTitle: preview?.name || "Quotation",
+    });
+
+    const handlePrintList = useReactToPrint({
+        content: () => listRef.current,
+        documentTitle: "Quotations List",
+    });
 
     useEffect(() => {
         setQuotations(getQuotations());
@@ -113,7 +128,7 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                 </div>
             </div>
 
-            <div className="overflow-auto max-h-96 rounded border">
+            <div className="overflow-auto max-h-96 rounded border" ref={listRef}>
                 <table className="min-w-full text-xs">
                     <thead className="sticky top-0 bg-gray-100 border-b">
                         <tr>
@@ -198,11 +213,11 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                 </table>
 
             </div>
-            
+
             <div className="flex justify-end p-2">
                 <Button
-                className="px-2"
-                onClick={onClose}
+                    className="px-2"
+                    onClick={onClose}
                 >Close</Button>
             </div>
 
@@ -217,72 +232,80 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                         >
                             ×
                         </button>
-                        <h4 className="text-base font-semibold mb-3">
-                            Quotation: {preview.name || "(Untitled)"}
-                        </h4>
+                        <div ref={previewRef} >
+                            <h4 className="text-base font-semibold mb-3">
+                                NEW SALEEM SANITARY TRADERS
+                            </h4>
 
-                        <div className="grid grid-cols-2 gap-3 text-xs mb-4">
-                            <div><span className="text-gray-500">ID:</span> {preview.id}</div>
-                            <div>
-                                <span className="text-gray-500">Created:</span>{" "}
-                                {preview.createdAt
-                                    ? new Date(preview.createdAt).toLocaleString()
-                                    : "-"}
+                            <div className="grid grid-cols-2 gap-3 text-xs mb-4">
+                                <div><span className="text-gray-500">ID:</span> {preview.id}</div>
+                                <div>
+                                    <span className="text-gray-500">Created:</span>{" "}
+                                    {preview.createdAt
+                                        ? new Date(preview.createdAt).toLocaleString()
+                                        : "-"}
+                                </div>
+                                <div>
+                                    <span className="text-gray-500">Bill Type:</span>{" "}
+                                    Quotation
+                                </div>
+                                <div>
+                                    <span className="text-gray-500">Payment Type:</span>{" "}
+                                    {preview.payload?.billPaymentType ?? "-"}
+                                </div>
+                                <div className="col-span-2">
+                                    <span className="text-gray-500">Description:</span>{" "}
+                                    {preview.payload?.description ?? "-"}
+                                </div>
                             </div>
-                            <div>
-                                <span className="text-gray-500">Bill Type:</span>{" "}
-                                {preview.payload?.billType ?? "-"}
-                            </div>
-                            <div>
-                                <span className="text-gray-500">Payment Type:</span>{" "}
-                                {preview.payload?.billPaymentType ?? "-"}
-                            </div>
-                            <div className="col-span-2">
-                                <span className="text-gray-500">Description:</span>{" "}
-                                {preview.payload?.description ?? "-"}
-                            </div>
-                        </div>
 
-                        <div className="overflow-auto max-h-72 border rounded">
-                            <table className="min-w-full text-xs">
-                                <thead className="sticky top-0 bg-gray-100 border-b">
-                                    <tr>
-                                        <th className="px-2 py-2 text-left">#</th>
-                                        <th className="px-2 py-2 text-left">Product</th>
-                                        <th className="px-2 py-2 text-right">Qty</th>
-                                        <th className="px-2 py-2 text-right">Price</th>
-                                        <th className="px-2 py-2 text-right">Discount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(preview.payload?._rawSelectedItems ?? preview.items ?? []).map((it, idx) => (
-                                        <tr key={idx} className="border-t">
-                                            <td className="px-2 py-2">{idx + 1}</td>
-                                            <td className="px-2 py-2">{it.productName ?? it.name ?? it.productCode ?? it.productId ?? "-"}</td>
-                                            <td className="px-2 py-2 text-right">{it.quantity ?? "-"}</td>
-                                            <td className="px-2 py-2 text-right">
-                                                {formatMoney(it.salePrice1 ?? it.price ?? 0)}
-                                            </td>
-                                            <td className="px-2 py-2 text-right">
-                                                {formatMoney(it.discount ?? 0)}
-                                            </td>
+                            <div className="overflow-auto max-h-72 border rounded">
+                                <table className="min-w-full text-xs">
+                                    <thead className="sticky top-0 bg-gray-100 border-b">
+                                        <tr>
+                                            <th className="px-2 py-2 text-left">#</th>
+                                            <th className="px-2 py-2 text-left">Product</th>
+                                            <th className="px-2 py-2 text-right">Qty</th>
+                                            <th className="px-2 py-2 text-right">Price</th>
+                                            <th className="px-2 py-2 text-right">Discount</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div className="mt-4 flex items-center justify-between text-sm">
-                            <div>
-                                <span className="text-gray-500">Flat Discount:</span>{" "}
-                                {formatMoney(preview.payload?.flatDiscount ?? 0)}
+                                    </thead>
+                                    <tbody>
+                                        {(preview.payload?._rawSelectedItems ?? preview.items ?? []).map((it, idx) => (
+                                            <tr key={idx} className="border-t">
+                                                <td className="px-2 py-2">{idx + 1}</td>
+                                                <td className="px-2 py-2">{it.productName ?? it.name ?? it.productCode ?? it.productId ?? "-"}</td>
+                                                <td className="px-2 py-2 text-right">{it.quantity ?? "-"}</td>
+                                                <td className="px-2 py-2 text-right">
+                                                    {formatMoney(it.salePrice1 ?? it.price ?? 0)}
+                                                </td>
+                                                <td className="px-2 py-2 text-right">
+                                                    {formatMoney(it.discount ?? 0)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
-                            <div className="font-semibold">
-                                Total: {formatMoney(preview.payload?.totalAmount ?? preview.total)}
+
+                            <div className="mt-4 flex items-center justify-between text-sm">
+                                <div>
+                                    {/* <span className="text-gray-500">Flat Discount:</span>{" "}
+                                    {formatMoney(preview.payload?.flatDiscount ?? 0)} */}
+                                </div>
+                                <div className="font-semibold">
+                                    Total: {formatMoney(preview.payload?.totalAmount ?? preview.total)}
+                                </div>
                             </div>
                         </div>
 
                         <div className="mt-4 flex justify-end gap-2">
+                            <button
+                                className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white"
+                                onClick={handlePrintPreview}
+                            >
+                                Print
+                            </button>
                             <button
                                 className="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300"
                                 onClick={() => setPreview(null)}

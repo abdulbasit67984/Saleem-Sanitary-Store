@@ -141,6 +141,8 @@ ProductSchema.statics.allocatePurchasePrice = async function (productId, require
 
 
 ProductSchema.statics.calculatePurchasePriceForReturn = async function (productId, returnedQuantity) {
+
+    
     const StatusOfPrice = mongoose.model('StatusOfPrice'); // Reference the StatusOfPrice model
 
     // Fetch the first relevant StatusOfPrice record with remainingQuantity > 0
@@ -156,14 +158,18 @@ ProductSchema.statics.calculatePurchasePriceForReturn = async function (productI
         }).sort({ createdAt: -1 });
     }
 
+    // console.log('returnedQuantity', returnedQuantity)
+
     // Increment the remaining quantity of the first record
-    statusRecord.remainingQuantity += returnedQuantity;
+    statusRecord.remainingQuantity += Number(returnedQuantity);
 
     // Save the updated record
     await statusRecord.save();
 
+    const product = await this.findById(productId, 'productPack');
+
     // Calculate the total purchase price for the returned quantity
-    const totalCost = returnedQuantity * parseFloat(statusRecord.newPrice);
+    const totalCost = returnedQuantity * (parseFloat(statusRecord.newPrice)/parseFloat(product?.productPack));
 
     return Number(totalCost); // Return the total cost for the returned quantity
 };

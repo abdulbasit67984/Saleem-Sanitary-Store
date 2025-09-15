@@ -25,11 +25,12 @@ const SaleReturnAgainstBill = () => {
   const [productSearch, setProductSearch] = useState('');
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [product, setProduct] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  
-    const [isLoading, setIsLoading] = useState(false);
-    const [submitError, setSubmitError] = useState('');
-    const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [quantity, setQuantity] = useState(0);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [quantityErrors, setQuantityErrors] = useState({});
 
   useEffect(() => {
     if (billId && billId.length >= 5) {
@@ -53,8 +54,8 @@ const SaleReturnAgainstBill = () => {
   useEffect(() => {
     if (productSearch.trim() && bill?.billItems) {
       const filtered = bill.billItems.filter((item) =>
-        item.productId?.productName?.toLowerCase().includes(productSearch.toLowerCase()) ||
-        item.productId?.productCode?.toLowerCase().includes(productSearch.toLowerCase())
+        item?.productId?.productName?.toLowerCase().includes(productSearch.toLowerCase()) ||
+        item?.productId?.productCode?.toLowerCase().includes(productSearch.toLowerCase())
       );
       setFilteredProducts(filtered);
     } else {
@@ -70,22 +71,124 @@ const SaleReturnAgainstBill = () => {
 
   const handleAddProduct = () => {
     if (product) {
+      const alreadyExists = selectedItems.some(
+        (item) => item.productId?._id === product.productId?._id
+      );
+
+      if (alreadyExists) {
+        alert("This product is already added to the invoice.");
+        return;
+      }
+
       const newItem = {
         ...product,
         quantity,
         returnPrice: product.billItemPrice || 0,
+        billItemUnit: 0,
+        maxNum: product?.quantity,
+        maxUnits: product?.billItemUnit > 0 ? product?.billItemUnit : product?.billItemPack
       };
+
       dispatch(setSelectedItems([...selectedItems, newItem]));
       setProduct(null);
-      setQuantity(1);
+      setQuantity(0);
       setProductSearch('');
-      console.log('selectedItems', selectedItems)
+      console.log('selectedItems', selectedItems);
     }
   };
 
+
+  const handleDelete = (index) => {
+    const updatedItems = [...selectedItems];
+    updatedItems.splice(index, 1);
+    dispatch(setSelectedItems(updatedItems));
+  }
+
   const handleQuantityChange = (index, newQuantity) => {
-    const updatedItems = selectedItems.map((item, i) =>
-      i === index ? { ...item, quantity: newQuantity } : item
+    const item = selectedItems[index];
+    if (!item) return;
+
+    // sanitize
+    if (isNaN(newQuantity) || newQuantity < 1) newQuantity = 0;
+
+    if (newQuantity > item?.maxNum) {
+      // set to max and show error
+      const updatedItems = selectedItems.map((it, i) =>
+        i === index ? { ...it, quantity: item.maxNum } : it
+      );
+      dispatch(setSelectedItems(updatedItems));
+
+      setQuantityErrors((prev) => ({
+        ...prev,
+        [index]: `Maximum available quantity is ${item.maxNum}`,
+      }));
+
+      // optionally clear the error after a short time
+      setTimeout(() => {
+        setQuantityErrors((prev) => {
+          const copy = { ...prev };
+          delete copy[index];
+          return copy;
+        });
+      }, 4000);
+
+      return;
+    }
+
+    // clear any previous error
+    setQuantityErrors((prev) => {
+      const copy = { ...prev };
+      delete copy[index];
+      return copy;
+    });
+
+    const updatedItems = selectedItems.map((it, i) =>
+      i === index ? { ...it, quantity: newQuantity } : it
+    );
+    dispatch(setSelectedItems(updatedItems));
+  };
+
+  const handleItemUnitsChange = (index, newUnits) => {
+    const item = selectedItems[index];
+    if (!item) return;
+
+    // sanitize
+    if (isNaN(newUnits)) newUnits = 0;
+    // console.log('item', item)
+
+    if (newUnits > item?.maxUnits) {
+      // set to max and show error
+      const updatedItems = selectedItems.map((it, i) =>
+        i === index ? { ...it, billItemUnit: item.maxUnits } : it
+      );
+      dispatch(setSelectedItems(updatedItems));
+
+      setQuantityErrors((prev) => ({
+        ...prev,
+        [index]: `Maximum available Units is ${item.maxUnits}`,
+      }));
+
+      // optionally clear the error after a short time
+      setTimeout(() => {
+        setQuantityErrors((prev) => {
+          const copy = { ...prev };
+          delete copy[index];
+          return copy;
+        });
+      }, 4000);
+
+      return;
+    }
+
+    // clear any previous error
+    setQuantityErrors((prev) => {
+      const copy = { ...prev };
+      delete copy[index];
+      return copy;
+    });
+
+    const updatedItems = selectedItems.map((it, i) =>
+      i === index ? { ...it, billItemUnit: newUnits } : it
     );
     dispatch(setSelectedItems(updatedItems));
   };
@@ -98,7 +201,7 @@ const SaleReturnAgainstBill = () => {
   };
 
   const handleCalculateTotal = () => {
-    const total = selectedItems.reduce((sum, item) => sum + item.returnPrice * item.quantity, 0);
+    const total = selectedItems.reduce((sum, item) => sum + item.returnPrice * (item.billItemUnit / item.billItemPack + item.quantity), 0);
     dispatch(setTotalReturnAmount(total - flatDiscount));
   };
 
@@ -115,7 +218,7 @@ const SaleReturnAgainstBill = () => {
     setIsLoading(true);
     setSubmitError('');
     setSubmitSuccess(false);
-    
+
     // console.log( bill.customer?._id,
     //   billId,
     //   'againstBill',
@@ -124,9 +227,10 @@ const SaleReturnAgainstBill = () => {
     //   returnReason,)
     try {
       const returnItems = selectedItems.map((item) => ({
-        productId: item.productId._id, // Assuming your product has an _id
+        productId: item.productId?._id, // Assuming your product has an _id
         quantity: item.quantity,
         returnPrice: item.returnPrice,
+        billItemUnit: item.billItemUnit
 
       }));
 
@@ -231,8 +335,8 @@ const SaleReturnAgainstBill = () => {
                   }}
                 >
                   <td className="px-2 py-1">{index + 1}</td>
-                  <td className="px-2 py-1">{product.productId.productName}</td>
-                  <td className="px-2 py-1">{product.productId.productPack}</td>
+                  <td className="px-2 py-1">{product.productId?.productName}</td>
+                  <td className="px-2 py-1">{product.productId?.productPack}</td>
                   <td className="px-2 py-1">
                     {product.billItemPrice}
                   </td>
@@ -256,20 +360,33 @@ const SaleReturnAgainstBill = () => {
             <tr className="bg-gray-100">
               <th className="p-2 border text-left">Product</th>
               <th className="p-2 border text-left">Quantity</th>
-              <th className="p-2 border text-left">Price</th>
+              <th className="p-2 border text-left">Units</th>
+              <th className="p-2 border text-left">Price/Pack</th>
               <th className="p-2 border text-left">Total</th>
+              <th className="p-2 border text-left">Action</th>
             </tr>
           </thead>
           <tbody>
-            {selectedItems.map((item, index) => (
+            {selectedItems?.map((item, index) => (
               <tr key={index} className="border">
-                <td className="p-2 text-left">{item.productId.productName}</td>
+                <td className="p-2 text-left">{item.productId?.productName}</td>
                 <td className="p-2 text-left">
                   <input
                     type="number"
                     value={item.quantity}
                     className="border p-1 w-16"
                     onChange={(e) => handleQuantityChange(index, Number(e.target.value))}
+                  />
+                  {quantityErrors[index] && (
+                    <div className="text-red-600 text-xs mt-1">{quantityErrors[index]}</div>
+                  )}
+                </td>
+                <td className="p-2 text-left">
+                  <input
+                    type="number"
+                    value={item.billItemUnit}
+                    className="border p-1 w-16"
+                    onChange={(e) => handleItemUnitsChange(index, Number(e.target.value))}
                   />
                 </td>
                 <td className="p-2 text-left">
@@ -280,7 +397,10 @@ const SaleReturnAgainstBill = () => {
                     onChange={(e) => handlePriceChange(index, Number(e.target.value))}
                   />
                 </td>
-                <td className="p-2 text-left">{(item.returnPrice * item.quantity).toFixed(2)}</td>
+                <td className="p-2 text-left">{(item.returnPrice * (item.billItemUnit / item.billItemPack + item.quantity)).toFixed(2)}</td>
+                <td className="p-2 text-left">
+                  <Button onClick={() => handleDelete(index)} className='px-2'>Remove</Button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -304,7 +424,7 @@ const SaleReturnAgainstBill = () => {
             label="Total Return Amount"
             labelClass="w-32"
             className='w-48 text-xs p-1'
-            value={totalReturnAmount}
+            value={Number(totalReturnAmount).toFixed(2)}
             readOnly
           />
         </div>
