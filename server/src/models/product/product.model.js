@@ -77,18 +77,21 @@ const ProductSchema = new Schema({
     timestamps: true
 })
 
-ProductSchema.statics.allocatePurchasePrice = async function (productId, requiredQuantity, itemUnits, transaction) {
+ProductSchema.statics.allocatePurchasePrice = async function (productId, requiredQuantity, billItemPack, itemUnits, transaction) {
     const StatusOfPrice = mongoose.model('StatusOfPrice');
 
     const statusRecords = await StatusOfPrice.find({
         productId: productId,
     }).sort({ createdAt: 1 });
 
-    const quantityWithUnits = requiredQuantity * itemUnits;
+    // console.log('itemUnits', itemUnits)
+    
+    const quantityWithUnits = requiredQuantity * billItemPack + itemUnits;
     let remainingRequiredQuantity = quantityWithUnits;
     let totalCost = 0;
-
+    
     const product = await this.findById(productId, 'productPack');
+    // console.log('productPack', product.productPack)
 
     for (const record of statusRecords) {
         if (remainingRequiredQuantity <= 0) break;

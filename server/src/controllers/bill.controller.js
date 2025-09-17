@@ -85,13 +85,13 @@ const registerBill = asyncHandler(async (req, res) => {
             let productName = "";
 
             for (const item of billItems) {
-                const { productId, quantity, billItemPack } = item;
+                const { productId, quantity, billItemUnit, billItemPack } = item;
 
                 // console.log('item', item)
 
-                const purchaseCost = await Product.allocatePurchasePrice(productId, quantity, billItemPack, transaction);
+                const purchaseCost = await Product.allocatePurchasePrice(productId, quantity, billItemPack, billItemUnit, transaction);
                 if (typeof purchaseCost !== "number" || isNaN(purchaseCost)) {
-                    console.log('purchaseCost', purchaseCost)
+                    // console.log('purchaseCost', purchaseCost)
                     console.log(typeof (purchaseCost))
                     throw new Error(`Invalid purchase cost calculated for product ID ${productId}`);
                 }
@@ -105,7 +105,7 @@ const registerBill = asyncHandler(async (req, res) => {
                 productName = product.productName;
 
                 const originalProductQuantity = product.productTotalQuantity; // Capture original value for rollback
-                product.productTotalQuantity -= (quantity * billItemPack);
+                product.productTotalQuantity -= (quantity * billItemPack + billItemUnit);
                 // console.log('quantity, billItemPack', quantity, billItemPack)
 
                 // if (product.productTotalQuantity < 0) {
@@ -739,7 +739,7 @@ const getBills = asyncHandler(async (req, res) => {
         .lean();
 
     const billsWithTotalQuantity = bills.map((bill) => {
-        const totalQuantity = bill.billItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const totalQuantity = bill.billItems.reduce((sum, item) => sum + (item.quantity || item.billItemUnit), 0);
         return { ...bill, totalQuantity };
     });
 
