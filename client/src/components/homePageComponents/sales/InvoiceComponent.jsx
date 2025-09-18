@@ -328,7 +328,7 @@ const InvoiceComponent = () => {
 
   const generateInvoice = async () => {
 
-    if (!billType || !billPaymentType || !totalAmount) {
+    if (!billType || !totalAmount) {
       alert("Please fill all the required fields.");
       return;
     }
@@ -365,7 +365,7 @@ const InvoiceComponent = () => {
         const response = await config.createInvoice({
           description,
           billType,
-          billPaymentType,
+          billPaymentType: "cash",
           customer: customerId,
           billItems,
           flatDiscount: flatDiscount || 0,
@@ -533,7 +533,7 @@ const InvoiceComponent = () => {
         const response = await config.createInvoice({
           description,
           billType,
-          billPaymentType,
+          billPaymentType: "cash",
           customer: customerId,
           billItems,
           flatDiscount: 0,
@@ -996,6 +996,8 @@ const InvoiceComponent = () => {
               <QuotationComponent
                 selectedItems={selectedItems}
                 totalAmount={totalAmount}
+                billType={billType}
+                billPaymentType={billPaymentType}
               />
             </div>
           </div>
@@ -1024,6 +1026,8 @@ const InvoiceComponent = () => {
                     q.items ?? // older minimal schema
                     [];
 
+                  console.log('payload', payload)
+
                   // --- Redux restores (adjust import paths) ---
                   // set invoice core fields
                   dispatch(setSelectedItems(items));
@@ -1047,12 +1051,16 @@ const InvoiceComponent = () => {
                   if (payload.description !== undefined) {
                     setDescription(payload.description ?? "");
                   }
-                  if (payload.billPaymentType !== undefined) {
-                    setBillPaymentType(payload.billPaymentType ?? "");
-                  }
                   if (payload.dueDate !== undefined) {
                     setDueDate(payload.dueDate ?? "");
                   }
+                  // if (payload.billType !== undefined) {
+                  //   setBillType(payload.billType ?? "");
+                  // }
+                  setBillPaymentType("cash");
+
+                  // console.log('billType', billType)
+                  // console.log('billPaymentType', billPaymentType)
                   if (payload.extraItems !== undefined) {
                     dispatch(setExtraProducts(payload.extraItems ?? []));
                   }
