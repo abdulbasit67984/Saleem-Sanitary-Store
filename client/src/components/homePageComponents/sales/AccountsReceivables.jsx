@@ -195,15 +195,20 @@ const AccountReceivables = () => {
                     <td className="py-2 px-2 text-center">
                       {receivable.customer?.customerRegion || 'N/A'}
                     </td>
-                    <td className="py-1 px-2 text-center">
+                    <td className="py-1 px-2 text-center ">
                       <button
-                        className="hover:bg-green-600 border border-green-600 text-green-600 hover:text-white py-1 px-2 rounded-full"
-                        onClick={() => handleBillPayment(receivable.bill.billNo)}
+                        className="hover:bg-green-600 border border-green-600 text-green-600 hover:text-white py-1 px-2 rounded-full "
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBillPayment(receivable.bill.billNo)
+                        }
+                        }
                       >Add Payment</button>
                       <span> </span>
                       <button
                         className="hover:bg-red-600 border border-red-600 text-red-600 hover:text-white py-1 px-2 rounded-full"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setBill(receivable.bill)
                           setIsConfirmationOpen(true)
                         }}
