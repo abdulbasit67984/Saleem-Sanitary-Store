@@ -662,6 +662,7 @@ export class Config {
             }
         } catch (error) {
             console.log("Failed Adding Customer:", error)
+            throw error
         }
     }
 

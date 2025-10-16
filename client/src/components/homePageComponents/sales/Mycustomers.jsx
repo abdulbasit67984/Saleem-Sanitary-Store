@@ -22,7 +22,18 @@ function Mycustomers() {
   const [successMessage, setSuccessMessage] = useState('')
   const [currentPage, setCurrentPage] = useState(1); // Pagination state
 
-  const filteredCustomers = newCustomerData; // No filtering needed in this case
+  const [searchTerm, setSearchTerm] = useState('');
+
+
+  const filteredCustomers = newCustomerData.filter((customer) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      customer.customerName?.toLowerCase().includes(term) ||
+      customer.mobileNo?.toLowerCase().includes(term) ||
+      customer.customerRegion?.toLowerCase().includes(term)
+    );
+  });
+
   const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, filteredCustomers.length);
@@ -75,7 +86,16 @@ function Mycustomers() {
   };
 
 
+  const getDate = (date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
 
+    });
+  }
 
   const handleUpdateCustomer = async (data) => {
     console.log(data);
@@ -113,6 +133,26 @@ function Mycustomers() {
     <div className='bg-white rounded-lg'>
       <h2 className="text-lg text-center font-semibold py-4">All Customers</h2>
       {error && <p className="text-red-600 mt-2 mb-1 text-center text-sm">{error}</p>}
+
+      <div className="flex justify-between items-center mb-3 px-4">
+        <input
+          type="text"
+          placeholder="Search by name, mobile no, or region..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-1 w-1/2 text-sm focus:ring-1 focus:ring-gray-400 focus:outline-none"
+        />
+
+        {searchTerm && (
+          <button
+            onClick={() => setSearchTerm('')}
+            className="text-sm text-red-500 hover:underline"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
       <div className="overflow-auto max-h-72 mb-4 scrollbar-thin rounded">
         <table className="min-w-full bg-white border text-xs">
           <thead className="sticky -top-1 border-b shadow-sm bg-gray-300 z-10">
@@ -120,9 +160,11 @@ function Mycustomers() {
               <th className="py-2 px-1 text-left">S No.</th>
               <th className="py-2 px-1 text-left">Customer Name</th>
               <th className="py-2 px-1 text-left">Mobile No</th>
-              <th className="py-2 px-1 text-left">Last Order</th>
+              {/* <th className="py-2 px-1 text-left">Last Order</th> */}
+              <th className="py-2 px-1 text-left">Customer Region</th>
               <th className="py-2 px-1 text-left">Customer flag</th>
-              <th className="py-2 px-1 text-left"></th>
+              <th className="py-2 px-1 text-left">Created at</th>
+              <th className="py-2 px-1 text-left">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -131,8 +173,11 @@ function Mycustomers() {
                 <td className="py-1 px-2">{index + 1}</td>
                 <td className="py-1 px-2">{customer.customerName}</td>
                 <td className="py-1 px-2">{customer.mobileNo}</td>
-                <td className="py-1 px-2">25/3/2024</td>
+                {/* <td className="py-1 px-2">25/3/2024</td> */}
+                <td className="py-1 px-2">{customer.customerRegion}</td>
                 <td className="py-1 px-2">{customer.customerFlag}<span className={`h-10 w-20  bg-${customer.customerFlag}-500`}></span></td>
+                <td className="py-1 px-2">{customer.createdAt && customer.createdAt &&
+                        getDate(customer.createdAt)}</td>
                 <td className="py-1 px-2">
                   <button
                     className="bg-gray-500 hover:bg-gray-700 text-white py-1 px-2 rounded-full"

@@ -95,13 +95,18 @@ function SoldItems() {
   };
 
   const calculateTotals = (data) => {
-    const totalSaleCounter = data.reduce((acc, item) => acc + Number(item.totalAmount), 0);
-    const totalRevenue = data.reduce((acc, item) => acc + Number(item.billRevenue), 0);
-    const totalQtyCounter = data.reduce((acc, item) => acc + Number(item.totalQuantity), 0);
-    const totalDiscountCounter = data.reduce((acc, item) => acc + Number(item.flatDiscount), 0);
-    const totalRemainingBalance = data.reduce((acc, item) => acc + Number(item.totalAmount - item.paidAmount - item.flatDiscount), 0);
 
-    setTotalSales(totalSaleCounter-totalDiscountCounter);
+    const validBills = data.filter(
+      (item) => !item.description?.includes("Merged bill containing")
+    );
+
+    const totalSaleCounter = validBills.reduce((acc, item) => acc + Number(item.totalAmount), 0);
+    const totalRevenue = validBills.reduce((acc, item) => acc + Number(item.billRevenue), 0);
+    const totalQtyCounter = validBills.reduce((acc, item) => acc + Number(item.totalQuantity), 0);
+    const totalDiscountCounter = validBills.reduce((acc, item) => acc + Number(item.flatDiscount), 0);
+    const totalRemainingBalance = validBills.reduce((acc, item) => acc + Number(item.totalAmount - item.paidAmount - item.flatDiscount), 0);
+
+    setTotalSales(totalSaleCounter - totalDiscountCounter);
     setTotalQuantity(totalQtyCounter);
     setTotalFlatDiscount(totalDiscountCounter);
     setRemainingBalance(totalRemainingBalance);
@@ -152,6 +157,23 @@ function SoldItems() {
     });
   }
 
+  const handleClearFilters = () => {
+    dispatch(setSearchBillFilters({
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+      billType: [],
+      billStatus: [],
+      customer: "",
+    }));
+    setValidationMessage("");
+    setTotalSales(0);
+    setTotalQuantity(0);
+    setTotalFlatDiscount(0);
+    setRemainingBalance(0);
+    setTotalRevenue(0);
+    dispatch(setBillData([])); // clear table data
+  };
+
   useEffect(() => {
     if (billNo && billNo.length >= 5) {
       fetchBill(billNo);
@@ -164,6 +186,7 @@ function SoldItems() {
       if (response && response.data) {
         console.log('response.data', response.data)
         dispatch(setBillData([response.data]));
+        calculateTotals([response.data]);
       }
     } catch (error) {
       console.error('Error fetching bill:', error);
@@ -259,10 +282,11 @@ function SoldItems() {
             >
               {isButtonLoading ? <ButtonLoader /> : 'Retrieve'}
             </button>
+
           </div>
         </div>
 
-        <div className="mb-2 text-xs">
+        <div className="mb-2 text-xs flex">
           <Input
             label="Bill ID"
             labelClass="w-24"
@@ -273,6 +297,13 @@ function SoldItems() {
             ref={inputRef}
             onChange={(e) => dispatch(setBillNo(e.target.value))}
           />
+
+          <button
+            className="bg-gray-600 hover:bg-gray-700 duration-200 text-white w-24 p-2 rounded"
+            onClick={handleClearFilters}
+          >
+            Clear Filters
+          </button>
         </div>
 
         <div className="w-full flex items-end justify-between">
@@ -337,6 +368,7 @@ function SoldItems() {
                           setBillId(bill.billNo)
                           setIsEditing(true)
                         }}
+                        disabled={bill.mergedInto}
                       >
                         Edit
                       </button>}
