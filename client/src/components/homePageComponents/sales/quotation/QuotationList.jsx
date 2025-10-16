@@ -184,7 +184,10 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                                                 <div className="flex gap-2 justify-end">
                                                     <button
                                                         className="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white"
-                                                        onClick={() => setPreview(q)}
+                                                        onClick={() => {
+                                                            console.log('q', q)
+                                                            setPreview(q)
+                                                        }}
                                                     >
                                                         View
                                                     </button>
@@ -237,7 +240,7 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                                 NEW SALEEM SANITARY TRADERS
                             </h4>
 
-                            <div className="grid grid-cols-2 gap-3 text-xs mb-4">
+                            <div className="grid grid-cols-2 gap-3 text-[10px] mb-4">
                                 <div><span className="text-gray-500">ID:</span> {preview.id}</div>
                                 <div>
                                     <span className="text-gray-500">Created:</span>{" "}
@@ -259,28 +262,36 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                                 </div>
                             </div>
 
-                            <div className="overflow-auto max-h-72 border rounded">
+                            <div className="overflow-auto max-h-72 border rounded  print:overflow-visible print:max-h-none">
                                 <table className="min-w-full text-xs">
-                                    <thead className="sticky top-0 bg-gray-100 border-b">
+                                    <thead className="sticky text-[10px] top-0 bg-gray-100 border-b">
                                         <tr>
                                             <th className="px-2 py-2 text-left">#</th>
                                             <th className="px-2 py-2 text-left">Product</th>
                                             <th className="px-2 py-2 text-right">Qty</th>
+                                            <th className="px-2 py-2 text-right">Units</th>
+                                            <th className="px-2 py-2 text-right">Units / QTY</th>
                                             <th className="px-2 py-2 text-right">Price</th>
                                             <th className="px-2 py-2 text-right">Discount</th>
+                                            <th className="px-2 py-2 text-right">Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {(preview.payload?._rawSelectedItems ?? preview.items ?? []).map((it, idx) => (
-                                            <tr key={idx} className="border-t">
-                                                <td className="px-2 py-2">{idx + 1}</td>
-                                                <td className="px-2 py-2">{it.productName ?? it.name ?? it.productCode ?? it.productId ?? "-"}</td>
-                                                <td className="px-2 py-2 text-right">{it.quantity ?? "-"}</td>
-                                                <td className="px-2 py-2 text-right">
+                                            <tr key={idx} className="border-t text-[8px]">
+                                                <td className="px-2">{idx + 1}</td>
+                                                <td className="px-2">{it.productName ?? it.name ?? it.productCode ?? it.productId ?? "-"}</td>
+                                                <td className="px-2 text-right">{it.quantity ?? "-"}</td>
+                                                <td className="px-2 text-right">{it.billItemUnit !==0 ? it.billItemUnit : "-"}</td>
+                                                <td className="px-2 text-right">{it.productPack ?? "-"}</td>
+                                                <td className="px-2 text-right">
                                                     {formatMoney(it.salePrice1 ?? it.price ?? 0)}
                                                 </td>
-                                                <td className="px-2 py-2 text-right">
+                                                <td className="px-2 text-right">
                                                     {formatMoney(it.discount ?? 0)}
+                                                </td>
+                                                <td className="px-2 text-right">
+                                                    {formatMoney((it.salePrice1 * (it.billItemUnit / it.productPack + it.quantity))?? 0)}
                                                 </td>
                                             </tr>
                                         ))}
