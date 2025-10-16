@@ -42,6 +42,7 @@ import { extractErrorMessage } from '../../../utils/extractErrorMessage';
 import { useReactToPrint } from "react-to-print";
 import ViewBill from "./bills/ViewBill";
 import ViewBillThermal from "./bills/ViewBillThermal";
+import AddCustomer from './AddCustomer';
 
 
 const InvoiceComponent = () => {
@@ -60,6 +61,7 @@ const InvoiceComponent = () => {
   const [billPaymentType, setBillPaymentType] = useState('cash')
   const [customerIndex, setCustomerIndex] = useState('')
   const [customerFlag, setCustomerFlag] = useState('red')
+  const [selectedCustomer, setSelectedCustomer] = useState('');
   const [salesPerson, salesPalesPerson] = useState('')
   const [isInvoiceGenerated, setIsInvoiceGenerated] = useState(false);
   const [billError, setBillError] = useState('');
@@ -74,6 +76,8 @@ const InvoiceComponent = () => {
   const [showQuotationListModal, setShowQuotationListModal] = useState(false);
 
   const [bill, setBill] = useState(null)
+
+  const [showAddCustomer, setShowAddCustomer] = useState(false)
 
   const [showAddExtraProductModal, setShowAddExtraProductModal] = useState(false);
   const [extraProduct, setExtraProduct] = useState({
@@ -744,6 +748,13 @@ const InvoiceComponent = () => {
     }
   }, [selectedItems]);
 
+  useEffect(() => {
+    if (selectedCustomer === 'add') {
+      setShowAddCustomer(true);
+      setSelectedCustomer(''); // reset to avoid re-triggering modal
+    }
+  }, [selectedCustomer]);
+
   return (!isLoading ?
     (<div className="w-full mx-auto p-2 bg-white rounded shadow-lg overflow-auto max-h-[90vh]">
 
@@ -830,6 +841,23 @@ const InvoiceComponent = () => {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {showAddCustomer && (
+        <div className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-40'
+          onClick={() => setShowAddCustomer(false)
+          }
+        >
+          <AddCustomer
+            onCustomerCreated={(newCustomer) => {
+              // automatically select newly created customer
+              dispatch(setCustomer(newCustomer?._id));
+              setCustomerFlag(newCustomer?.customerFlag);
+              setSelectedCustomer(newCustomer._id);
+              // setShowAddCustomer(false); // close modal
+            }}
+          />
         </div>
       )}
 
@@ -933,16 +961,21 @@ const InvoiceComponent = () => {
               onChange={handleSearch}
             />
             <select
+              value={selectedCustomer}
               onChange={(e) => {
                 const customerId = e.target.value;
+                setSelectedCustomer(customerId);
                 dispatch(setCustomer(customerId));
                 const customer = customerData.find((c) => c._id === customerId);
                 setCustomerFlag(customer?.customerFlag); // Added optional chaining
-                console.log('customerFlag', customer?.customerFlag); // Added optional chaining
+                // console.log('customerFlag', customer?.customerFlag); // Added optional chaining
               }}
               className={`${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} border p-1 rounded text-xs w-full`}
             >
               <option value="">Select Customer</option>
+              <option value="add"
+                onClick={() => setShowAddCustomer(true)}
+              >+ Add New Customer</option>
               {filteredCustomers?.map((customer, index) => (
                 <option
                   key={index}
