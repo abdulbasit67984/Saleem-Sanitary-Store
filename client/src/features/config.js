@@ -1015,8 +1015,8 @@ export class Config {
                 });
 
             if (response.data) {
-                console.log("all account receivables: ", response.data)
-                return response.data;
+                console.log("all account receivables: ", response.data?.data)
+                return response.data?.data;
             } else {
                 return null;
             }

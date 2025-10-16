@@ -334,11 +334,12 @@ const UpdateBill = ({ billId, setIsEditing }) => {
               onChange={(e) => setBillData({ ...billData, description: e.target.value })}
             />
             <label className="ml-1 flex items-center">
-              <span className="w-28">Change Customer:</span>
+              <span className="w-28">Customer:</span>
               <select
                 className="border p-1 rounded text-xs w-44"
                 onChange={(e) => setBillData({ ...billData, customer: e.target.value })}
                 value={billData.customer || ""}
+                disabled={true}
               >
                 <option value="">{billData.customer?.customerName}</option>
                 {customerData?.map((customer, index) => (

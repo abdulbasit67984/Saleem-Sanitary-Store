@@ -146,7 +146,7 @@ const MergeBills = () => {
                             />
                             Create New Parent Bill
                         </label>
-                        <label className="flex items-center">
+                        {/* <label className="flex items-center">
                             <input
                                 type="radio"
                                 name="mergeOption"
@@ -156,7 +156,7 @@ const MergeBills = () => {
                                 className="mr-2"
                             />
                             Use Existing Parent Bill
-                        </label>
+                        </label> */}
                     </div>
 
                     {mergeOption === 'existing' && (

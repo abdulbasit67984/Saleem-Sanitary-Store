@@ -413,6 +413,102 @@ const getAccountReceivables = asyncHandler(async (req, res) => {
             throw new ApiError(400, 'BusinessId is missing in the request.');
         }
 
+        const customerAccounts = await IndividualAccount.find({
+            BusinessId,
+            customerId: { $exists: true, $ne: null }
+        }).select("_id individualAccountName customerId");
+
+        if (!customerAccounts.length)
+            return res
+                .status(404)
+                .json(new ApiResponse(404, [], "No customer accounts found."));
+
+        const customerAccountIds = customerAccounts.map(acc => acc._id);
+
+        // Step 2: fetch all general ledger entries related to these accounts
+        const ledgers = await GeneralLedger.aggregate([
+            {
+                $match: {
+                    BusinessId: new mongoose.Types.ObjectId(BusinessId),
+                    reference: { $in: customerAccountIds },
+                },
+            },
+            {
+                $lookup: {
+                    from: "individualaccounts",
+                    localField: "reference",
+                    foreignField: "_id",
+                    as: "account",
+                    pipeline: [
+                        {
+                            $lookup: {
+                                from: "customers",
+                                localField: "customerId",
+                                foreignField: "_id",
+                                as: "customer",
+                                pipeline: [
+                                    {
+                                        $project: {
+                                            customerName: 1,
+                                            mobileNo: 1,
+                                            customerRegion: 1,
+                                            customerFlag: 1,
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                        { $addFields: { customer: { $first: "$customer" } } },
+                    ],
+                },
+            },
+            { $addFields: { account: { $first: "$account" } } },
+            {
+                $sort: { createdAt: 1 } // earliest first to detect Opening Balance properly
+            }
+        ]);
+
+        console.log('ledgers', ledgers.length)
+
+        // Step 3: compute each account’s balance from Opening Balance onwards
+        const accountBalances = {};
+        for (const entry of ledgers) {
+            const accId = entry.individualAccountId.toString();
+            const debit = entry.debit || 0;
+            const credit = entry.credit || 0;
+
+            if (!accountBalances[accId]) {
+                accountBalances[accId] = {
+                    balance: 0,
+                    customer: entry.account.customer,
+                };
+            }
+
+            // If it's the opening balance, initialize it properly
+            if (entry.details === "Opening Balance") {
+                accountBalances[accId].balance = debit - credit;
+            } else {
+                // Continue calculating based on normal debit/credit
+                accountBalances[accId].balance += debit - credit;
+            }
+        }
+        
+
+        // Step 4: calculate total receivables across all customer accounts
+        let totalReceivables = 0;
+        const perCustomerBalances = [];
+
+        for (const accId in accountBalances) {
+            const balance = accountBalances[accId].balance;
+            const customer = accountBalances[accId].customer;
+            totalReceivables += balance > 0 ? balance : 0; // only positive balances are receivables
+            perCustomerBalances.push({
+                customerName: customer?.customerName || "N/A",
+                customerRegion: customer?.customerRegion || "N/A",
+                receivableAmount: balance,
+            });
+        }
+
         const accountReceivables = await AccountReceivable.aggregate([
             {
                 $match: {
@@ -494,7 +590,11 @@ const getAccountReceivables = asyncHandler(async (req, res) => {
 
         return res
             .status(200)
-            .json(new ApiResponse(200, accountReceivables, 'Active account receivables fetched successfully.'));
+            .json(new ApiResponse(200, {
+                accountReceivables,
+                totalReceivables,
+                perCustomerBalances,
+            }, 'Active account receivables fetched successfully.'));
     } catch (error) {
         console.error('Error fetching active account receivables:', error);
         throw new ApiError(500, error.message);

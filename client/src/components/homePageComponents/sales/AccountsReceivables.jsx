@@ -56,11 +56,19 @@ const AccountReceivables = () => {
   const fetchReceivables = async () => {
     try {
       const response = await config.getAccountReceivables();
-      if (response.data.length > 0) {
-        const data = response.data
+      // console.log('response', response)
+      if (response) {
+        const data = response.accountReceivables
+        // console.log('data', data)
         setReceivables(data);
 
-        const total = data.reduce(
+        const billsWithoutPosted = data.filter(
+          (item) => item.bill.isPosted !== true
+        );
+
+        console.log('billsWithoutPosted', billsWithoutPosted.length)
+
+        const total = billsWithoutPosted.reduce(
           (sum, item) => sum + ((item?.bill?.totalAmount - item?.bill?.paidAmount - item?.bill?.flatDiscount) || 0),
           0
         );

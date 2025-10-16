@@ -70,8 +70,7 @@ const ViewBillThermal = React.forwardRef((props, ref) => {
                                     </td>
                                     {!packingSlip && 
                                     <td className="p-1 text-right">
-                                        {(item.quantity + item.billItemUnit / item.billItemPack) < 1 ? commonFunction.formatAsianNumber(((item.quantity + item.billItemUnit / item.billItemPack) * item.billItemPrice) -
-                                            (((item.quantity + item.billItemUnit / item.billItemPack) * item.billItemPrice) * item.billItemDiscount / 100)) : commonFunction.formatAsianNumber(item.billItemPrice)}
+                                        {((item.quantity + item.billItemUnit / item.billItemPack) < 1 || item.quantity === 0) ? commonFunction.formatAsianNumber(item.billItemPrice / item.billItemPack) : commonFunction.formatAsianNumber(item.billItemPrice)}
                                     </td>
                                     }
                                     {!packingSlip && <td className="p-1 text-right">
