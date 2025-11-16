@@ -316,19 +316,26 @@ function Header() {
       ]
     },
     {
-      name: "Calculator",
-      slug: `/${primaryPath}/calculator`,
+      name: "Whatsapp Settings",
+      slug: `/${primaryPath}/whatsapp`,
       active: true,
       isAdmin: isAdmin(),
-      Children: [
-        {
-          name: "Calc",
-          slug: `/${primaryPath}/calculator/cal`,
-          active: true,
-          isAdmin: isAdmin()
-        },
-      ]
+      
     },
+    // {
+    //   name: "Calculator",
+    //   slug: `/${primaryPath}/calculator`,
+    //   active: true,
+    //   isAdmin: isAdmin(),
+    //   Children: [
+    //     {
+    //       name: "Calc",
+    //       slug: `/${primaryPath}/calculator/cal`,
+    //       active: true,
+    //       isAdmin: isAdmin()
+    //     },
+    //   ]
+    // },
     {
       name: 'Register account',
       slug: '/signup',

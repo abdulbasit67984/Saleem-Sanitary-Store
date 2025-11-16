@@ -666,6 +666,27 @@ export class Config {
         }
     }
 
+    async deleteCustomer(customerId) {
+        try {
+            const response = await this.client.delete(`/store/delete-customer/${customerId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${authService.getAccessToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (response) {
+                console.log("Delete Response:", response.data);
+                return response.data;
+            }
+        } catch (error) {
+            console.log("Failed Deleting Customer:", error);
+            throw error;
+        }
+    }
+
     async addSupplier({ ...data }) {
         console.log(data)
         try {
@@ -797,25 +818,25 @@ export class Config {
             console.log("Failed updating Product:", error)
         }
     }
-   async getReports(params) {
-    console.log(params);
-    try {
-        const response = await this.client.get('/product/get-report', {
-            headers: {
-                Authorization: `Bearer ${authService.getAccessToken()}`,
-                'Content-Type': 'application/json'
-            },
-            params // ✅ this attaches your query params to the request
-        });
+    async getReports(params) {
+        console.log(params);
+        try {
+            const response = await this.client.get('/product/get-report', {
+                headers: {
+                    Authorization: `Bearer ${authService.getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                },
+                params // ✅ this attaches your query params to the request
+            });
 
-        if (response.data) {
-            console.log("config Res: ", response.data);
-            return response.data;
+            if (response.data) {
+                console.log("config Res: ", response.data);
+                return response.data;
+            }
+        } catch (error) {
+            console.log("Failed getting reports:", error);
         }
-    } catch (error) {
-        console.log("Failed getting reports:", error);
     }
-}
 
     async billPayment({ ...data }) {
         try {
@@ -1365,6 +1386,86 @@ export class Config {
             throw error;
         }
     }
+
+
+    // Whatsapp APIs
+
+    async initWhatsapp() {
+        try {
+            const response = await this.client.get(`/whatsapp/init`, {
+                headers: {
+                    Authorization: `Bearer ${authService.getAccessToken()}`,
+                },
+            });
+            if (response.data) {
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error initializing WhatsApp:", error);
+            throw error;
+        }
+    }
+
+    async getQrCode() {
+        try {
+            const response = await this.client.get(`/whatsapp/qr`, {
+                headers: {
+                    Authorization: `Bearer ${authService.getAccessToken()}`,
+                },
+            });
+            if (response.data) {
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error fetching QR Code:", error);
+            throw error;
+        }
+    }
+
+    async checkWhatsappStatus() {
+        try {
+            const response = await this.client.get(`/whatsapp/status`, {
+                headers: {
+                    Authorization: `Bearer ${authService.getAccessToken()}`,
+                },
+            });
+            if (response.data) {
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error checking WhatsApp status:", error);
+            throw error;
+        }
+    }
+
+    async sendWhatsappMessage(data) {
+        try {
+            const response = await this.client.post(`/whatsapp/send-message`,
+                JSON.stringify(data),
+                {
+                    headers: {
+                        Authorization: `Bearer ${authService.getAccessToken()}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+            if (response.data) {
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error sending WhatsApp message:", error);
+            throw error;
+        }
+    }
+
 }
 const config = new Config();
 
