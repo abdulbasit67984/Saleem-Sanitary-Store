@@ -6,6 +6,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import Loader from '../../../pages/Loader';
 import { useForm } from 'react-hook-form';
 import Button from '../../Button';
+import ErrorResponseMessage from '../../ErrorResponseMessage';
+import ButtonLoader from '../../ButtonLoader';
+import { extractErrorMessage } from '../../../utils/extractErrorMessage';
+import SuccessResponseMessage from '../../SuccessResponseMessage';
 
 const ITEMS_PER_PAGE = 200; // Adjust as needed
 
@@ -13,11 +17,17 @@ function Mycustomers() {
 
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false)
+  const [showDeleteMessage, setShowDeleteMessage] = useState(false)
+  const [deleteMessage, setDeleteMessage] = useState('')
   const [newCustomerData, setNewCustomerData] = useState([])
   const [isEdit, setIsEdit] = useState(false)
   const [customerId, setCustomerId] = useState('')
   const [customerName, setCustomerName] = useState('')
-
+  const [deleteId, setDeleteId] = useState('')
+  
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  
   const [isCustomerCreated, setIsCustomerCreated] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [currentPage, setCurrentPage] = useState(1); // Pagination state
@@ -62,6 +72,36 @@ function Mycustomers() {
       setIsLoading(false)
     } catch (error) {
       setError(error.message)
+    }
+  }
+
+  const handleDeleteCustomer = async (customerId, customerName) => {
+    setError('')
+    setSuccessMessage('')
+    setDeleteId(customerId)
+    const message = `Are you sure you want to delete this customer? \nThis action is permanent and will also remove the customer's linked ledger account.\nThis cannot be undone.`;
+    const confirmDelete = window.confirm(message);
+
+    if (!confirmDelete) return;
+
+    setIsDeleteLoading(true)
+
+    try {
+      // console.log('customerId', customerId)
+      const data = await config.deleteCustomer(customerId)
+      console.log('data', data)
+      if (data.success) {
+        fetchCustomers()
+        setSuccessMessage(data?.message)
+        setShowSuccessMessage(true)
+      }
+      setIsDeleteLoading(false)
+    } catch (error) {
+      const msg = extractErrorMessage(error)
+      setDeleteMessage(msg)
+      setShowDeleteMessage(true)
+    } finally {
+      setIsDeleteLoading(false)
     }
   }
 
@@ -134,6 +174,18 @@ function Mycustomers() {
       <h2 className="text-lg text-center font-semibold py-4">All Customers</h2>
       {error && <p className="text-red-600 mt-2 mb-1 text-center text-sm">{error}</p>}
 
+      <ErrorResponseMessage
+        isOpen={showDeleteMessage}
+        onClose={() => setShowDeleteMessage(false)}
+        errorMessage={deleteMessage}
+      />
+
+      <SuccessResponseMessage
+        isOpen={showSuccessMessage}
+        onClose={() => setShowSuccessMessage(false)}
+        message={successMessage}
+      />
+
       <div className="flex justify-between items-center mb-3 px-4">
         <input
           type="text"
@@ -177,10 +229,14 @@ function Mycustomers() {
                 <td className="py-1 px-2">{customer.customerRegion}</td>
                 <td className="py-1 px-2">{customer.customerFlag}<span className={`h-10 w-20  bg-${customer.customerFlag}-500`}></span></td>
                 <td className="py-1 px-2">{customer.createdAt && customer.createdAt &&
-                        getDate(customer.createdAt)}</td>
-                <td className="py-1 px-2">
+                  getDate(customer.createdAt)}</td>
+                <td className="py-1 px-2 flex gap-2">
                   <button
-                    className="bg-gray-500 hover:bg-gray-700 text-white py-1 px-2 rounded-full"
+                    className="bg-red-500 hover:bg-red-700 text-white py-1 px-2 rounded-full"
+                    onClick={() => handleDeleteCustomer(customer._id, customer.customerName)}
+                  >{isDeleteLoading && customer._id === deleteId ? <ButtonLoader /> : 'Delete'}</button>
+                  <button
+                    className="bg-green-600 hover:bg-green-700 text-white py-1 px-2 rounded-full"
                     onClick={() => handleEdit(customer)}
                   >Edit</button>
                 </td>

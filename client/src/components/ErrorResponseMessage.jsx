@@ -17,7 +17,7 @@ const ErrorResponseMessage = ({ isOpen, onClose, errorMessage }) => {
                 <h2 className="text-lg font-semibold text-red-700 p-2">Error</h2>
                 <p className="text-gray-700">{errorMessage}</p>
                 <button
-                    className="px-4 py-2 mt-3 text-white bg-gray-500 rounded hover:bg-gray-600 transition"
+                    className="px-4 py-2 mt-3 text-white bg-primary rounded hover:bg-primaryHover transition"
                     onClick={onClose}
                 >
                     OK
