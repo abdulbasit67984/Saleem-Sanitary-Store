@@ -27,7 +27,7 @@ function FeaturesCategory() {
             className={`w-full ${!item.active ? 'cursor-not-allowed pointer-events-none' : ''}`}
             onClick={() => handleItemClick(i, item.slug)}
           >
-            <button className={` text-left  px-2 py-1 rounded ${item.active ? 'cursor-pointer ' : ''} duration-300 ${
+            <button className={`text-left  px-2 py-1 rounded ${item.active ? 'cursor-pointer ' : 'opacity-50 cursor-not-allowed pointer-events-none'} duration-300 ${
               activeIndex === i ? 'bg-white py-2 text-sm text-black' : `text-white ${item.active ? 'text-xs' : ' text-xs' }`
             }`}
             disabled={!item.active}
