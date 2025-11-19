@@ -834,6 +834,7 @@ const updateBill = asyncHandler(async (req, res) => {
 
             // console.log("6")
             if (salesRevenueAccount && salesRevenueDifference !== 0) {
+                newBill.billRevenue = newSalesRevenue;
                 salesRevenueAccount.accountBalance += salesRevenueDifference;
                 await salesRevenueAccount.save();
             }
