@@ -177,10 +177,15 @@ function FeaturesCategory() {
                     {/* Icon with animation */}
                     <motion.div
                       className="flex-shrink-0"
+                      // animate={{
+                      //   scale: isActive ? 1.1 : 1,
+                      // }}
+                      // transition={{ duration: 0.3 }}
                       animate={{
                         scale: isActive ? 1.1 : 1,
+                        rotate: isActive ? [0, -10, 10, -10, 0] : 0
                       }}
-                      transition={{ duration: 0.3 }}
+                      transition={{ duration: 0.6 }}
                     >
                       <IconComponent size={18} strokeWidth={2} />
                     </motion.div>
