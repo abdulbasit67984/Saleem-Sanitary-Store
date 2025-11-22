@@ -200,12 +200,12 @@ const ViewBill = React.forwardRef((props, ref) => {
                             </ul>
                         </div>
                     }
-                    <div className='flex items-end justify-end gap-20'>
+                    <div className='flex items-center justify-center pt-4'>
                         <p className='text-center text-[10px]'>Software by Pandas. 📞 03103480229 🌐 www.pandas.com.pk</p>
-                        <div className="text-right mt-16 mr-24">
+                        {/* <div className="text-right mt-1 mr-24">
                             <p>____________________________</p>
                             <p className='mr-4'>Signature & Stamp</p>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </div>

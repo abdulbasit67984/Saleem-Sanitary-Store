@@ -969,6 +969,7 @@ const InvoiceComponent = () => {
                 const customer = customerData.find((c) => c._id === customerId);
                 setCustomerFlag(customer?.customerFlag); // Added optional chaining
                 // console.log('customerFlag', customer?.customerFlag); // Added optional chaining
+                document.title = customer?.customerName || 'Sale Item'
               }}
               className={`${billType === 'thermal' ? thermalColor.th100 : A4Color.a4100} border p-1 rounded text-xs w-full`}
             >

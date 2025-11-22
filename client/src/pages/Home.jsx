@@ -189,7 +189,7 @@ function Home() {
   return (
     <div className='flex'>
       <FeaturesCategory />
-      <div className='w-5/6 bg-gray-100 p-4 overflow-auto max-h-svh'>
+      <div className='w-full bg-gray-100 p-4 overflow-auto '>
         {renderActiveFeature()}
       </div>
     </div>
