@@ -109,7 +109,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                                     <td className="text-xs p-2">
                                         <div>
                                             {(item.quantity + item.billItemUnit / item.billItemPack) < 1 ? (item.billItemUnit) : (item.quantity + item.billItemUnit / item.billItemPack)}
-                                            <span> {(item.quantity + item.billItemUnit / item.billItemPack) < 1 ? (item.productId.packUnit)?.toUpperCase() || 'PCS' : (item.productId.quantityUnit)?.toUpperCase() || 'PCS'}</span>
+                                            <span> {(item.quantity + item.billItemUnit / item.billItemPack) < 1 ? (item.productId?.packUnit)?.toUpperCase() || 'PCS' : (item.productId?.quantityUnit)?.toUpperCase() || 'PCS'}</span>
                                         </div>
                                     </td>
                                     <td className="text-xs p-2">
