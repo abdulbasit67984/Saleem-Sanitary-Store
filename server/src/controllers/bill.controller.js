@@ -327,9 +327,9 @@ const registerBill = asyncHandler(async (req, res) => {
             }
 
 
-            // if (customer && mobileNo) {
-            //     await sendWhatsappMessage(mobileNo, `Thank you for choosing New Saleem Sanitary Traders.`);
-            // }
+            if (customer && mobileNo) {
+                await sendWhatsappMessage(mobileNo, `Thank you for choosing New Saleem Sanitary Traders.\n\n*Bill Details:*\nTotal Bill: ${totalAmount}\nFlat Discount: ${flatDiscount}\n*Net Total:* ${totalAmount - flatDiscount}`);
+            }
 
             // const test = true;
             // if(test){
