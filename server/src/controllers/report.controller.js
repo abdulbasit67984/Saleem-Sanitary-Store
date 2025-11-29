@@ -296,55 +296,68 @@ const getDailyReports = asyncHandler(async (req, res) => {
                     mergedInto: null
                 }
             },
-            { $unwind: "$billItems" },
+
+            // Lookup customer
             {
                 $lookup: {
-                    from: "products",
-                    localField: "billItems.productId",
+                    from: "customers",
+                    localField: "customer",
                     foreignField: "_id",
-                    as: "product"
+                    as: "customer"
                 }
             },
-            { $unwind: "$product" },
             {
-                $lookup: {
-                    from: "saleprices",
-                    localField: "product.salePricesId",
-                    foreignField: "_id",
-                    as: "salePrices"
+                $addFields: {
+                    customer: { $first: "$customer" }
                 }
             },
-            { $unwind: { path: "$salePrices", preserveNullAndEmptyArrays: true } },
+
+            // Calculate bill-level total
             {
-                $project: {
-                    billItemPrice: "$billItems.billItemPrice",
-                    quantity: "$billItems.quantity",
-                    salePrice1: "$salePrices.salePrice1",
-                    salePrice2: "$salePrices.salePrice2",
-                    salePrice3: "$salePrices.salePrice3",
-                    salePrice4: "$salePrices.salePrice4",
+                $addFields: {
+                    billNetTotal: {
+                        $subtract: [
+                            "$totalAmount",
+                            { $ifNull: ["$flatDiscount", 0] }
+                        ]
+                    }
+                }
+            },
+
+            // Assign price category based on rules
+            {
+                $addFields: {
                     priceCategory: {
-                        $switch: {
-                            branches: [
-                                { case: { $eq: ["$billItems.billItemPrice", "$salePrices.salePrice1"] }, then: "salePrice1" },
-                                { case: { $eq: ["$billItems.billItemPrice", "$salePrices.salePrice2"] }, then: "salePrice2" },
-                                { case: { $eq: ["$billItems.billItemPrice", "$salePrices.salePrice3"] }, then: "salePrice3" },
-                                { case: { $eq: ["$billItems.billItemPrice", "$salePrices.salePrice4"] }, then: "salePrice4" }
-                            ],
-                            default: "custom"
-                        }
-                    },
-                    totalItemAmount: { $multiply: ["$billItems.billItemPrice", "$billItems.quantity"] }
+                        $cond: [
+                            { $eq: ["$customer", null] },  // If walk-in / no customer
+                            "salePrice1",
+                            {
+                                $switch: {
+                                    branches: [
+                                        { case: { $eq: ["$customer.customerFlag", "red"] }, then: "salePrice1" },
+                                        { case: { $eq: ["$customer.customerFlag", "green"] }, then: "salePrice2" },
+                                        { case: { $eq: ["$customer.customerFlag", "yellow"] }, then: "salePrice3" },
+                                        { case: { $eq: ["$customer.customerFlag", "white"] }, then: "salePrice4" }
+                                    ],
+                                    default: "salePrice1"
+                                }
+                            }
+                        ]
+                    }
                 }
             },
+
+            // Group final totals
             {
                 $group: {
                     _id: "$priceCategory",
-                    totalSales: { $sum: "$totalItemAmount" },
-                    itemCount: { $sum: "$quantity" }
+                    totalSales: { $sum: "$billNetTotal" },
+                    billCount: { $sum: 1 }
                 }
             }
         ]);
+        // console.log('salesByPriceCategory', salesByPriceCategory)
+
 
         // ============ PURCHASE DETAILS ============
         const purchaseDetails = await Purchase.aggregate([
