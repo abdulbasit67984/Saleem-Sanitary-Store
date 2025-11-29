@@ -103,7 +103,7 @@ const Dashboard = () => {
         </ChartCard>
 
         {/* Stock Pie */}
-        <ChartCard title="Stock Report">
+        <ChartCard title="Top Sold Products">
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Tooltip />

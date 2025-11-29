@@ -312,7 +312,7 @@ function SoldItems() {
         </div>
 
         {/* Section 2: Items Table */}
-        <div className="overflow-auto max-h-72 mb-4 scrollbar-thin rounded">
+        <div className="overflow-auto max-h-72 mb-4 rounded scrollbar-thin scrollbar-thumb-primary scrollbar-track-transparent">
           <table className="min-w-full bg-white border text-xs">
             <thead className="sticky -top-1 border-b shadow-sm bg-gray-300 z-10">
               <tr>

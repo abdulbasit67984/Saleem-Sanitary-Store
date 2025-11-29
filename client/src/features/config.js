@@ -1443,7 +1443,7 @@ export class Config {
             throw error;
         }
     }
-
+    
     async sendWhatsappMessage(data) {
         try {
             const response = await this.client.post(`/whatsapp/send-message`,
@@ -1466,7 +1466,29 @@ export class Config {
         }
     }
 
+    async getDailyReports(dateRange) {
+        try {
+            const response = await this.client.get(`/reports/daily-reports?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`, {
+                headers: {
+                    Authorization: `Bearer ${authService.getAccessToken()}`,
+                },
+            });
+            console.log('response', response)
+            if (response.data) {
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error getting daily reports:", error);
+            throw error;
+        }
+    }
+
+
+
 }
+
 const config = new Config();
 
 

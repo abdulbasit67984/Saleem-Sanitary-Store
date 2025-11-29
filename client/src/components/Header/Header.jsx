@@ -8,6 +8,8 @@ import Navbar from './navbar/Navbar'
 import { useParams } from 'react-router-dom'
 import authService from '../../features/auth'
 import { setCurrentUser } from '../../store/slices/auth/authSlice'
+import { User, LogOut, Sparkles } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 function Header() {
   const authStatus = useSelector((state) => state.auth.status)
@@ -17,10 +19,15 @@ function Header() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  useEffect(() => {
+  const [scrolled, setScrolled] = useState(false)
 
-  }, [])
-
+  // useEffect(() => {
+  //   const handleScroll = () => {
+  //     setScrolled(window.scrollY > 10)
+  //   }
+  //   window.addEventListener('scroll', handleScroll)
+  //   return () => window.removeEventListener('scroll', handleScroll)
+  // }, [])
 
   const isAdmin = () => {
     return userData?.role === "admin"
@@ -240,6 +247,12 @@ function Header() {
       isAdmin: isAdmin(),
       Children: [
         {
+          name: "Daily Reports",
+          slug: `/${primaryPath}/accounts/daily-reports`,
+          active: isAdmin() || isOwner() || hasRight("Daily Reports"),
+          isAdmin: isAdmin()
+        },
+        {
           name: "Expense Entry",
           slug: `/${primaryPath}/accounts/expense-entry`,
           active: isAdmin() || isOwner() || hasRight("Expense Entry"),
@@ -320,7 +333,7 @@ function Header() {
       slug: `/${primaryPath}/whatsapp`,
       active: isAdmin() || isOwner() || hasRight("Whatsapp Settings"),
       isAdmin: isAdmin(),
-      
+
     },
     // {
     //   name: "Calculator",
@@ -362,31 +375,92 @@ function Header() {
   // return !authStatus ? (
   return authStatus ? (
     <>
-      <header className={`bg-primary shadow-md  h-12 w-full `}>
-        <Container className={'shadow-lg z-50'}>
-          <nav className='flex items-center justify-end gap-3 pt-1 w-full'>
-            {/* <Logo width='w-24 ' className='rounded-full opacity-90 ' /> */}
-            <div className='flex items-center'>
+      <motion.header
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className={`
+          bg-gradient-to-r from-primary via-primary to-slate-900 shadow-2xl h-16 max-w-screen fixed top-0 left-0 right-0 z-50
+          transition-all duration-300
+          ${scrolled ? 'backdrop-blur-xl bg-opacity-95' : ''}
+        `}
+      >
+        {/* Animated gradient overlay */}
+        <motion.div
+          className="absolute inset-0 opacity-30"
+          animate={{
+            background: [
+              'linear-gradient(to right, #1e293b, #312e81)',
+              'linear-gradient(to right, #312e81, #1e293b)',
+              'linear-gradient(to right, #1e293b, #312e81)',
+            ],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        />
+
+        {/* <Container className={'shadow-lg z-50 relative h-full '}> */}
+          <nav className='flex items-center justify-between h-full overflow-y-auto'>
+            {/* Logo Section */}
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex-shrink-0"
+            >
+              {/* <Logo width='w-24' className='rounded-full opacity-90' /> */}
+            </motion.div>
+
+            {/* Navbar Component */}
+            <div className='flex-1 flex items-center justify-start'>
               <Navbar data={navItems} currentUser={userData} />
+              <motion.button
+                onClick={() => {
+                  if (isOwner() || isAdmin()) navigate('/signup')
+                }}
+                disabled={!authStatus}
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.9 }}
+                className={`
+                  p-2 mr-2 rounded-xl transition-all backdrop-blur-sm
+                  ${authStatus
+                    ? 'bg-white/10 hover:bg-white/20 cursor-pointer'
+                    : 'bg-white/5 cursor-not-allowed opacity-50'
+                  }
+                `}
+              >
+                <User className={`w-5 h-5 ${authStatus ? 'text-white' : 'text-gray-400'}`} />
+              </motion.button>
+
+              {authStatus && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  // whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <LogoutBtn />
+                </motion.div>
+              )}
             </div>
 
-
-            <div className='w-full flex justify-end gap-3'>
-              <button onClick={() => {
-                if (isOwner() || isAdmin()) navigate('/signup')
-              }}
-                disabled={!authStatus}>
-                <img src={authStatus ? "../../../src/assets/user(2).png" : "../../../src/assets/user(1).png"} className='w-6 filter invert brightness-0' alt="" />
-              </button>
-              {authStatus &&
-                <LogoutBtn />
-              }
+            {/* User Actions Section */}
+            <div className='flex items-center gap-3 flex-shrink-0'>
             </div>
-
           </nav>
-        </Container>
-      </header>
+        {/* </Container> */}
 
+        {/* Bottom border glow */}
+        <motion.div
+          className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-white to-transparent"
+          animate={{
+            opacity: [0.5, 1, 0.5],
+          }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.header>
+
+      {/* Spacer to prevent content from going under fixed header */}
+      <div className="h-16" />
     </>
   ) : null
 }

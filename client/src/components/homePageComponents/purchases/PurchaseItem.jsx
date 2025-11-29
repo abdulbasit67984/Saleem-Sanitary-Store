@@ -44,8 +44,10 @@ const PurchaseItem = () => {
     vendorCompanyId: '',
     productDiscountPercentage: '',
     productPack: 1,
+    packUnit: 'pcs',
     productPurchasePrice: '',
     productTotalQuantity: 0,
+    quantityUnit: 'pcs',
     isNewProduct: true,
   });
 
@@ -523,17 +525,55 @@ const PurchaseItem = () => {
                 divClass="flex gap-2 text-xs items-center"
                 className="p-1"
               />
+              <div className='flex gap-2'>
+                <div className="flex gap-10 items-center">
+                  <label htmlFor="">Pack: </label>
+                  <input
+                    type="text"
+                    name="productPack"
+                    value={newProduct.productPack}
+                    onChange={handleNewProductChange}
+                    className="border p-1 rounded-md w-20"
+                  />
+                </div>
+                <select
+                  name="packUnit"
+                  className='px-2 rounded-lg text-[11px]'
+                  // value={newProduct.packUnit}
+                  onChange={handleNewProductChange}
+                >
+                  <option value="">Select Pack Unit</option>
+                  {['pcs', 'kg', 'grams', 'ft', 'inches', 'cm'].map((unit, i) => (
+                    <option key={i} value={unit}>{unit.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className='flex gap-2'>
+                <div className="flex gap-10 items-center">
+                  <label htmlFor="">Total Qty: </label>
+                  <input
+                    type="text"
+                    value={0}
+                    disabled
+                    className="border p-1 rounded-md w-20"
+                  />
+                </div>
+                <select
+                  name="quantityUnit"
+                  className='px-2 rounded-lg text-[11px]'
+                  // value={newProduct.quantityUnit}
+                  onChange={handleNewProductChange}
+                >
+                  <option value="">Select Quantity Unit</option>
+                  {['pcs', 'cotton', 'box', 'pack', 'kg', 'ton','meter', 'yard','ft'].map((unit, i) => (
+                    <option key={i} value={unit}>{unit.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+
               <Input
-                label="Pack:"
-                name="productPack"
-                value={newProduct.productPack}
-                onChange={handleNewProductChange}
-                labelClass="w-28"
-                divClass="flex gap-2 text-xs items-center"
-                className="p-1"
-              />
-              <Input
-                label="Purchase Price: (Required)"
+                label="Purchase Price: *"
                 name="productPurchasePrice"
                 value={newProduct.productPurchasePrice}
                 onChange={handleNewProductChange}

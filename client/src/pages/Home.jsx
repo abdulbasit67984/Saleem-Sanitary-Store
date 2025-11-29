@@ -37,6 +37,7 @@ import {
   ShortItemList,
   ExpiryReport,
   //accounts
+  DailyReport,
   Posting,
   OpeningAndAdjustmentBalance,
   ExpenseEntry,
@@ -149,6 +150,8 @@ function Home() {
         switch (pathParts[3]) {
           case 'posting':
             return <Posting />;
+          case 'daily-reports':
+            return <DailyReport />
           case 'opening-&-adjustment-balance':
             return <OpeningAndAdjustmentBalance />;
           case 'expense-entry':
@@ -189,7 +192,7 @@ function Home() {
   return (
     <div className='flex'>
       <FeaturesCategory />
-      <div className='w-full bg-gray-100 p-4 overflow-auto '>
+      <div className='w-full bg-gray-100 p-4 overflow-auto scrollbar scrollbar-thumb-primary scrollbar-track-transparent'>
         {renderActiveFeature()}
       </div>
     </div>

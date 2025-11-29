@@ -11,7 +11,7 @@ function MagicUiAnimation({ text = "Welcome to PANDAS" }) {
     }
 
     return (
-        <div className="relative w-full h-screen overflow-hidden flex items-center justify-center gap-6 bg-white dark:bg-black">
+        <div className="relative w-full h-[85svh] overflow-hidden flex items-center justify-center gap-6 bg-white dark:bg-black">
             <AnimatedGridPattern
                 numSquares={50}
                 maxOpacity={0.4}

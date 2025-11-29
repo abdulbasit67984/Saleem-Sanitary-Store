@@ -50,6 +50,7 @@ import PurchaseReport from "./homePageComponents/purchases/PurchaseReport";
 import PurchaseReturn from "./homePageComponents/purchases/PurchaseReturn";
 
 //accounts
+import DailyReport from "./homePageComponents/accounts/DailyReport";
 import Posting from "./homePageComponents/accounts/Posting";
 import OpeningAndAdjustmentBalance from "./homePageComponents/accounts/OpeningAndAdjustmentBalance";
 import ExpenseEntry from "./homePageComponents/accounts/ExpenseEntry";
@@ -113,6 +114,7 @@ export {
     ShortItemList,
     ExpiryReport,
     //accounts
+    DailyReport,
     Posting,
     OpeningAndAdjustmentBalance,
     ExpenseEntry,

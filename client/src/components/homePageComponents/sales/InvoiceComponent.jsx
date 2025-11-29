@@ -977,15 +977,22 @@ const InvoiceComponent = () => {
               <option value="add"
                 onClick={() => setShowAddCustomer(true)}
               >+ Add New Customer</option>
-              {filteredCustomers?.map((customer, index) => (
-                <option
-                  key={index}
-                  onClick={() => setCustomerIndex(index)}
-                  value={customer._id}
-                >
-                  {customer.customerName}
-                </option>
-              ))}
+              {filteredCustomers?.map((customer, index) => {
+                const flag =
+                  customer.customerFlag === "white" ? "⚪" :
+                    customer.customerFlag === "yellow" ? "🟡" :
+                      customer.customerFlag === "green" ? "🟢" :
+                        "🔴";
+                return (
+                  <option
+                    key={index}
+                    onClick={() => setCustomerIndex(index)}
+                    value={customer._id}
+                  >
+                    {customer.customerName} {flag}
+                  </option>
+                )
+              })}
             </select>
           </label>
 

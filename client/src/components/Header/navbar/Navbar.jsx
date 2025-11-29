@@ -1,94 +1,314 @@
 /* eslint-disable react/prop-types */
-// import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { setActiveFeatureIndex, setNavItemCategoryData } from '../../../store/slices/navItems/navItemsSlice';
+import React, { useState } from 'react'
+import { NavLink } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { setActiveFeatureIndex, setNavItemCategoryData } from '../../../store/slices/navItems/navItemsSlice'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  LayoutDashboard, 
+  ShoppingCart, 
+  Package, 
+  Box, 
+  Wallet, 
+  Users, 
+  MessageCircle,
+  UserPlus,
+  Building2,
+  Shield,
+  ChevronDown,
+  FileText,
+  RotateCcw,
+  TrendingUp,
+  UserCheck,
+  CreditCard,
+  DollarSign,
+  ShoppingBag,
+  Truck,
+  Factory,
+  BarChart3,
+  Plus,
+  PlusCircle,
+  Layers,
+  Printer,
+  Search,
+  AlertCircle,
+  List,
+  Calendar,
+  BookOpen,
+  GitMerge,
+} from 'lucide-react'
 
-// eslint-disable-next-line react/prop-types
-function Navbar({ data, currentUser }) { // Keep currentUser prop if you use it elsewhere, or remove if isAdmin() / isOwner() handle all user checks upstream
-    const navData = data;
-    const dispatch = useDispatch();
-
-    // Determine if the current user is an admin.
-    // This assumes currentUser is passed and has a 'data.role' property.
-    // If isAdmin() function already relies on global state or context,
-    // you might not need currentUser prop here, but it's good for clarity.
-    const userIsAdmin = currentUser?.role?.toLowerCase() === 'admin';
-    console.log('userIsAdmin', userIsAdmin)
-
-
-    const handleNavItems = (i) => {
-        const item = navData[i];
-
-        // If the item is not active, prevent any Redux dispatches.
-        if (!item.active) {
-            return;
-        }
-
-        if (item && item.Children) {
-            dispatch(setNavItemCategoryData(item.Children));
-        } else {
-            // If an item has no children, clear the category data
-            dispatch(setNavItemCategoryData(null));
-        }
-        dispatch(setActiveFeatureIndex({ activeIndex: null }));
-    }
-
-    return (
-        <>
-            <nav className="relative">
-                <div>
-                    <ul className="flex items-center justify-center gap-4 text-white font-">
-                        {navData.map((item, i) => {
-                            // --- NEW FILTERING LOGIC ---
-                            // If the item is marked as 'isAdmin' true,
-                            // and the current user is NOT an admin, then skip rendering this item.
-                            if (item.isAdmin && !userIsAdmin) {
-                                return null; // Don't render this item
-                            }
-                            // --- END NEW FILTERING LOGIC ---
-
-                            // The `item.active` property directly tells us if the feature is accessible (enabled/disabled)
-                            const isFeatureDisabled = !item.active;
-
-                            // Apply appropriate classes for disabled state
-                            const disabledClasses = isFeatureDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
-
-                            return (
-                                <li
-                                    key={i}
-                                    className={`${disabledClasses}`}
-                                >
-                                    <button
-                                        onClick={() => handleNavItems(i)}
-                                        disabled={isFeatureDisabled}
-                                        className="focus:outline-none"
-                                    >
-                                        <NavLink
-                                            to={item.slug}
-                                            className={({ isActive }) =>
-                                                `block text-sm py-2 pr-4 pl-3 duration-200
-                                                ${isActive ? "shadow-md border-t-2" : ""}
-                                                hover:shadow-md px-3 rounded-2xl py-2 w-auto text-nowrap relative
-                                                ${disabledClasses}`
-                                            }
-                                            onClick={(e) => {
-                                                if (isFeatureDisabled) {
-                                                    e.preventDefault();
-                                                }
-                                            }}
-                                        >
-                                            {item.name}
-                                        </NavLink>
-                                    </button>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </div>
-            </nav>
-        </>
-    );
+// Icon mapping for all navigation items
+const iconMap = {
+  'Dashboard': LayoutDashboard,
+  'Sales': ShoppingCart,
+  'Purchases': ShoppingBag,
+  'Stock': Box,
+  'Accounts': Wallet,
+  'Users': Users,
+  'Whatsapp Settings': MessageCircle,
+  'Register account': UserPlus,
+  'Register Business': Building2,
+  'Add Roles': Shield,
+  'Sale Item (Invoice)': FileText,
+  'Sale Return Against Bill': RotateCcw,
+  'Direct Sale Return': RotateCcw,
+  'Sale Report': TrendingUp,
+  'Bill Reports': FileText,
+  'Merge Bills': GitMerge,
+  'Add Customer': UserCheck,
+  'My Customers': Users,
+  'Bill Payment': CreditCard,
+  'Account Receivables': DollarSign,
+  'Purchase Item': ShoppingBag,
+  'Purchase Return': RotateCcw,
+  'Purchase Report': BarChart3,
+  'Add Company': Factory,
+  'All Companies': Building2,
+  'Add Supplier': Truck,
+  'All Supplier': Truck,
+  'Registration': FileText,
+  'Stock Increase': TrendingUp,
+  'Stock Report': BarChart3,
+  'Changed Price Report': TrendingUp,
+  'Add Item Category': Layers,
+  'Add Item Type': Plus,
+  'Bar Code Printing': Printer,
+  'Stock Search': Search,
+  'Expiry Report': AlertCircle,
+  'Short Items List': List,
+  'Daily Reports': Calendar,
+  'Expense Entry': DollarSign,
+  'Vendor Journal Entry': BookOpen,
+  'Customer Journal Entry': BookOpen,
+  'Opening & Adjustment Balance': DollarSign,
+  'New Ledger': PlusCircle,
+  'Ledger Accounts': BookOpen,
+  'Merge Accounts': GitMerge,
+  'Income Statement': BarChart3,
+  'Add New Users': UserPlus,
+  'Rights': Shield,
+  'All Users': Users
 }
 
-export default Navbar;
+// Separate component for dropdown items to avoid hooks issues
+const DropdownItem = ({ child, idx }) => {
+  const [isChildHovered, setIsChildHovered] = useState(false)
+  const ChildIcon = iconMap[child.name] || Box
+  const isChildDisabled = !child.active
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: idx * 0.03 }}
+      onMouseEnter={() => setIsChildHovered(true)}
+      onMouseLeave={() => setIsChildHovered(false)}
+    >
+      <NavLink
+        to={child.slug}
+        onClick={(e) => {
+          if (isChildDisabled) {
+            e.preventDefault()
+          }
+        }}
+        className={({ isActive }) =>
+          `
+            flex items-center gap-3 px-4 py-3 rounded-xl text-sm
+            transition-all duration-200 group
+            ${isActive ? 'bg-white/15 shadow-md' : ''}
+            ${isChildDisabled 
+              ? 'opacity-40 cursor-not-allowed text-gray-400' 
+              : 'text-white hover:bg-white/10 cursor-pointer'
+            }
+          `
+        }
+      >
+        {/* Child Icon with rotation on hover */}
+        <motion.div
+          animate={
+            isChildHovered && !isChildDisabled
+              ? { rotate: 360 }
+              : { rotate: 0 }
+          }
+          transition={{ duration: 0.5 }}
+          className="flex-shrink-0"
+        >
+          <ChildIcon className="w-4 h-4" />
+        </motion.div>
+
+        {/* Child Text */}
+        <span className="flex-1">{child.name}</span>
+
+        {/* Active indicator dot */}
+        {!isChildDisabled && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={isChildHovered ? { scale: 1 } : { scale: 0 }}
+            className="w-1.5 h-1.5 rounded-full bg-blue-400"
+          />
+        )}
+      </NavLink>
+    </motion.div>
+  )
+}
+
+function Navbar({ data, currentUser }) {
+  const navData = data
+  const dispatch = useDispatch()
+  const [hoveredIndex, setHoveredIndex] = useState(null)
+  const [openDropdown, setOpenDropdown] = useState(null)
+
+  const userIsAdmin = currentUser?.role?.toLowerCase() === 'admin'
+  console.log('userIsAdmin', userIsAdmin)
+
+  const handleNavItems = (i) => {
+    const item = navData[i]
+
+    if (!item.active) {
+      return
+    }
+
+    if (item && item.Children) {
+      dispatch(setNavItemCategoryData(item.Children))
+    } else {
+      dispatch(setNavItemCategoryData(null))
+    }
+    dispatch(setActiveFeatureIndex({ activeIndex: null }))
+  }
+
+  return (
+    <nav className="relative w-full">
+      <div className="w-full overflow-x-auto scrollbar-hide">
+        <ul className="flex items-center justify-start gap-2 text-white min-w-max px-1">
+          {navData.map((item, i) => {
+            // Filter admin-only items
+            if (item.isAdmin && !userIsAdmin) {
+              return null
+            }
+
+            const isFeatureDisabled = !item.active
+            const hasChildren = item.Children && item.Children.length > 0
+            const Icon = iconMap[item.name] || Box
+
+            return (
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05, duration: 0.3 }}
+                className="relative"
+                onMouseEnter={() => {
+                  setHoveredIndex(i)
+                  if (hasChildren && !isFeatureDisabled) {
+                    setOpenDropdown(i)
+                  }
+                }}
+                onMouseLeave={() => {
+                  setHoveredIndex(null)
+                  setOpenDropdown(null)
+                }}
+              >
+                <button
+                  onClick={() => handleNavItems(i)}
+                  disabled={isFeatureDisabled}
+                  className="focus:outline-none"
+                >
+                  <NavLink
+                    to={item.slug}
+                    className={({ isActive }) =>
+                      `
+                        relative flex items-center gap-1.5 px-2 py-2 rounded-xl text-xs font-medium
+                        transition-all duration-300 text-nowrap
+                        ${isActive ? 'bg-white/20 shadow-lg' : ''}
+                        ${isFeatureDisabled 
+                          ? 'opacity-40 cursor-not-allowed pointer-events-none' 
+                          : 'hover:bg-white/10'
+                        }
+                      `
+                    }
+                    onClick={(e) => {
+                      if (isFeatureDisabled) {
+                        e.preventDefault()
+                      }
+                    }}
+                  >
+                    {/* Icon with animation */}
+                    <motion.div
+                      animate={
+                        hoveredIndex === i && !isFeatureDisabled
+                          ? { 
+                              rotate: [0, -10, 10, -10, 0],
+                              scale: [1, 1.1, 1.1, 1.1, 1]
+                            }
+                          : {}
+                      }
+                      transition={{ duration: 0.5 }}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </motion.div>
+
+                    {/* Text */}
+                    <span className="relative">
+                      {item.name}
+                    </span>
+
+                    {/* Dropdown indicator */}
+                    {hasChildren && (
+                      <motion.div
+                        animate={{ rotate: openDropdown === i ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </motion.div>
+                    )}
+
+                    {/* Hover glow effect */}
+                    {hoveredIndex === i && !isFeatureDisabled && (
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-primary/50 to-purple-400/20 rounded-xl blur-xl -z-10"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      />
+                    )}
+                  </NavLink>
+                </button>
+
+                {/* Dropdown Menu */}
+                <AnimatePresence>
+                  {hasChildren && openDropdown === i && !isFeatureDisabled && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full left-0 mt-2 min-w-[280px] bg-gradient-to-br from-slate-800/95 to-slate-900/95 rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-50 backdrop-blur-xl"
+                    >
+                      <div className="p-2 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                        {item.Children.map((child, idx) => (
+                          <DropdownItem key={idx} child={child} idx={idx} />
+                        ))}
+                      </div>
+
+                      {/* Dropdown bottom glow */}
+                      <motion.div
+                        className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"
+                        animate={{
+                          opacity: [0.3, 0.6, 0.3],
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.li>
+            )
+          })}
+        </ul>
+      </div>
+    </nav>
+  )
+}
+
+export default Navbar

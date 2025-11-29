@@ -24,6 +24,7 @@ import { saleReturnRoutes } from "./routes/saleReturn.route.js";
 import { purchaseRoutes } from "./routes/purchase.route.js";
 import { dashboardRoutes } from "./routes/dashboard.route.js";
 import { whatsappRoutes } from "./routes/whatsapp.route.js";
+import { reportRoutes } from "./routes/report.route.js";
 
 
 // Apply routes
@@ -36,4 +37,5 @@ app.use("/api/v1/saleReturn", saleReturnRoutes);
 app.use("/api/v1/purchase", purchaseRoutes); 
 app.use("/api/v1/dashboard", dashboardRoutes); 
 app.use("/api/v1/whatsapp", whatsappRoutes);
+app.use("/api/v1/reports", reportRoutes);
 export { app }

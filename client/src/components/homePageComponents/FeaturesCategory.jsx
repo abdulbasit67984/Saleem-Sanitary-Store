@@ -92,7 +92,7 @@ function FeaturesCategory() {
       initial={false}
       animate={{ width: isCollapsed ? '4rem' : '16.666667%' }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className='h-screen mt-3 rounded-r-md bg-gradient-to-b from-primary via-primary to-slate-900 shadow-2xl relative'
+      className='h-[85svh] mt-3 rounded-r-md bg-gradient-to-b from-primary via-primary to-slate-900 shadow-2xl relative'
     >
       {/* Decorative gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 pointer-events-none" />
@@ -100,7 +100,7 @@ function FeaturesCategory() {
       {/* Toggle button */}
       <motion.button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 -top-2 z-50 bg-white hover:bg-primary border-2 border-primary text-white rounded-full p-1.5 shadow-lg transition-colors group" // <-- ADD 'group' class here
+        className="absolute -right-3 -top-2 z-20 bg-white hover:bg-primary border-2 border-primary text-white rounded-full p-1.5 shadow-lg transition-colors group" // <-- ADD 'group' class here
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
