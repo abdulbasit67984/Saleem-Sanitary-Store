@@ -291,7 +291,7 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                                                     {formatMoney(it.discount ?? 0)}
                                                 </td>
                                                 <td className="px-2 text-right">
-                                                    {formatMoney((it.salePrice1 * (it.billItemUnit / it.productPack + it.quantity))?? 0)}
+                                                    {formatMoney((it.salePrice1 * (it.billItemUnit / it.productPack + it.quantity)) - ((it.salePrice1 * (it.billItemUnit / it.productPack + it.quantity)) * (it.discount / 100 ))?? 0)}
                                                 </td>
                                             </tr>
                                         ))}
@@ -299,10 +299,10 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                                 </table>
                             </div>
 
-                            <div className="mt-4 flex items-center justify-between text-sm">
+                            <div className="mt-4 justify-end text-sm">
                                 <div>
-                                    {/* <span className="text-gray-500">Flat Discount:</span>{" "}
-                                    {formatMoney(preview.payload?.flatDiscount ?? 0)} */}
+                                    <span className="text-gray-500">Flat Discount:</span>{" "}
+                                    {formatMoney(preview.payload?.flatDiscount ?? 0)}
                                 </div>
                                 <div className="font-semibold">
                                     Total: {formatMoney(preview.payload?.totalAmount ?? preview.total)}
