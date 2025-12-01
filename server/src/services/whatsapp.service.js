@@ -1,172 +1,209 @@
 // server/src/services/whatsapp.service.js
+
 import pkg from 'whatsapp-web.js';
 import qrcode from 'qrcode';
 import { EventEmitter } from 'events';
-import puppeteer from 'puppeteer'
 import path from 'path';
 import fs from 'fs';
 
 const { Client, LocalAuth } = pkg;
 
-let client;
+// Emit QR updates to frontend
+export const whatsappEmitter = new EventEmitter();
+
+let client = null;
 let clientReady = false;
 let currentQr = null;
 let messageQueue = [];
-let reconnecting = false;
 
-export const whatsappEmitter = new EventEmitter(); // used to emit QR updates to frontend
-
-// ✅ Fixed: create a stable puppeteer profile path
-const chromePath = "C:/Users/DIBB ComputerS/.cache/puppeteer/chrome/win64-141.0.7390.78/chrome-win64/chrome.exe";
-const userDataDir = path.join(process.cwd(), "puppeteer_data");
-if (!fs.existsSync(userDataDir)) fs.mkdirSync(userDataDir);
-
-// ✅ Fixed: give LocalAuth a persistent directory
+// Persistent authentication directory
 const authDir = path.join(process.cwd(), "whatsapp_auth");
 if (!fs.existsSync(authDir)) fs.mkdirSync(authDir);
 
-let browser;
+
+/* --------------------------------------------------------
+   INIT WHATSAPP 
+---------------------------------------------------------*/
 
 export const initWhatsapp = async () => {
     try {
+        console.log("🚀 Starting WhatsApp Service...");
 
+        // Avoid duplicate initialization
         if (client && clientReady) {
-            console.log("⚙️ WhatsApp already initialized.");
+            console.log("⚙️ WhatsApp already initialized");
             return;
         }
 
-        if (!browser) {
-            browser = await puppeteer.launch({
-                // executablePath: chromePath,
-                executablePath: "C:/Program Files/Google/Chrome/Application/chrome.exe",
+        // Create WhatsApp Client
+        client = new Client({
+            authStrategy: new LocalAuth({
+                clientId: "pandas-session",
+                dataPath: authDir,
+            }),
+            puppeteer: {
                 headless: true,
-                userDataDir,
+                executablePath: "C:/Program Files/Google/Chrome/Application/chrome.exe",
                 args: [
                     "--no-sandbox",
                     "--disable-setuid-sandbox",
                     "--disable-gpu",
                     "--disable-dev-shm-usage",
-                    "--remote-debugging-port=9222",
                 ],
-            });
-
-            console.log("✅ Puppeteer launched successfully!");
-        }
-
-        client = new Client({
-            authStrategy: new LocalAuth({
-                clientId: "pandas-session", // you can name it anything
-                dataPath: authDir, // store session data here
-            }),
-            puppeteer: {
-                browserWSEndpoint: (await browser.wsEndpoint()), // connect to launched browser
             },
         });
 
-        // Generate QR code event
-        client.on("qr", async (qr) => {
+        /* --------------------------
+            QR EVENT
+        ---------------------------*/
+        client.on("qr", async qr => {
             currentQr = await qrcode.toDataURL(qr);
             whatsappEmitter.emit("qr", currentQr);
-            console.log("📱 WhatsApp QR generated!");
+            console.log("📱 WhatsApp QR generated");
         });
 
-        // When client is ready
+        /* --------------------------
+            READY EVENT
+        ---------------------------*/
         client.on("ready", () => {
             clientReady = true;
-            reconnecting = false;
-            console.log("✅ WhatsApp Client Ready!");
+            console.log("✅ WhatsApp is READY!");
 
-            // Send queued messages (if any)
+            // Process queued messages
             if (messageQueue.length > 0) {
-                console.log(`📤 Sending ${messageQueue.length} queued messages...`);
-                messageQueue.forEach(async ({ number, message }) => {
-                    await sendWhatsappMessage(number, message);
+                console.log(`📨 Processing ${messageQueue.length} queued messages...`);
+                messageQueue.forEach(async (item) => {
+                    await sendWhatsappMessage(item.number, item.message);
                 });
                 messageQueue = [];
             }
         });
 
-        // When disconnected
-        client.on("disconnected", (reason) => {
+        /* --------------------------
+            DISCONNECTED EVENT
+        ---------------------------*/
+        client.on("disconnected", async (reason) => {
+            console.log("⚠️ WhatsApp Disconnected:", reason);
             clientReady = false;
-            console.log("⚠️ WhatsApp disconnected:", reason);
 
-            if (!reconnecting) {
-                reconnecting = true;
-                console.log("🔄 Attempting to reconnect in 5 seconds...");
-                setTimeout(async () => {
-                    try {
-                        await initWhatsapp();
-                        console.log("✅ Reconnected successfully!");
-                    } catch (err) {
-                        console.error("❌ Reconnection failed:", err);
-                    } finally {
-                        reconnecting = false;
-                    }
-                }, 5000);
-            }
+            console.log("♻️ Restarting WhatsApp...");
+            await restartWhatsapp();
         });
 
-        // Log any incoming messages (optional)
-        client.on("message", (msg) => {
-            console.log(`📩 New message from ${msg.from}: ${msg.body}`);
+        /* --------------------------
+            ERROR EVENT
+        ---------------------------*/
+        client.on("auth_failure", (msg) => {
+            console.error("❌ AUTH ERROR:", msg);
         });
 
-        // Initialize client
+        client.on("change_state", (state) => {
+            console.log("🔄 WhatsApp State:", state);
+        });
+
+        /* --------------------------
+            INIT CLIENT
+        ---------------------------*/
         await client.initialize();
-    } catch (error) {
-        console.error("❌ Error initializing WhatsApp:", error);
-        throw error;
+
+    } catch (err) {
+        console.error("❌ WhatsApp Init Error:", err);
+        await restartWhatsapp();
     }
 };
 
-// Get QR Code
+
+
+/* --------------------------------------------------------
+   RESTART WHATSAPP SAFELY
+---------------------------------------------------------*/
+
+export const restartWhatsapp = async () => {
+    try {
+        console.log("🔁 Restarting WhatsApp Client...");
+
+        if (client) {
+            await client.destroy().catch(() => { });
+        }
+
+        client = null;
+        clientReady = false;
+
+        await new Promise(res => setTimeout(res, 3000)); // small pause
+        await initWhatsapp();
+
+    } catch (err) {
+        console.error("❌ WHATSAPP RESTART FAILED:", err);
+    }
+};
+
+
+
+/* --------------------------------------------------------
+   GET QR
+---------------------------------------------------------*/
 export const getQrCode = async () => {
-    if (currentQr) {
-        return { qr: currentQr };
-    } else {
-        return { message: "QR not yet generated, please wait..." };
-    }
+    if (currentQr) return { qr: currentQr };
+    return { message: "QR not generated yet" };
 };
 
-// Check WhatsApp connection status
+
+
+/* --------------------------------------------------------
+   CHECK STATUS
+---------------------------------------------------------*/
 export const checkWhatsappStatus = async () => {
     return { ready: clientReady };
 };
 
-// Send WhatsApp Message
+
+
+/* --------------------------------------------------------
+   SEND MESSAGE
+---------------------------------------------------------*/
+
 export const sendWhatsappMessage = async (number, message) => {
     try {
-        const chatId = number?.includes("@c.us") ? number : `${number}@c.us`;
+        const chatId = number.includes("@c.us") ? number : `${number}@c.us`;
 
         if (!clientReady) {
-            console.log(`⏳ Client not ready, queuing message to ${number}`);
+            console.log(`⏳ WhatsApp not ready → queued message: ${number}`);
             messageQueue.push({ number: chatId, message });
             return { status: "queued", number };
         }
 
         await client.sendMessage(chatId, message);
-        console.log(`📤 Message sent to ${number}: ${message}`);
+        console.log(`📤 Message SENT to ${number}`);
+
         return { status: "sent", number, message };
-    } catch (error) {
-        console.error("❌ WhatsApp send error:", error);
-        throw error;
+
+    } catch (err) {
+        console.error("❌ WhatsApp send error:", err);
+
+        // in case client died mid-send
+        if (err.message.includes("Session closed")) {
+            console.log("⚠️ Detected session crash → Restarting WhatsApp...");
+            await restartWhatsapp();
+        }
+
+        return { status: "failed", error: err.message };
     }
 };
 
 
-// 🧹 Graceful shutdown
+
+/* --------------------------------------------------------
+   SHUTDOWN SAFELY
+---------------------------------------------------------*/
+
 process.on("SIGINT", async () => {
-    console.log("🧹 Closing WhatsApp and Puppeteer...");
+    console.log("🧹 Shutting down WhatsApp...");
     if (client) await client.destroy().catch(() => { });
-    if (browser) await browser.close().catch(() => { });
     process.exit(0);
 });
 
-
-process.once("SIGUSR2", async () => {
-    console.log("🔁 Restarting server, closing Puppeteer...");
+process.on("SIGTERM", async () => {
+    console.log("🧹 Cleaning up (SIGTERM)...");
     if (client) await client.destroy().catch(() => { });
-    if (browser) await browser.close().catch(() => { });
-    process.kill(process.pid, "SIGUSR2");
+    process.exit(0);
 });
