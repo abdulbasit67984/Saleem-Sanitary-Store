@@ -18,7 +18,7 @@ function MagicUiAnimation({ text = "Welcome to PANDAS" }) {
                 duration={3}
                 repeatDelay={5}
                 className={cn(
-                    "text-[#27aedb] absolute inset-0 h-full w-full",
+                    "text-primary absolute inset-0 h-full w-full",
                     "[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]",
                     "skew-y-12 "
                 )}
