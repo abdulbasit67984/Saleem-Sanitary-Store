@@ -410,7 +410,7 @@ function Header() {
             </motion.div>
 
             {/* Navbar Component */}
-            <div className='flex-1 flex items-center justify-start'>
+            <div className='flex-1 flex items-center justify-start overflow-x-auto scrollbar-none'>
               <Navbar data={navItems} currentUser={userData} />
               <motion.button
                 onClick={() => {

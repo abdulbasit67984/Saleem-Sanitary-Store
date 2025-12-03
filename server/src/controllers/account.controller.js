@@ -1189,7 +1189,7 @@ const closeAccountBalance = asyncHandler(async (req, res) => {
             const lastOpeningEntry = await GeneralLedger.findOne({
                 BusinessId,
                 individualAccountId: accountId,
-                details: "Opening Balance"
+                details: { $regex: /^Opening Balance for/ }
             }).sort({ createdAt: -1 }); // Get the latest "Opening Balance" entry
 
             let ledgerEntries;

@@ -10,6 +10,9 @@ import functions from "../../../features/functions"
 import JournalEntryModal from "./JournalEntryModal.jsx";
 
 import { refreshLedgerData } from "../../../utils/refreshLedger.js";
+import Input from "../../Input.jsx";
+import { ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { motion } from "framer-motion";
 
 const Ledger = () => {
   const [accounts, setAccounts] = useState([]);
@@ -19,6 +22,7 @@ const Ledger = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [totalPayAndRec, setTotalPayAndRec] = useState({});
 
   const [accountTypeFilter, setAccountTypeFilter] = useState("all");
   const [balanceTypeFilter, setBalanceTypeFilter] = useState("all");
@@ -128,7 +132,7 @@ const Ledger = () => {
   const getComputedBalance = (individual) => {
     const computed = accountBalances[individual._id];
     // if computed is undefined, fall back to the server value or 0
-    return typeof computed === "number" ? computed : (Number(individual.accountBalance) || 0);
+    return typeof computed === "number" ? computed : 0;
   };
 
   if (sortOrder === "asc") {
@@ -278,34 +282,77 @@ const Ledger = () => {
   // Compute balances from ledgerData: sum(debit) - sum(credit) per referenceAccount._id
   const computeBalances = (ledgerEntries) => {
     const map = {};
+
     if (!Array.isArray(ledgerEntries)) return map;
 
-    console.log('ledgerEntries', ledgerEntries)
+    // Group entries by account first
+    const grouped = {};
+
     for (const entry of ledgerEntries) {
-      // skip if missing referenceAccount
-      const refId = entry?.referenceAccount?._id;
-      if (!refId) continue;
+      const id = entry?.referenceAccount?._id;
+      if (!id) continue;
 
+      // Ignore Sales Revenue (same rule as inside GL)
+      if (entry.individualAccount?.name === "Sales Revenue") continue;
 
-      // optional: ignore Sales Revenue entries the same way you did for selected ledger
-      const isSalesRevenue = entry.individualAccount?.name === "Sales Revenue";
-      if (isSalesRevenue) continue;
-
-      const debit = Number(entry.debit || 0);
-      const credit = Number(entry.credit || 0);
-
-      if (!map[refId]) map[refId] = 0;
-      map[refId] += debit;
-      map[refId] -= credit;
+      if (!grouped[id]) grouped[id] = [];
+      grouped[id].push(entry);
     }
 
-    return map; // accountId -> balance
+    // Now compute balance PER ACCOUNT using same GL logic
+    Object.keys(grouped).forEach((id) => {
+      const entries = grouped[id];
+
+      // cut up to last Opening Balance
+      const lastOpeningIndex = entries
+        .map((e) => e.details)
+        .lastIndexOf("Opening Balance");
+
+      const filtered =
+        lastOpeningIndex !== -1 ? entries.slice(lastOpeningIndex) : entries;
+
+      // now compute debit - credit
+      let balance = 0;
+
+      for (const e of filtered) {
+        balance += Number(e.debit || 0);
+        balance -= Number(e.credit || 0);
+      }
+
+      map[id] = balance;
+    });
+
+    return map;
   };
+
+  const totalPayablesAndReceivables = () => {
+
+    let totalReceivables = 0;
+    let totalPayables = 0;
+
+    accounts.flatMap(account =>
+      account.subCategories.flatMap(sub =>
+        sub.individualAccounts.filter(individual => {
+          // console.log('individual', individual)
+          if ((individual.customerId) && (individual.mergedInto === null)) totalReceivables += getComputedBalance(individual);
+          if ((individual.supplierId || individual.companyId) && individual.mergedInto === null) totalPayables += getComputedBalance(individual);
+        })
+      )
+    )
+
+    return {
+      totalReceivables,
+      totalPayables
+    }
+  }
+
 
   // Recompute balances whenever ledgerData changes
   useEffect(() => {
     const map = computeBalances(ledgerData);
     setAccountBalances(map);
+    const totalRecAndPay = totalPayablesAndReceivables()
+    setTotalPayAndRec(totalRecAndPay)
   }, [ledgerData]);
 
 
@@ -330,8 +377,54 @@ const Ledger = () => {
   };
 
   return (
-    <div className="p-3 bg-gray-100 min-h-screen">
-      <h1 className="text-2xl font-bold mb-4">General Ledger</h1>
+    <div className=" bg-gray-100 min-h-screen">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">General Ledger</h1>
+
+        {
+          !selectedAccount && (
+            <div className="flex gap-3">
+              {/* Receivables */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                <div className="rounded-2xl shadow-md bg-white border p-4 flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-green-100">
+                    <ArrowDownCircle className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Total Receivables</p>
+                    <p className="text-xl font-semibold">
+                      {functions.formatAsianNumber(totalPayAndRec?.totalReceivables)}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Payables */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <div className="rounded-2xl shadow-md bg-white border p-4 flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-red-100">
+                    <ArrowUpCircle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Total Payables</p>
+                    <p className="text-xl font-semibold">
+                      {functions.formatAsianNumber(totalPayAndRec?.totalPayables)}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )
+        }
+      </div>
 
       {loading && <Loader h_w='h-16 w-16 border-t-4 border-b-4' message='Loading please Wait...' />}
       {error && <p className="text-red-500">{error}</p>}
@@ -412,7 +505,7 @@ const Ledger = () => {
       {/* Account List */}
       {!selectedAccount && (
         <div className="bg-gray-50 p-3 max-h-96 overflow-auto scrollbar-track-gray-700 scrollbar-thin ">
-          <div className="bg-white p-3 mb-4 rounded-md shadow flex flex-wrap gap-3 items-center justify-between">
+          <div className="bg-white p-3 mb-4 rounded-md shadow flex flex-wrap gap-3 items-center justify-between sticky -top-3">
             {/* Search by name */}
             <input
               type="text"
@@ -473,16 +566,17 @@ const Ledger = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {filteredAccounts.map(individual => (
-              <div
-                key={individual._id}
-                className={` ${individual.customerId && 'bg-green-200'} ${(individual.supplierId || individual.companyId) && 'bg-red-200'} p-4 rounded shadow-md cursor-pointer hover:shadow-lg transition`}
-                onClick={() => handleSelectAccount(individual)}
-              >
-                <h2 className="text-lg font-semibold">{individual.individualAccountName}</h2>
-                <p className="text-gray-600">Balance: {functions.formatAsianNumber(getComputedBalance(individual))}</p>
-              </div>
-            ))}
+            {filteredAccounts.map(individual => {
+
+              return (!individual.mergedInto) ? (
+                <div key={individual._id}
+                  className={` ${individual.customerId && 'bg-green-200'} ${(individual.supplierId || individual.companyId) && 'bg-red-200'} p-4 rounded shadow-md cursor-pointer hover:shadow-lg transition`}
+                  onClick={() => handleSelectAccount(individual)}
+                >
+                  <h2 className="text-lg font-semibold">{individual.individualAccountName}</h2>
+                  <p className="text-gray-600">Balance: {functions.formatAsianNumber(getComputedBalance(individual))}</p>
+                </div>) : null
+            })}
           </div>
         </div>
       )}

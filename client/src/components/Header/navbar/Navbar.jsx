@@ -5,40 +5,11 @@ import { useDispatch } from 'react-redux'
 import { setActiveFeatureIndex, setNavItemCategoryData } from '../../../store/slices/navItems/navItemsSlice'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  LayoutDashboard, 
-  ShoppingCart, 
-  Package, 
-  Box, 
-  Wallet, 
-  Users, 
-  MessageCircle,
-  UserPlus,
-  Building2,
-  Shield,
-  ChevronDown,
-  FileText,
-  RotateCcw,
-  TrendingUp,
-  UserCheck,
-  CreditCard,
-  DollarSign,
-  ShoppingBag,
-  Truck,
-  Factory,
-  BarChart3,
-  Plus,
-  PlusCircle,
-  Layers,
-  Printer,
-  Search,
-  AlertCircle,
-  List,
-  Calendar,
-  BookOpen,
-  GitMerge,
+  // ... keep your imports exactly as they were
+  LayoutDashboard, ShoppingCart, Package, Box, Wallet, Users, MessageCircle, UserPlus, Building2, Shield, ChevronDown, FileText, RotateCcw, TrendingUp, UserCheck, CreditCard, DollarSign, ShoppingBag, Truck, Factory, BarChart3, Plus, PlusCircle, Layers, Printer, Search, AlertCircle, List, Calendar, BookOpen, GitMerge,
 } from 'lucide-react'
 
-// Icon mapping for all navigation items
+// ... Keep iconMap exactly as is ...
 const iconMap = {
   'Dashboard': LayoutDashboard,
   'Sales': ShoppingCart,
@@ -91,7 +62,7 @@ const iconMap = {
   'All Users': Users
 }
 
-// Separate component for dropdown items to avoid hooks issues
+// ... Keep DropdownItem exactly as is ...
 const DropdownItem = ({ child, idx }) => {
   const [isChildHovered, setIsChildHovered] = useState(false)
   const ChildIcon = iconMap[child.name] || Box
@@ -114,7 +85,7 @@ const DropdownItem = ({ child, idx }) => {
         }}
         className={({ isActive }) =>
           `
-            flex items-center gap-3 px-4 py-3 rounded-xl text-sm
+            flex items-center gap-3 px-4 py-2 rounded-xl text-xs
             transition-all duration-200 group
             ${isActive ? 'bg-white/15 shadow-md' : ''}
             ${isChildDisabled 
@@ -124,23 +95,16 @@ const DropdownItem = ({ child, idx }) => {
           `
         }
       >
-        {/* Child Icon with rotation on hover */}
         <motion.div
-          animate={
-            isChildHovered && !isChildDisabled
-              ? { rotate: 360 }
-              : { rotate: 0 }
-          }
+          animate={isChildHovered && !isChildDisabled ? { rotate: 360 } : { rotate: 0 }}
           transition={{ duration: 0.5 }}
           className="flex-shrink-0"
         >
           <ChildIcon className="w-4 h-4" />
         </motion.div>
 
-        {/* Child Text */}
         <span className="flex-1">{child.name}</span>
 
-        {/* Active indicator dot */}
         {!isChildDisabled && (
           <motion.div
             initial={{ scale: 0 }}
@@ -158,9 +122,11 @@ function Navbar({ data, currentUser }) {
   const dispatch = useDispatch()
   const [hoveredIndex, setHoveredIndex] = useState(null)
   const [openDropdown, setOpenDropdown] = useState(null)
+  
+  // NEW: State to hold coordinates for the dropdown
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 })
 
   const userIsAdmin = currentUser?.role?.toLowerCase() === 'admin'
-  console.log('userIsAdmin', userIsAdmin)
 
   const handleNavItems = (i) => {
     const item = navData[i]
@@ -177,12 +143,31 @@ function Navbar({ data, currentUser }) {
     dispatch(setActiveFeatureIndex({ activeIndex: null }))
   }
 
+  // NEW: Helper to calculate position on hover
+  const handleMouseEnter = (e, i, hasChildren, isFeatureDisabled) => {
+    setHoveredIndex(i)
+    
+    if (hasChildren && !isFeatureDisabled) {
+      // Get the position of the hovered element
+      const rect = e.currentTarget.getBoundingClientRect()
+      
+      // Update state with coordinates relative to the window
+      setDropdownPos({
+        top: rect.bottom + 10, // 10px gap
+        left: rect.left
+      })
+      
+      setOpenDropdown(i)
+    }
+  }
+
   return (
     <nav className="relative w-full">
-      <div className="w-full overflow-x-auto scrollbar-hide">
-        <ul className="flex items-center justify-start gap-2 text-white min-w-max px-1">
+      <div className="w-full overflow-x-auto scrollbar-none">
+        <ul className="flex items-center scrollbar-thin justify-start gap-2 text-white min-w-max px-1 py-2 "> 
+          {/* Added pb-4 pt-2 to give space for shadows/animations without clipping immediate edges */}
+          
           {navData.map((item, i) => {
-            // Filter admin-only items
             if (item.isAdmin && !userIsAdmin) {
               return null
             }
@@ -197,13 +182,9 @@ function Navbar({ data, currentUser }) {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.3 }}
-                className="relative"
-                onMouseEnter={() => {
-                  setHoveredIndex(i)
-                  if (hasChildren && !isFeatureDisabled) {
-                    setOpenDropdown(i)
-                  }
-                }}
+                className="relative" // Relative is fine here, but dropdown will be Fixed
+                // Update Mouse Enter to capture coordinates
+                onMouseEnter={(e) => handleMouseEnter(e, i, hasChildren, isFeatureDisabled)}
                 onMouseLeave={() => {
                   setHoveredIndex(null)
                   setOpenDropdown(null)
@@ -228,12 +209,9 @@ function Navbar({ data, currentUser }) {
                       `
                     }
                     onClick={(e) => {
-                      if (isFeatureDisabled) {
-                        e.preventDefault()
-                      }
+                      if (isFeatureDisabled) e.preventDefault()
                     }}
                   >
-                    {/* Icon with animation */}
                     <motion.div
                       animate={
                         hoveredIndex === i && !isFeatureDisabled
@@ -248,12 +226,8 @@ function Navbar({ data, currentUser }) {
                       <Icon className="w-4 h-4" />
                     </motion.div>
 
-                    {/* Text */}
-                    <span className="relative">
-                      {item.name}
-                    </span>
+                    <span className="relative">{item.name}</span>
 
-                    {/* Dropdown indicator */}
                     {hasChildren && (
                       <motion.div
                         animate={{ rotate: openDropdown === i ? 180 : 0 }}
@@ -263,7 +237,6 @@ function Navbar({ data, currentUser }) {
                       </motion.div>
                     )}
 
-                    {/* Hover glow effect */}
                     {hoveredIndex === i && !isFeatureDisabled && (
                       <motion.div
                         className="absolute inset-0 bg-gradient-to-r from-primary/50 to-purple-400/20 rounded-xl blur-xl -z-10"
@@ -283,7 +256,13 @@ function Navbar({ data, currentUser }) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute top-full left-0 mt-2 min-w-[280px] bg-gradient-to-br from-slate-800/95 to-slate-900/95 rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-50 backdrop-blur-xl"
+                      // CHANGED: Position fixed allows it to escape the scroll container
+                      // Added z-50 to ensure it is on top of everything
+                      className="fixed min-w-[180px] bg-gradient-to-br from-slate-800/95 to-slate-900/95 rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-[9999] backdrop-blur-xl "
+                      style={{
+                        top: dropdownPos.top,
+                        left: dropdownPos.left
+                      }}
                     >
                       <div className="p-2 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
                         {item.Children.map((child, idx) => (
@@ -291,7 +270,6 @@ function Navbar({ data, currentUser }) {
                         ))}
                       </div>
 
-                      {/* Dropdown bottom glow */}
                       <motion.div
                         className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"
                         animate={{
