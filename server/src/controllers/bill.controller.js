@@ -328,14 +328,7 @@ const registerBill = asyncHandler(async (req, res) => {
 
 
             if (customer && mobileNo) {
-                await sendWhatsappMessage(mobileNo, `Thank you for choosing New Saleem Sanitary Traders.
-                    \n\n*Bill Details:*
-                    \nBill No: ${billNo}
-                    \nCustomer: ${customerDetails?.customerName}
-                    \nTotal Bill: ${totalAmount}
-                    \nFlat Discount: ${flatDiscount}
-                    \nPaid Amount: ${paidAmount}
-                    \n*Net Total:* ${totalAmount - flatDiscount - paidAmount}`);
+                await sendWhatsappMessage(mobileNo, `Thank you for choosing New Saleem Sanitary Traders.\n\n*Bill Details:*\nBill No: ${billNo}\nCustomer: ${customerDetails?.customerName}\nTotal Bill: ${totalAmount}\nFlat Discount: ${flatDiscount}\nPaid Amount: ${paidAmount}\n*Net Total:* ${totalAmount - flatDiscount - paidAmount}`);
             }
 
             // const test = true;
