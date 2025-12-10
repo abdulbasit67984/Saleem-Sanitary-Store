@@ -115,6 +115,10 @@ const StockSearch = () => {
     const handleDelete = async (id) => {
         setIsButtonLoading(true);
         setDeleteId(id);
+        
+        const confirm = window.confirm('Are You sure to want to delete this product? This Action cannot be undone!')
+
+        if(!confirm) return
 
         try {
             const response = await config.deleteProduct(id);
