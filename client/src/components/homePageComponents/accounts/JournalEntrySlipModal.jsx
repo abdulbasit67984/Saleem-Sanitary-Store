@@ -156,11 +156,11 @@ const JournalEntrySlipModal = ({ isOpen, onClose, entryData }) => {
 
             {/* Footer */}
             <div className="text-center mt-4 pt-2 border-t border-dashed border-gray-400">
-              <p className="text-[11px] text-gray-600 text-black">Thank you!</p>
-              <p className="text-[10px] text-gray-500 text-black mt-1">
+              <p className="text-[11px] text-black text-black">Thank you!</p>
+              <p className="text-[10px] text-black text-black mt-1">
                 Software by Pandas. 📞 03103480229
               </p>
-              <p className="text-[10px] text-gray-500 text-black">🌐 www.pandas.com.pk</p>
+              <p className="text-[10px] text-black text-black">🌐 www.pandas.com.pk</p>
             </div>
           </div>
         </div>

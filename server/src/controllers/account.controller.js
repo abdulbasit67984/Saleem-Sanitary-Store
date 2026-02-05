@@ -10,6 +10,9 @@ import { GeneralLedger } from "../models/accounts/generalLedger.model.js";
 import { TransactionManager } from "../utils/TransactionManager.js";
 import { Product } from "../models/product/product.model.js"
 import { Bill } from "../models/bills/bill.model.js";
+import { Customer } from "../models/customer.model.js";
+import { Supplier } from "../models/supplier.model.js";
+import { sendWhatsappMessage } from "../services/whatsapp.service.js";
 
 const registerAccount = asyncHandler(async (req, res) => {
 
@@ -786,6 +789,52 @@ const postVendorJournalEntry = asyncHandler(async (req, res) => {
                 }
             ]);
 
+            // Send WhatsApp message to supplier
+            if (vendorAccount.supplierId) {
+                const supplier = await Supplier.findById(vendorAccount.supplierId);
+                if (supplier && supplier.mobileNo) {
+                    let mobileNo = supplier.mobileNo;
+                    
+                    // Remove spaces, dashes, brackets, etc.
+                    mobileNo = mobileNo.replace(/[^0-9+]/g, "");
+                    
+                    // Format phone number
+                    if (mobileNo.startsWith("0")) {
+                        mobileNo = "92" + mobileNo.slice(1);
+                    } else if (!mobileNo.startsWith("92")) {
+                        mobileNo = "92" + mobileNo;
+                    }
+                    
+                    const whatsappMessage = `📊 *TRANSACTION CONFIRMATION* 
+
+Dear ${supplier.supplierName || 'Valued Supplier'},
+
+━━━━━━━━━━━━━━━━━━━━━━
+*PAYMENT DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━
+
+Transaction Type: ${details || 'Cash Given'}
+Amount: Rs. ${amount}
+Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+Time: ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+
+━━━━━━━━━━━━━━━━━━━━━━
+*DESCRIPTION*
+━━━━━━━━━━━━━━━━━━━━━━
+
+${description || 'N/A'}
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Your transaction has been successfully recorded.
+
+
+_Powered by PANDAS Software_`;
+
+                    await sendWhatsappMessage(mobileNo, whatsappMessage);
+                }
+            }
+
             res.status(201).json(new ApiResponse(201, null, "Vendor journal entry posted successfully!"));
         });
     } catch (error) {
@@ -896,6 +945,52 @@ const postCustomerJournalEntry = asyncHandler(async (req, res) => {
                     description
                 }
             ]);
+
+                        // Send WhatsApp message to customer
+            if (customerAccount.customerId) {
+                const customer = await Customer.findById(customerAccount.customerId);
+                if (customer && customer.mobileNo) {
+                    let mobileNo = customer.mobileNo;
+                    
+                    // Remove spaces, dashes, brackets, etc.
+                    mobileNo = mobileNo.replace(/[^0-9+]/g, "");
+                    
+                    // Format phone number
+                    if (mobileNo.startsWith("0")) {
+                        mobileNo = "92" + mobileNo.slice(1);
+                    } else if (!mobileNo.startsWith("92")) {
+                        mobileNo = "92" + mobileNo;
+                    }
+                    
+                    const whatsappMessage = `📊 *TRANSACTION CONFIRMATION* 
+
+Dear ${customer.customerName || 'Valued Customer'},
+
+━━━━━━━━━━━━━━━━━━━━━━
+*PAYMENT DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━
+
+Transaction Type: ${details || 'Cash Received'}
+Amount: Rs. ${amount}
+Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+Time: ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+
+━━━━━━━━━━━━━━━━━━━━━━
+*DESCRIPTION*
+━━━━━━━━━━━━━━━━━━━━━━
+
+${description || 'N/A'}
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Your transaction has been successfully recorded.
+
+
+_Powered by PANDAS Software_`;
+
+                    await sendWhatsappMessage(mobileNo, whatsappMessage);
+                }
+            }
 
 
             res.status(201).json(new ApiResponse(201, null, "Customer journal entry posted successfully!"));
