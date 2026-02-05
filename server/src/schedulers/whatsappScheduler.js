@@ -53,9 +53,9 @@ cron.schedule(
                     `آپ کے تعاون کا شکریہ! 🙏\n` +
                     `پارکو الیکٹرک اینڈ الیکٹرانک اسٹور — جہاں اعتماد اور کوالٹی ہمیشہ ساتھ چلتے ہیں! ⚡`;
 
-                if (mobileNo?.length > 10) {
-                    await sendWhatsappMessage(mobileNo, message);
-                }
+                // if (mobileNo?.length > 10) {
+                //     await sendWhatsappMessage(mobileNo, message);
+                // }
 
                 // console.log(`✅ Message sent to ${customer.name}`);
             }
