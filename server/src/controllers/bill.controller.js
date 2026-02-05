@@ -338,7 +338,7 @@ const registerBill = asyncHandler(async (req, res) => {
 
                 const whatsappMessage = `*BILL CONFIRMATION* 
 
-Thank you for choosing *Mubarak Sanitary Traders*!
+Thank you for choosing *New Saleem Sanitary Traders*!
 
 ━━━━━━━━━━━━━━━━━━━━━━
 📋 *BILL DETAILS*
