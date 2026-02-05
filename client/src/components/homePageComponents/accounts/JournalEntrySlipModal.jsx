@@ -37,7 +37,7 @@ const JournalEntrySlipModal = ({ isOpen, onClose, entryData }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[60]">
-      <div className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4">
+      <div className="bg-white text-black rounded-lg shadow-xl max-w-sm w-full mx-4">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-800">Print Slip</h3>
@@ -57,7 +57,7 @@ const JournalEntrySlipModal = ({ isOpen, onClose, entryData }) => {
             style={{ fontFamily: "monospace" }}
           >
             {/* Business Header */}
-            <div className="text-center border-b border-dashed border-gray-400 pb-2 mb-2">
+            <div className="text-center border-b text-black border-dashed border-gray-400 pb-2 mb-2">
               <h2 className="text-sm font-bold uppercase">
                 {userData?.BusinessId?.businessName || "Business Name"}
               </h2>
@@ -75,7 +75,7 @@ const JournalEntrySlipModal = ({ isOpen, onClose, entryData }) => {
 
             {/* Slip Title */}
             <div className="text-center mb-3">
-              <h3 className="text-xs font-bold border border-gray-400 inline-block px-3 py-1 rounded">
+              <h3 className="text-xs font-bold border text-black border-gray-400 inline-block px-3 py-1 rounded">
                 {entryType}
               </h3>
             </div>
@@ -83,12 +83,12 @@ const JournalEntrySlipModal = ({ isOpen, onClose, entryData }) => {
             {/* Entry Details */}
             <div className="text-[10px] space-y-1 border-b border-dashed border-gray-400 pb-2 mb-2">
               <div className="flex justify-between">
-                <span className="font-semibold">Date:</span>
+                <span className="font-semibold text-black">Date:</span>
                 <span>{currentDate}</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-semibold">Account:</span>
-                <span className="text-right max-w-[50%] truncate">
+                <span className="font-semibold text-black">Account:</span>
+                <span className="text-right text-black max-w-[50%] truncate">
                   {entryData.accountName || entryData.individualAccountName}
                 </span>
               </div>
@@ -96,7 +96,7 @@ const JournalEntrySlipModal = ({ isOpen, onClose, entryData }) => {
 
             {/* Previous Balance */}
             {entryData.previousBalance !== undefined && (
-              <div className="flex justify-between text-[10px] mb-1">
+              <div className="flex justify-between text-black text-[10px] mb-1">
                 <span className="font-semibold">Previous Balance:</span>
                 <span>Rs. {functions.formatAsianNumber(entryData.previousBalance || 0)}</span>
               </div>
@@ -104,7 +104,7 @@ const JournalEntrySlipModal = ({ isOpen, onClose, entryData }) => {
 
             {/* Amount Section */}
             <div className="bg-gray-100 p-2 rounded mb-2">
-              <div className="flex justify-between text-xs font-bold">
+              <div className="flex justify-between text-xs text-black font-bold">
                 <span>Amount {entryData.customerId ? "Received" : "Paid"}:</span>
                 <span className="text-base">
                   Rs. {functions.formatAsianNumber(entryData.amount || 0)}
@@ -115,7 +115,7 @@ const JournalEntrySlipModal = ({ isOpen, onClose, entryData }) => {
             {/* Remaining Balance */}
             {entryData.remainingBalance !== undefined && (
               <div className="bg-yellow-50 border border-yellow-300 p-2 rounded mb-2">
-                <div className="flex justify-between text-xs font-bold">
+                <div className="flex justify-between text-black text-xs font-bold">
                   <span>Remaining Balance:</span>
                   <span className="text-base">
                     Rs. {functions.formatAsianNumber(entryData.remainingBalance || 0)}
@@ -126,21 +126,21 @@ const JournalEntrySlipModal = ({ isOpen, onClose, entryData }) => {
 
             {/* Description & Details */}
             {entryData.description && (
-              <div className="text-[10px] mb-1">
+              <div className="text-[10px] mb-1 text-black">
                 <span className="font-semibold">Description: </span>
                 <span>{entryData.description}</span>
               </div>
             )}
 
             {entryData.details && (
-              <div className="text-[10px] mb-2">
-                <span className="font-semibold">Details: </span>
+              <div className="text-[10px] text-black mb-2">
+                <span className="font-semibold text-black">Details: </span>
                 <span>{entryData.details}</span>
               </div>
             )}
 
             {/* Entry Type Indicator */}
-            <div className="text-[10px] border-t border-dashed border-gray-400 pt-2 mt-2">
+            <div className="text-[10px] border-t text-black border-dashed border-gray-400 pt-2 mt-2">
               <div className="flex justify-between">
                 <span className="font-semibold">Entry Type:</span>
                 <span>
@@ -156,11 +156,11 @@ const JournalEntrySlipModal = ({ isOpen, onClose, entryData }) => {
 
             {/* Footer */}
             <div className="text-center mt-4 pt-2 border-t border-dashed border-gray-400">
-              <p className="text-[9px] text-gray-600">Thank you!</p>
-              <p className="text-[8px] text-gray-500 mt-1">
+              <p className="text-[9px] text-gray-600 text-black">Thank you!</p>
+              <p className="text-[8px] text-gray-500 text-black mt-1">
                 Software by Pandas. 📞 03103480229
               </p>
-              <p className="text-[8px] text-gray-500">🌐 www.pandas.com.pk</p>
+              <p className="text-[8px] text-gray-500 text-black">🌐 www.pandas.com.pk</p>
             </div>
           </div>
         </div>
