@@ -2,8 +2,8 @@
 import React from 'react';
 import Logo from '../../../Logo';
 import commonFunction from '../../../../features/functions';
-import billLogo from '../../../../assets/billLogo.jpeg'
-import paymentQR from '../../../../assets/paymentQR.jpeg'
+import billLogo from '../../../../assets/billLogo.jpg'
+import paymentQR from '../../../../assets/paymentQR.jpg'
 
 import billDesign from '../../../../assets/billDesign.svg'
 // import { useSelector } from 'react-redux';
