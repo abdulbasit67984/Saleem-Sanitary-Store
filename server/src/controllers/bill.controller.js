@@ -333,7 +333,47 @@ const registerBill = asyncHandler(async (req, res) => {
 
 
             if (customer && mobileNo) {
-                await sendWhatsappMessage(mobileNo, `Thank you for choosing New Saleem Sanitary Traders.\n\n*Bill Details:*\nBill No: ${billNo}\nCustomer: ${customerDetails?.customerName}\nTotal Bill: ${totalAmount}\nFlat Discount: ${flatDiscount}\nPaid Amount: ${paidAmount}\n*Net Total:* ${totalAmount - flatDiscount - paidAmount}`);
+                const netTotal = totalAmount - flatDiscount - paidAmount;
+                const formattedDueDate = dueDate ? new Date(dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
+
+                const whatsappMessage = `*BILL CONFIRMATION* 
+
+Thank you for choosing *Mubarak Sanitary Traders*!
+
+━━━━━━━━━━━━━━━━━━━━━━
+📋 *BILL DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━
+
+🔖 Bill Number: \`${billNo}\`
+📅 Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+👤 Customer: ${customerDetails?.customerName || 'N/A'}
+
+━━━━━━━━━━━━━━━━━━━━━━
+*FINANCIAL SUMMARY*
+━━━━━━━━━━━━━━━━━━━━━━
+
+Total Amount: Rs. ${totalAmount}
+Flat Discount: -Rs. ${flatDiscount}
+Paid Amount: Rs. ${paidAmount}
+┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+*OUTSTANDING BALANCE: Rs. ${netTotal}*
+
+━━━━━━━━━━━━━━━━━━━━━━
+*ADDITIONAL INFORMATION*
+━━━━━━━━━━━━━━━━━━━━━━
+
+Bill Status: ${billStatus?.toUpperCase() || 'PENDING'}
+Due Date: ${formattedDueDate}
+Description: ${description || 'N/A'}
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+✨ Your bill has been successfully created in our system.
+
+
+_Powered by PANDAS Software_`;
+
+                await sendWhatsappMessage(mobileNo, whatsappMessage);
             }
 
             // const test = true;
