@@ -457,6 +457,27 @@ export class Config {
         }
     }
 
+    async fetchProductHistoryForCustomer(customerId, productId) {
+        try {
+            const response = await this.client.get(`/bill/get-product-history`, {
+                params: { customerId, productId },
+                headers: {
+                    Authorization: ` Bearer ${authService.getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response) {
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error in Fetching Product History:", error);
+            throw error;
+        }
+    }
+
 
     async createInvoice({ ...props }) {
         try {
@@ -1462,6 +1483,42 @@ export class Config {
             }
         } catch (error) {
             console.error("Error sending WhatsApp message:", error);
+            throw error;
+        }
+    }
+
+    async logoutWhatsapp() {
+        try {
+            const response = await this.client.post(`/whatsapp/logout`, {}, {
+                headers: {
+                    Authorization: `Bearer ${authService.getAccessToken()}`,
+                },
+            });
+            if (response.data) {
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error logging out WhatsApp:", error);
+            throw error;
+        }
+    }
+
+    async reconnectWhatsapp() {
+        try {
+            const response = await this.client.post(`/whatsapp/reconnect`, {}, {
+                headers: {
+                    Authorization: `Bearer ${authService.getAccessToken()}`,
+                },
+            });
+            if (response.data) {
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error reconnecting WhatsApp:", error);
             throw error;
         }
     }

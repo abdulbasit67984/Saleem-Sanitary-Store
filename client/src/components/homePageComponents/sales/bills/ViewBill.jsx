@@ -1,11 +1,12 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import Logo from '../../../Logo';
-import paymentQR from '../../../../assets/paymentQR.jpg'
 import commonFunction from '../../../../features/functions';
-// import { useSelector } from 'react-redux';
-import billLogo from '../../../../assets/billLogo.jpg'
+import billLogo from '../../../../assets/billLogo.jpeg'
+import paymentQR from '../../../../assets/paymentQR.jpeg'
+
 import billDesign from '../../../../assets/billDesign.svg'
+// import { useSelector } from 'react-redux';
 
 // ViewBill component wrapped in forwardRef
 const ViewBill = React.forwardRef((props, ref) => {
@@ -14,27 +15,30 @@ const ViewBill = React.forwardRef((props, ref) => {
     const packingSlip = props.packingSlip
     const previousBalance = props.previousBalance
     const showPreviousBalance = props.showPreviousBalance
+    const showExemptedParagraph = props.exemptedParagraph
 
-    const exemptedParagraph = bill?.BusinessId?.exemptedParagraph?.split('۔')
+    const exemptedParagraph = bill?.BusinessId?.exemptedParagraph
+
+    console.log(bill)
+    const businessName = bill?.BusinessId?.businessName;
 
     return bill && (
-        <div className=' h-[28rem] shadow-lg overflow-y-auto scrollbar-thin relative'>
+        <div className=' h-[28rem] shadow-lg overflow-y-auto scrollbar-thin'>
             <div ref={ref} className="view-bill p-4 pt-8 bg-white" >
-
-
                 {/* Business Information */}
+                
                 <div className="flex justify-center relative">
 
-                    <div className='ml-5'>
-                        <img src={billLogo} alt="" className='w-36 pr-2' />
+                    <div className=''>
+                        <img src={billLogo} alt="" className='w-40 ' />
                     </div>
 
                     <div className='text-center w-full z-20'>
                         <div className='flex pl-4'>
-                            
-                            <div className='flex items-end justify-center ml-'>
-                                <span className='text-lg font-bold pb-5 pr-2'>NEW</span>
-                                <span className='text-4xl font-extrabold pb-2 pr-2'>SALEEM </span> <h2 className="text-xl font-bold pb-2"> SANITARY TRADERS</h2>
+
+                            <div className='flex items-end justify-center '>
+                                <span className='text-4xl font-extrabold pb-2 pr-2'>{businessName?.split(' ')[0]} </span> <h2 className="text-xl font-bold pb-2"> {businessName?.split(' ').slice(1).join(' ')}</h2>
+
                             </div>
                         </div>
                         {/* <p className="text-sm ">{bill?.storeAddress}</p> */}
@@ -46,7 +50,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                     </div>
                 </div>
 
-                <div className='w-full flex justify-center'><div className='border-b border-gray-400 my-5 w-4/5'></div></div>
+                <div className='w-full flex justify-center'><div className='border-b-2 my-5 w-4/5'></div></div>
 
                 {/* Invoice and Customer Information */}
                 <div className="flex justify-between mb-4">
@@ -80,7 +84,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                 {/* Items Section */}
                 <div className="my-6">
                     <table className="w-full border">
-                        <thead className="border-2">
+                        <thead className="border-2 border-black">
                             <tr>
                                 <th className="text-xs text-left p-2">No.</th>
                                 <th className="text-xs text-left p-2">Item Name</th>
@@ -88,7 +92,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                                 <th className="text-xs text-left p-2">Qty</th>
                                 <th className="text-xs text-left p-2">Units/pack</th>
                                 {
-                                    !packingSlip && <th className="text-xs text-left p-2">Rate</th>}
+                                    !packingSlip && <th className="text-xs text-left p-2">Rate/pack</th>}
                                 {
                                     !packingSlip && <th className="text-xs text-left p-2">Gross Am.</th>}
                                 {
@@ -102,18 +106,18 @@ const ViewBill = React.forwardRef((props, ref) => {
                         </thead>
                         <tbody>
                             {bill?.billItems && bill?.billItems.map((item, index) => (
-                                <tr key={index} className="break-inside-avoid border-2">
+                                <tr key={index} className="break-inside-avoid border-2 border-black">
                                     <td className="text-xs p-2">{index + 1}</td>
-                                    <td className="text-xs p-2">{commonFunction.truncateString(item.productId?.productName, 30)}</td>
+                                    <td className="text-xs p-2">{commonFunction.truncateString(item.productId?.productName, 50)}</td>
                                     <td className="text-xs p-2">{commonFunction.truncateString(item.productId?.companyId?.companyName, 13)}</td>
                                     <td className="text-xs p-2">
                                         <div>
-                                            {(item.quantity + item.billItemUnit / item.billItemPack) < 1 ? (item.billItemUnit) : (item.quantity + item.billItemUnit / item.billItemPack)}
-                                            <span> {(item.quantity + item.billItemUnit / item.billItemPack) < 1 ? (item.productId?.packUnit)?.toUpperCase() || 'PCS' : (item.productId?.quantityUnit)?.toUpperCase() || 'PCS'}</span>
+                                            {((item.quantity + item.billItemUnit / item.billItemPack) < 1 || item.quantity === 0) ? (item.billItemUnit) : (item.quantity + item.billItemUnit / item.billItemPack)?.toFixed(2)}
+                                            <span> {((item.quantity + item.billItemUnit / item.billItemPack) < 1 || item.quantity === 0) ? (item.productId?.packUnit)?.toUpperCase() || 'PCS' : (item.productId?.quantityUnit)?.toUpperCase() || 'PCS'}</span>
                                         </div>
                                     </td>
                                     <td className="text-xs p-2">
-                                        {item.billItemPack + " " + (item.productId?.packUnit?.toUpperCase() ||"PCS")}
+                                        {item.billItemPack + " " + (item.productId?.packUnit?.toUpperCase() || "PCS")}
                                     </td>
                                     {!packingSlip &&
                                         <td className="text-xs p-2">
@@ -142,7 +146,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                             ))}
 
                             {bill.extraItems && bill.extraItems.map((item, index) => (
-                                <tr key={index} className="text-xs break-inside-avoid border-2">
+                                <tr key={index} className="text-xs break-inside-avoid border-2 border-black">
                                     <td className="text-xs p-2">{bill?.billItems.length + index + 1}</td>
                                     <td className="text-xs p-2">{commonFunction.truncateString(item.itemName, 30)}</td>
                                     <td className="text-xs p-2"></td>
@@ -167,7 +171,7 @@ const ViewBill = React.forwardRef((props, ref) => {
                             <img src={paymentQR} alt="" className=' h-32' />
                         </div>
                         <div className='flex justify-end pr-5'>
-                            <div className=" mb-4 text-l border-2 p-3">
+                            <div className=" mb-4 text-l border-2 border-black p-3">
                                 <p className='font-semibold'><span className='inline-block font-medium w-44'>Total Gross Amount:</span> {bill && commonFunction.formatAsianNumber(bill.totalAmount)}</p>
                                 <p className='font-semibold'><span className='inline-block font-medium w-44'>Discount Amount:</span> {bill && commonFunction.formatAsianNumber(bill.flatDiscount)}</p>
                                 <p className='font-semibold'><span className='inline-block font-medium w-44'>Paid Amount:</span> {bill && commonFunction.formatAsianNumber(bill.paidAmount)}</p>
@@ -181,28 +185,21 @@ const ViewBill = React.forwardRef((props, ref) => {
 
                 {!packingSlip &&
                     <div className='mt-3'>
-                        <p className='text-[12px] text-right'>نوٹ:  کوئی بھی آئیٹم واپس یا تبدیل ہو سکتا ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو۔ چائنہ آئیٹمز کی واپسی نہیں ہوگی۔ کسی بھی آئٹم کی واپسی صرف بل یا رسید کی موجودگی میں ہی قابل قبول ہوگی۔ </p>
-
+                        <p className='text-[12px] text-right'>  نوٹ:  کوئی بھی آئیٹم واپس یا تبدیل ہو سکتا ہے بشرطیکہ وہ اپنی اصلی حالت میں ہو اور مکمل پیکنگ میں ہو۔ چائنہ آئیٹمز کی واپسی نہیں ہوگی۔ کسی بھی آئٹم کی واپسی صرف بل یا رسید کی موجودگی میں ہی قابل قبول ہوگی۔
+                        </p>
                     </div>
                 }
 
                 {/* Signature Section */}
                 <div className=''>
-                    {
-                        props.exemptedParagraph &&
-                        <div className="text-justify mt-4 text-[10px] pb-5">
-                            <h4 className='text-right mr-4 text-[12px] py-2 font-bold'>:ضروری ہدایات</h4>
-                            <ul>
-                                {exemptedParagraph?.map((paragraph, i) => (
-                                    paragraph.length > 3 &&
-                                    <li key={i} className='text-right flex flex-row-reverse gap-1 py-1'> <span>&#8592;</span> <span>{paragraph}</span></li>
-                                ))}
-                            </ul>
+                    {showExemptedParagraph &&
+                        <div className="text-center mt-3 text-xs font-semibold ">
+                            {exemptedParagraph}
                         </div>
                     }
-                    <div className='flex items-center justify-center pt-4'>
-                        <p className='text-center text-[10px]'>Software by Pandas. 📞 03103480229 🌐 www.pandas.com.pk</p>
-                        {/* <div className="text-right mt-1 mr-24">
+                    <div className='flex items-center justify-end'>
+                        <p className='text-center text-[10px]'>Software by Pandas. 🌐 www.pandas.com.pk</p>
+                        {/* <div className="text-right mt-16 mr-24">
                             <p>____________________________</p>
                             <p className='mr-4'>Signature & Stamp</p>
                         </div> */}

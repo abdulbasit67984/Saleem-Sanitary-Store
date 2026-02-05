@@ -8,8 +8,9 @@ import Navbar from './navbar/Navbar'
 import { useParams } from 'react-router-dom'
 import authService from '../../features/auth'
 import { setCurrentUser } from '../../store/slices/auth/authSlice'
-import { User, LogOut, Sparkles } from 'lucide-react'
+import { User, LogOut, Sparkles, Search } from 'lucide-react'
 import { motion } from 'framer-motion'
+import ProductSearchModal from './ProductSearchModal'
 
 function Header() {
   const authStatus = useSelector((state) => state.auth.status)
@@ -20,6 +21,7 @@ function Header() {
   const dispatch = useDispatch()
 
   const [scrolled, setScrolled] = useState(false)
+  const [showSearchModal, setShowSearchModal] = useState(false)
 
   // useEffect(() => {
   //   const handleScroll = () => {
@@ -28,6 +30,18 @@ function Header() {
   //   window.addEventListener('scroll', handleScroll)
   //   return () => window.removeEventListener('scroll', handleScroll)
   // }, [])
+
+  // Keyboard shortcut for search (Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setShowSearchModal(true)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const isAdmin = () => {
     return userData?.role === "admin"
@@ -386,7 +400,7 @@ function Header() {
         `}
       >
         {/* Animated gradient overlay */}
-        <motion.div
+        {/* <motion.div
           className="absolute inset-0 opacity-30"
           animate={{
             background: [
@@ -396,7 +410,7 @@ function Header() {
             ],
           }}
           transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-        />
+        /> */}
 
         {/* <Container className={'shadow-lg z-50 relative h-full '}> */}
           <nav className='flex items-center justify-between h-full overflow-y-auto'>
@@ -412,6 +426,18 @@ function Header() {
             {/* Navbar Component */}
             <div className='flex-1 flex items-center justify-start overflow-x-auto scrollbar-none'>
               <Navbar data={navItems} currentUser={userData} />
+              
+              {/* Search Button */}
+              <motion.button
+                onClick={() => setShowSearchModal(true)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="p-2 mr-2 rounded-xl transition-all backdrop-blur-sm bg-white/10 hover:bg-white/20 cursor-pointer"
+                title="Search Products (Ctrl+K)"
+              >
+                <Search className="w-5 h-5 text-white" />
+              </motion.button>
+
               <motion.button
                 onClick={() => {
                   if (isOwner() || isAdmin()) navigate('/signup')
@@ -458,6 +484,12 @@ function Header() {
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         />
       </motion.header>
+
+      {/* Product Search Modal */}
+      <ProductSearchModal 
+        isOpen={showSearchModal} 
+        onClose={() => setShowSearchModal(false)} 
+      />
 
       {/* Spacer to prevent content from going under fixed header */}
       <div className="h-16" />

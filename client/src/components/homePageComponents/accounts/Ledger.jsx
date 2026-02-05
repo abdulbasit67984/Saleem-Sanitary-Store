@@ -8,11 +8,13 @@ import { useSelector } from "react-redux";
 import Loader from "../../../pages/Loader";
 import functions from "../../../features/functions"
 import JournalEntryModal from "./JournalEntryModal.jsx";
+import { showSuccessToast, showErrorToast } from "../../../utils/toast";
 
 import { refreshLedgerData } from "../../../utils/refreshLedger.js";
 import Input from "../../Input.jsx";
-import { ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, Eye, EyeOff, FileText } from "lucide-react";
 import { motion } from "framer-motion";
+import AccountsPreviewModal from "./AccountsPreviewModal.jsx";
 
 const Ledger = () => {
   const [accounts, setAccounts] = useState([]);
@@ -23,6 +25,7 @@ const Ledger = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [totalPayAndRec, setTotalPayAndRec] = useState({});
+  const [showTotals, setShowTotals] = useState(false);
 
   const [accountTypeFilter, setAccountTypeFilter] = useState("all");
   const [balanceTypeFilter, setBalanceTypeFilter] = useState("all");
@@ -42,6 +45,7 @@ const Ledger = () => {
 
   const [showJournalModal, setShowJournalModal] = useState(false);
   const [journalAccount, setJournalAccount] = useState(null);
+  const [showAccountsPreviewModal, setShowAccountsPreviewModal] = useState(false);
 
   const [accountBalances, setAccountBalances] = useState({});
 
@@ -236,11 +240,13 @@ const Ledger = () => {
         setAdjustFormData({ reason: "", debit: 0, credit: 0 });
         setShowAdjustModal(false);
         setAdjustSuccess("Balance adjusted successfully");
+        showSuccessToast("Balance adjusted successfully");
         setTimeout(() => setAdjustSuccess(null), 3000);
 
       }
     } catch (err) {
       setAdjustError(err.response?.data?.message || "Failed to adjust balance");
+      showErrorToast(err.response?.data?.message || "Failed to adjust balance");
     } finally {
       setAdjustLoading(false);
     }
@@ -266,7 +272,7 @@ const Ledger = () => {
   };
 
   const handleJournalEntrySuccess = async () => {
-    setShowJournalModal(false);
+    // Don't close modal here - let JournalEntryModal handle closing after slip is printed/closed
     const { accounts: updatedAccounts, ledger: updatedLedger } = await fetchAccountsAndLedger();
 
     // Update state with the new data
@@ -334,8 +340,18 @@ const Ledger = () => {
       account.subCategories.flatMap(sub =>
         sub.individualAccounts.filter(individual => {
           // console.log('individual', individual)
-          if ((individual.customerId) && (individual.mergedInto === null)) totalReceivables += getComputedBalance(individual);
-          if ((individual.supplierId || individual.companyId) && individual.mergedInto === null) totalPayables += getComputedBalance(individual);
+          if ((individual.customerId) && (individual.mergedInto === null) && (!individual.isMerged)) totalReceivables += getComputedBalance(individual);
+          if ((individual.supplierId || individual.companyId) && individual.mergedInto === null && (!individual.isMerged))  totalPayables += getComputedBalance(individual);
+
+          if(individual.isMerged) {
+            const isMergeBalance = getComputedBalance(individual);
+            if(isMergeBalance > 0) {
+              totalReceivables += isMergeBalance;
+            } else if(isMergeBalance < 0) {
+              totalPayables += (isMergeBalance);
+            }
+          } 
+
         })
       )
     )
@@ -383,44 +399,63 @@ const Ledger = () => {
 
         {
           !selectedAccount && (
-            <div className="flex gap-3">
-              {/* Receivables */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
+            <div className="flex gap-3 items-center">
+              <button
+                onClick={() => setShowAccountsPreviewModal(true)}
+                className="p-2 rounded-full hover:bg-gray-200 transition"
+                title="Print Accounts Preview"
               >
-                <div className="rounded-2xl shadow-md bg-white border p-4 flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-green-100">
-                    <ArrowDownCircle className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Total Receivables</p>
-                    <p className="text-xl font-semibold">
-                      {functions.formatAsianNumber(totalPayAndRec?.totalReceivables)}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
+                <FileText className="w-6 h-6 text-blue-600" />
+              </button>
+              <button
+                onClick={() => setShowTotals(!showTotals)}
+                className="p-2 rounded-full hover:bg-gray-200 transition"
+                title={showTotals ? "Hide totals" : "Show totals"}
+              >
+                {showTotals ? <Eye className="w-6 h-6" /> : <EyeOff className="w-6 h-6" />}
+              </button>
 
-              {/* Payables */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-              >
-                <div className="rounded-2xl shadow-md bg-white border p-4 flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-red-100">
-                    <ArrowUpCircle className="w-6 h-6 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Total Payables</p>
-                    <p className="text-xl font-semibold">
-                      {functions.formatAsianNumber(totalPayAndRec?.totalPayables)}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
+              {showTotals && (
+                <>
+                  {/* Receivables */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <div className="rounded-2xl shadow-md bg-white border p-4 flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-green-100">
+                        <ArrowDownCircle className="w-6 h-6 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Total Receivables</p>
+                        <p className="text-xl font-semibold">
+                          {functions.formatAsianNumber(totalPayAndRec?.totalReceivables)}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Payables */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <div className="rounded-2xl shadow-md bg-white border p-4 flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-red-100">
+                        <ArrowUpCircle className="w-6 h-6 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Total Payables</p>
+                        <p className="text-xl font-semibold">
+                          {functions.formatAsianNumber(totalPayAndRec?.totalPayables)}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
             </div>
           )
         }
@@ -675,10 +710,20 @@ const Ledger = () => {
       {showJournalModal && selectedAccount && (
         <JournalEntryModal
           account={selectedAccount}
+          accountBalance={getComputedBalance(selectedAccount)}
           onClose={() => setShowJournalModal(false)}
           onSuccess={handleJournalEntrySuccess}
         />
       )}
+
+      {/* Accounts Preview Modal */}
+      <AccountsPreviewModal
+        isOpen={showAccountsPreviewModal}
+        onClose={() => setShowAccountsPreviewModal(false)}
+        accounts={accounts}
+        getComputedBalance={getComputedBalance}
+        businessName={userData?.BusinessId?.businessName || "Business"}
+      />
 
     </div>
   );

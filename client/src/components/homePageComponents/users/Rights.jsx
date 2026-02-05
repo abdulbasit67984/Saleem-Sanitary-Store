@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import Loader from '../../../pages/Loader.jsx';
 import Button from '../../Button.jsx';
-import SuccessResponseMessage from '../../SuccessResponseMessage.jsx';
 import authService from '../../../features/auth.js';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 const Rights = () => {
     const [loading, setLoading] = useState(true);
@@ -61,6 +61,7 @@ const Rights = () => {
     const handleSubmit = async () => {
         if (!selectedUserId) {
             setError('Please select a user first');
+            showErrorToast('Please select a user first');
             return;
         }
 
@@ -68,10 +69,12 @@ const Rights = () => {
             setSaving(true);
             await authService.assignUserRights(selectedUserId, selectedRoles);
             setSuccess(true);
+            showSuccessToast('Roles assigned successfully!');
             setError('');
             setTimeout(() => setSuccess(false), 3000);
         } catch (error) {
             setError(error.message || 'Failed to save changes');
+            showErrorToast(error.message || 'Failed to save changes');
         } finally {
             setSaving(false);
         }
@@ -90,12 +93,6 @@ const Rights = () => {
                     {error}
                 </div>
             )}
-
-            <SuccessResponseMessage
-                isOpen={success}
-                onClose={() => setSuccess(false)}
-                message="Roles assigned successfully!"
-            />
 
             <div className="mb-6">
                 <label className="block text-gray-700 font-medium mb-2">

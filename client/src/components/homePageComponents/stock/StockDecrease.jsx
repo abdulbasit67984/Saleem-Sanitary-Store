@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import Input from '../../Input';
 import Button from '../../Button';
 import config from '../../../features/config.js'
+import { showErrorToast, showSuccessToast } from '../../../utils/toast'
 
 const StockIncrease = () => {
   const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm();
@@ -26,7 +27,7 @@ const StockIncrease = () => {
     if (selectedProduct) {
       const decreaseQuantity = parseInt(data.quantity);
       if (decreaseQuantity > selectedProduct.totalQuantity) {
-        alert("Error: Quantity to decrease exceeds current stock.");
+        showErrorToast("Quantity to decrease exceeds current stock.");
         return;
       }
       const response = await config.decreaseStock(data)

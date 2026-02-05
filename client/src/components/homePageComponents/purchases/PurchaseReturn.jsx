@@ -13,6 +13,7 @@ import Input from '../../Input';
 import Button from '../../Button';
 import config from '../../../features/config'; // Import API config
 import { extractErrorMessage } from '../../../utils/extractErrorMessage';
+import { showErrorToast, showWarningToast, showSuccessToast } from '../../../utils/toast';
 
 const PurchaseReturn = () => {
     const dispatch = useDispatch();
@@ -82,12 +83,12 @@ const PurchaseReturn = () => {
 
     const handleSubmit = async () => {
         if (!vendorSupplier && !vendorCompany) {
-            alert("Please select either Vendor Supplier or Vendor Company.");
+            showWarningToast("Please select either Vendor Supplier or Vendor Company.");
             return;
         }
 
         if (selectedItems.length === 0) {
-            alert("Please add items for return.");
+            showWarningToast("Please add items for return.");
             return;
         }
         setError('')
@@ -110,12 +111,14 @@ const PurchaseReturn = () => {
 
             if (response) {
                 setSubmitSuccess(true);
+                showSuccessToast("Purchase return processed successfully!");
                 dispatch(resetPurchaseReturn());
             }
         } catch (error) {
             // console.log(error);
             const errorMessage = extractErrorMessage(error);
             setError(errorMessage);
+            showErrorToast(errorMessage);
         } finally {
             setIsLoading(false);
         }

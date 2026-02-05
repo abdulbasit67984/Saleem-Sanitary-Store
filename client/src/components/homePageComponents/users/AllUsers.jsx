@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Loader from '../../../pages/Loader.jsx';
 import Button from '../../Button.jsx';
-import SuccessResponseMessage from '../../SuccessResponseMessage.jsx';
-import ErrorResponseMessage from '../../ErrorResponseMessage.jsx';
 import DeleteConfirmation from '../../DeleteConfirmation.jsx';
 import authService from '../../../features/auth.js';
 import { setCurrentUser } from '../../../store/slices/auth/authSlice.js';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 const ManageUsers = ({ onUserSelect }) => {
   const [loading, setLoading] = useState(true);
@@ -65,9 +64,11 @@ const ManageUsers = ({ onUserSelect }) => {
       if (response) {
         setUsers(response.data);
         setSuccessMessage('User deleted successfully');
+        showSuccessToast('User deleted successfully');
       }
     } catch (error) {
       setError(error.message || 'Failed to delete user');
+      showErrorToast(error.message || 'Failed to delete user');
     } finally {
       setLoading(false);
       setShowDeleteConfirm(false);
@@ -116,10 +117,12 @@ const ManageUsers = ({ onUserSelect }) => {
       if (response) {
         setUsers(response.data);
         setSuccessMessage('User updated successfully');
+        showSuccessToast('User updated successfully');
         setShowEditModal(false);
       }
     } catch (error) {
       setError(error.message || 'Failed to update user');
+      showErrorToast(error.message || 'Failed to update user');
     } finally {
       setLoading(false);
     }
@@ -132,18 +135,6 @@ const ManageUsers = ({ onUserSelect }) => {
   return (
     <div className="bg-white shadow-md rounded-md p-4">
       <h2 className="text-lg font-semibold mb-4">Manage Users</h2>
-      
-      <ErrorResponseMessage
-        isOpen={!!error}
-        onClose={() => setError('')}
-        errorMessage={error}
-      />
-      
-      <SuccessResponseMessage
-        isOpen={!!successMessage}
-        onClose={() => setSuccessMessage('')}
-        message={successMessage}
-      />
       
       <DeleteConfirmation
         isOpen={showDeleteConfirm}

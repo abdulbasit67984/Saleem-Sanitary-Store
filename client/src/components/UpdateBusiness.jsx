@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Input, Logo } from './index.js'; // Assuming these components exist
 import { useDispatch, useSelector } from 'react-redux'; // Assuming Redux is used for auth state
 import { useForm } from 'react-hook-form';
+import { showSuccessToast, showErrorToast } from '../utils/toast';
 
 function UpdateBusiness({setisBusinessUpdate}) {
     const navigate = useNavigate();
@@ -53,6 +54,7 @@ function UpdateBusiness({setisBusinessUpdate}) {
                 } else {
                     // Handle cases where the user has no business or fetch failed
                     setError(response?.message || "Could not fetch business details.");
+                    showErrorToast(response?.message || "Could not fetch business details.");
                 }
             } catch (err) {
                 const htmlString = err.response.data; // Reusing error parsing from Register component
@@ -61,6 +63,7 @@ function UpdateBusiness({setisBusinessUpdate}) {
                 const preContent = doc.querySelector('pre')?.innerHTML.replace(/<br\s*\/?>/gi, '\n') || err.message;
                 const errorMessage = preContent.split('\n')[0];
                 setError(errorMessage || "Error fetching business details.");
+                showErrorToast(errorMessage || "Error fetching business details.");
             } finally {
                 setIsLoading(false);
             }
@@ -103,10 +106,12 @@ function UpdateBusiness({setisBusinessUpdate}) {
             if (response && response.statusCode === 200) {
                 setResponseMessage(response.message || "Business details updated successfully!");
                 setShowSuccessModal(true);
+                showSuccessToast(response.message || "Business details updated successfully!");
                 // Optionally update local state or refetch data after successful update
                 // setBusinessData(response.data); // If response returns the updated data
             } else {
                 setError(response?.message || "Failed to update business details.");
+                showErrorToast(response?.message || "Failed to update business details.");
             }
 
         } catch (err) {
@@ -117,6 +122,7 @@ function UpdateBusiness({setisBusinessUpdate}) {
             const preContent = doc.querySelector('pre')?.innerHTML.replace(/<br\s*\/?>/gi, '\n') || err.message;
             const errorMessage = preContent.split('\n')[0];
             setError(errorMessage || "An error occurred during update.");
+            showErrorToast(errorMessage || "An error occurred during update.");
         } finally {
             setIsUpdating(false);
             // No reset here, as we want to keep the updated values in the form after success

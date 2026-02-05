@@ -7,6 +7,7 @@ import { Button, Input, Logo } from './index.js'
 import { useDispatch, useSelector } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import UpdateBusiness from './UpdateBusiness.jsx'
+import { showSuccessToast, showErrorToast } from '../utils/toast'
 
 function RegisterBusiness() {
     const navigate = useNavigate()
@@ -35,6 +36,7 @@ function RegisterBusiness() {
             if (reponse) {
                 setResponse(reponse)
                 setIsStoreCreated(true)
+                showSuccessToast(reponse || 'Business registered successfully!')
                 setIsLoading(false)
             }
 
@@ -51,6 +53,7 @@ function RegisterBusiness() {
             const errorMessage = preContent.split('\n')[0]; // Get the first line
 
             setError(errorMessage)
+            showErrorToast(errorMessage)
         } finally {
             setIsLoading(false)
             reset()
@@ -101,9 +104,9 @@ function RegisterBusiness() {
                             labelClass='text-sm w-36'
                             className="text-xs p-1.5 w-full"
                             divClass=" gap-2 items-center"
-                            {...register("businessName", {
-                                required: true,
-                            })}
+                            // {...register("businessName", {
+                            //     required: true,
+                            // })}
                         />
 
                         <Input
@@ -112,9 +115,9 @@ function RegisterBusiness() {
                             labelClass='text-sm w-36'
                             className="text-xs p-1.5 w-full"
                             divClass=" gap-2 items-center"
-                            {...register("businessRegion", {
-                                required: true,
-                            })}
+                            // {...register("businessRegion", {
+                            //     required: true,
+                            // })}
                         />
                         <Input
                             label="Subscription: "
@@ -122,9 +125,9 @@ function RegisterBusiness() {
                             labelClass='text-sm w-36'
                             className="text-xs p-1.5 w-full"
                             divClass=" gap-2 items-center"
-                            {...register("subscription", {
-                                required: true,
-                            })}
+                            // {...register("subscription", {
+                            //     required: true,
+                            // })}
                         />
                         <Input
                             label="Exempted Paragraph(if any): "
@@ -132,7 +135,7 @@ function RegisterBusiness() {
                             labelClass='text-sm w-full'
                             className="text-xs p-1.5 w-full"
                             divClass=" gap-2 items-center"
-                            {...register("exemptedParagraph")}
+                            // {...register("exemptedParagraph")}
                         />
                         <Input
                             label="GST Amount: (if any)"
@@ -141,7 +144,7 @@ function RegisterBusiness() {
                             divClass=" gap-2 items-center"
                             labelClass='text-sm w-36'
                             type='number'
-                            {...register("gst")}
+                            // {...register("gst")}
                         />
                         <Input
                             label="Logo"
@@ -150,7 +153,7 @@ function RegisterBusiness() {
                             divClass=" gap-2 items-center"
                             labelClass='text-sm w-36'
                             type='file'
-                            {...register("businessLogo")}
+                            // {...register("businessLogo")}
                         />
 
                     </div>

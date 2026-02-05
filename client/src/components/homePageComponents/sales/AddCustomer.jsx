@@ -7,6 +7,7 @@ import Loader from '../../../pages/Loader';
 import { useSelector, useDispatch } from 'react-redux';
 import { setCustomerData } from '../../../store/slices/customer/customerSlice'
 import { extractErrorMessage } from '../../../utils/extractErrorMessage';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 
 const AddCustomer = ({ onCustomerCreated }) => {
@@ -50,6 +51,7 @@ const AddCustomer = ({ onCustomerCreated }) => {
         console.log("comp res: ", response.message)
         setIsLoading(false)
         setIsCustomerCreated(true)
+        showSuccessToast(response.message || 'Customer added successfully!')
         // setCustomerId(response.data?._id)
 
         const newCustomer = response.data;
@@ -73,6 +75,7 @@ const AddCustomer = ({ onCustomerCreated }) => {
       const message = extractErrorMessage(error)
       console.log('message', message)
       setErrorMessage(message)
+      showErrorToast(message || 'Failed to add customer')
       setTimeout(() => {
         setErrorMessage('');
       }, 4000);
@@ -186,8 +189,8 @@ const AddCustomer = ({ onCustomerCreated }) => {
                 className={`border p-1  rounded w-full`}
               >
                 {/* <option value="">Select Flag</option> */}
-                <option className='bg-red-500 text-white text-center' value="red">Red</option>
-                <option className='bg-green-500 text-white text-center' value="green">Green</option>
+                <option className='bg-red-500 text-white text-center' value="red">Red (Retail)</option>
+                <option className='bg-green-500 text-white text-center' value="green">Green (Wholesale)</option>
                 <option className='bg-yellow-500 text-center text-white' value="yellow">Yellow</option>
                 <option className='bg-white  text-center' value="white">White</option>
               </select>

@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import config from '../../../features/config'; // Import your config
 import Button from '../../Button'; // Import your Button component
-import ErrorResponseMessage from '../../ErrorResponseMessage';
-import SuccessResponseMessage from '../../SuccessResponseMessage';
 import Loader from '../../../pages/Loader';
 import { extractErrorMessage } from '../../../utils/extractErrorMessage';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 const CustomerJournalEntry = () => {
     const [customerAccounts, setCustomerAccounts] = useState([]);
@@ -71,6 +70,7 @@ const CustomerJournalEntry = () => {
             const response = await config.postCustomerJournalEntry(formData); 
             if (response) {
                 setSuccess("Customer journal entry recorded successfully!");
+                showSuccessToast("Customer journal entry recorded successfully!");
                 setFormData({
                     customerAccountId: '',
                     amount: '',
@@ -79,11 +79,13 @@ const CustomerJournalEntry = () => {
                 });
             } else {
                 setError(response.message || "Failed to record customer journal entry.");
+                showErrorToast(response.message || "Failed to record customer journal entry.");
             }
         } catch (err) {
             console.error("Error recording customer journal entry:", err);
             const errorMessage = extractErrorMessage(err);
             setError(errorMessage);
+            showErrorToast(errorMessage || "Failed to record customer journal entry");
         } finally {
             setLoading(false);
         }

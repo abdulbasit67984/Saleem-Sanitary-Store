@@ -21,7 +21,7 @@ const initialState = {
   productCode: '',
   productQuantity: '',
   productDiscount: '',
-  productPrice: 0,
+  productPrice: '',
   productUnits: '',
   product: {},
   extraProducts: []

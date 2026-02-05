@@ -81,7 +81,7 @@ const ViewPurchase = (bill, isOpen, onClose) => {
                             {purchase.purchaseItems && purchase.purchaseItems.map((item, index) => (
                                 <tr key={index} className="break-inside-avoid">
                                     <td className="text-xs p-2">{index + 1}</td>
-                                    <td className="text-xs p-2">{item.productId.productName}</td>
+                                    <td className="text-xs p-2">{item.productId?.productName}</td>
                                     <td className="text-xs p-2">{item.quantity}</td>
                                     <td className="text-xs p-2">{item.pricePerUnit}</td>
                                     <td className="text-xs p-2">{item.quantity * item.pricePerUnit}</td>

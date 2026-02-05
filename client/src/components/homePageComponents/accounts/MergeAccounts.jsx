@@ -5,6 +5,7 @@ import Button from '../../Button';
 import config from '../../../features/config';
 import { extractErrorMessage } from '../../../utils/extractErrorMessage';
 import Loader from '../../../pages/Loader';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 const MergeAccounts = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -64,9 +65,11 @@ const MergeAccounts = () => {
             }
 
             setSubmitSuccess(true);
+            showSuccessToast("Accounts merged successfully!");
             setChildAccountIds([]);
         } catch (err) {
             setSubmitError(extractErrorMessage(err));
+            showErrorToast(extractErrorMessage(err));
         } finally {
             setIsLoading(false);
         }

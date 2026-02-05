@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux"
 import authService from "../features/auth"
 import { useForm } from "react-hook-form"
 import { setCurrentUser } from '../store/slices/auth/authSlice'
+import { showSuccessToast, showErrorToast } from '../utils/toast'
 
 function Login() {
 
@@ -37,6 +38,7 @@ function Login() {
                 dispatch(authLogin(user));
                 dispatch(setCurrentUser(user));
                 dispatch(setToken(resToken));
+                showSuccessToast('Login successful!')
                 // console.log("authstatus:", authStatus, "user:", userData, "token:", token);
                 // console.log("username:", user.username);
                 // console.log("business:", user.BusinessId?.businessName);
@@ -58,6 +60,7 @@ function Login() {
             const errorMessage = preContent.split('\n')[0]; // Get the first line
 
             setError(errorMessage)
+            showErrorToast(errorMessage)
         } finally {
             setIsLoading(false)
         }

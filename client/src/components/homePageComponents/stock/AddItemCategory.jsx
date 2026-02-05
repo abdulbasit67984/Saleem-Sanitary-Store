@@ -7,6 +7,7 @@ import Loader from '../../../pages/Loader';
 import { useSelector, useDispatch } from 'react-redux';
 import Input from '../../Input';
 import { setCategoryData } from '../../../store/slices/products/categorySlice'
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 
 const AddItemCategory = () => {
@@ -68,11 +69,13 @@ const AddItemCategory = () => {
                 setSuccessMessage(response.message)
                 console.log("comp res: ", response.message)
                 setIsCategoryCreated(true)
+                showSuccessToast(response.message || 'Category created successfully!')
                 reset()
             }
         } catch (error) {
             console.log("error adding Category:", error)
             setError(error.message)
+            showErrorToast(error.message || 'Failed to create category')
         } finally {
             setIsLoading(false)
             setIsButtonLoading(false)

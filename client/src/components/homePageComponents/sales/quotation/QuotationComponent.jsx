@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { addQuotation } from "../../../../utils/quotationStorage.js";
 import Button from "../../../Button";
+import { showWarningToast, showSuccessToast } from "../../../../utils/toast";
 
 // Expect full invoice state props so we can restore later
 export default function QuotationComponent({
@@ -21,7 +22,7 @@ export default function QuotationComponent({
 
   const handleSave = () => {
     if (!name.trim()) {
-      alert("Please enter a quotation name.");
+      showWarningToast("Please enter a quotation name.");
       return;
     }
 
@@ -62,14 +63,14 @@ export default function QuotationComponent({
     addQuotation(quotation);
     setShow(false);
     setName("");
-    alert("Quotation saved ✅");
+    showSuccessToast("Quotation saved successfully!");
   };
 
   return (
     <div className="inline-block w-full">
       <Button
         onClick={() => setShow(true)}
-        className="bg-purple-500 hover:bg-purple-700 w-full text-white px-4 py-2 rounded"
+        className=" hover:bg-purple-700 w-full text-white px-4 py-2 rounded"
       >
         Save as Quotation
       </Button>

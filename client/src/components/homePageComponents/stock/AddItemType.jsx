@@ -8,6 +8,7 @@ import Loader from '../../../pages/Loader';
 import { useDispatch, useSelector } from 'react-redux';
 import Input from '../../Input';
 import { setTypeData } from '../../../store/slices/products/typeSlice'
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 
 const AddItemType = () => {
@@ -69,11 +70,13 @@ const AddItemType = () => {
                 console.log("comp res: ", response.message)
                 fetchTypes()
                 setIsTypeCreated(true)
+                showSuccessToast(response.message || 'Type created successfully!')
                 reset()
             }
         } catch (error) {
             console.log("error adding Type:", error)
             setError(error.message)
+            showErrorToast(error.message || 'Failed to create type')
         } finally {
             setIsLoading(false)
             setIsButtonLoading(false)

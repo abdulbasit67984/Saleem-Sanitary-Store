@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useForm, useFieldArray } from 'react-hook-form'; // Import useFieldArray
 import { extractErrorMessage } from '../utils/extractErrorMessage.js';
 import { setCurrentUser } from '../store/slices/auth/authSlice.js';
+import { showSuccessToast, showErrorToast } from '../utils/toast';
 
 function UpdateUserDetails({setIsUpdateUserDetails}) {
     const navigate = useNavigate();
@@ -85,6 +86,7 @@ function UpdateUserDetails({setIsUpdateUserDetails}) {
             if (response && response.statusCode === 200) {
                 setResponseMessage(response.message || "Profile updated successfully!");
                 setShowSuccessModal(true);
+                showSuccessToast(response.message || "Profile updated successfully!");
 
                 if (response.data) {
                     // Dispatch the updated user data (which includes the new mobileno array)
@@ -93,11 +95,13 @@ function UpdateUserDetails({setIsUpdateUserDetails}) {
 
             } else {
                 setError(extractErrorMessage(response) || "Failed to update profile details.");
+                showErrorToast(extractErrorMessage(response) || "Failed to update profile details.");
             }
 
         } catch (err) {
             const errorMessage = extractErrorMessage(err);
             setError(errorMessage || "An error occurred during profile update.");
+            showErrorToast(errorMessage || "An error occurred during profile update.");
         } finally {
             setIsUpdating(false);
         }

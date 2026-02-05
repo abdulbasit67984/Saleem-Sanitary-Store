@@ -9,6 +9,9 @@ import {
     clearQuotations,
 } from "../../../../utils/quotationStorage";
 import Button from "../../../Button";
+import { useSelector } from "react-redux";
+import { showWarningToast, showSuccessToast } from "../../../../utils/toast";
+import ConfirmationModal from "../../../ConfirmationModal";
 
 export default function QuotationList({ onLoadQuotation, onClose }) {
     const [quotations, setQuotations] = useState([]);
@@ -16,8 +19,17 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
     const [selected, setSelected] = useState(new Set());
     const [preview, setPreview] = useState(null); // quotation to preview
 
+    // Confirmation modal states
+    const [showDeleteOneConfirm, setShowDeleteOneConfirm] = useState(false);
+    const [quotationToDelete, setQuotationToDelete] = useState(null);
+    const [showDeleteSelectedConfirm, setShowDeleteSelectedConfirm] = useState(false);
+    const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+
     const previewRef = useRef(); // for printing preview
     const listRef = useRef();    // optional: for printing list
+
+    const userData = useSelector((state) => state.auth.userData);
+    // console.log('userData in QuotationList:', userData);
 
     // react-to-print hook
     const handlePrintPreview = useReactToPrint({
@@ -62,32 +74,49 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
     };
 
     const handleDeleteOne = (id) => {
-        if (!window.confirm("Delete this quotation?")) return;
-        const next = deleteQuotation(id);
+        setQuotationToDelete(id);
+        setShowDeleteOneConfirm(true);
+    };
+
+    const confirmDeleteOne = () => {
+        const next = deleteQuotation(quotationToDelete);
         setQuotations(next);
         setSelected((s) => {
             const t = new Set(s);
-            t.delete(String(id));
+            t.delete(String(quotationToDelete));
             return t;
         });
+        setShowDeleteOneConfirm(false);
+        setQuotationToDelete(null);
+        showSuccessToast('Quotation deleted successfully!');
     };
 
     const handleDeleteSelected = () => {
         if (selected.size === 0) {
-            alert("No quotations selected.");
+            showWarningToast("No quotations selected.");
             return;
         }
-        if (!window.confirm(`Delete ${selected.size} selected quotation(s)?`)) return;
+        setShowDeleteSelectedConfirm(true);
+    };
+
+    const confirmDeleteSelected = () => {
         const next = deleteQuotations(Array.from(selected));
         setQuotations(next);
         setSelected(new Set());
+        setShowDeleteSelectedConfirm(false);
+        showSuccessToast(`${selected.size} quotation(s) deleted successfully!`);
     };
 
     const handleClearAll = () => {
-        if (!window.confirm("Delete ALL quotations? This cannot be undone.")) return;
+        setShowClearAllConfirm(true);
+    };
+
+    const confirmClearAll = () => {
         clearQuotations();
         setQuotations([]);
         setSelected(new Set());
+        setShowClearAllConfirm(false);
+        showSuccessToast('All quotations cleared successfully!');
     };
 
     const handleLoad = (q) => {
@@ -237,10 +266,10 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                         </button>
                         <div ref={previewRef} >
                             <h4 className="text-base font-semibold mb-3">
-                                NEW SALEEM SANITARY TRADERS
+                                {userData?.BusinessId?.businessName}
                             </h4>
 
-                            <div className="grid grid-cols-2 gap-3 text-[10px] mb-4">
+                            <div className="grid grid-cols-2 gap-3 text-[12px] mb-4">
                                 <div><span className="text-gray-500">ID:</span> {preview.id}</div>
                                 <div>
                                     <span className="text-gray-500">Created:</span>{" "}
@@ -264,7 +293,7 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
 
                             <div className="overflow-auto max-h-72 border rounded  print:overflow-visible print:max-h-none">
                                 <table className="min-w-full text-xs">
-                                    <thead className="sticky text-[10px] top-0 bg-gray-100 border-b">
+                                    <thead className="sticky text-[12px] top-0 bg-gray-100 border-b">
                                         <tr>
                                             <th className="px-2 py-2 text-left">#</th>
                                             <th className="px-2 py-2 text-left">Product</th>
@@ -278,7 +307,7 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                                     </thead>
                                     <tbody>
                                         {(preview.payload?._rawSelectedItems ?? preview.items ?? []).map((it, idx) => (
-                                            <tr key={idx} className="border-t text-[8px]">
+                                            <tr key={idx} className="border-t text-[12px]">
                                                 <td className="px-2">{idx + 1}</td>
                                                 <td className="px-2">{it.productName ?? it.name ?? it.productCode ?? it.productId ?? "-"}</td>
                                                 <td className="px-2 text-right">{it.quantity ?? "-"}</td>
@@ -299,19 +328,17 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                                 </table>
                             </div>
 
-                            <div className="mt-4 justify-end text-sm">
-                                <div className="mt-4 flex justify-end text-sm">
+                            <div className="mt-4 flex justify-end text-sm">
+                                <div>
+                                    <div className="font-semibold">
+                                        Total Amount: {formatMoney(preview.payload?.totalAmount ?? preview.total)}
+                                    </div>
                                     <div>
-                                        <div className="font-semibold">
-                                            Total Amount: {formatMoney(preview.payload?.totalAmount ?? preview.total)}
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Flat Discount:</span>{" "}
-                                            {formatMoney(preview.payload?.flatDiscount ?? 0)}
-                                        </div>
-                                        <div className="font-semibold">
-                                            Net Payable: {formatMoney(preview.payload?.totalAmount - preview.payload?.flatDiscount ?? preview.total)}
-                                        </div>
+                                        <span className="text-gray-500">Flat Discount:</span>{" "}
+                                        {formatMoney(preview.payload?.flatDiscount ?? 0)}
+                                    </div>
+                                    <div className="font-semibold">
+                                        Net Payable: {formatMoney(preview.payload?.totalAmount - preview.payload?.flatDiscount ?? preview.total)}
                                     </div>
                                 </div>
                             </div>
@@ -344,6 +371,42 @@ export default function QuotationList({ onLoadQuotation, onClose }) {
                     </div>
                 </div>
             )}
+
+            {/* Delete One Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showDeleteOneConfirm}
+                onConfirm={confirmDeleteOne}
+                onCancel={() => {
+                    setShowDeleteOneConfirm(false);
+                    setQuotationToDelete(null);
+                }}
+                title="Delete Quotation"
+                message="Are you sure you want to delete this quotation? This action cannot be undone."
+                type="delete"
+                confirmText="Delete"
+            />
+
+            {/* Delete Selected Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showDeleteSelectedConfirm}
+                onConfirm={confirmDeleteSelected}
+                onCancel={() => setShowDeleteSelectedConfirm(false)}
+                title="Delete Selected Quotations"
+                message={`Are you sure you want to delete ${selected.size} selected quotation(s)? This action cannot be undone.`}
+                type="delete"
+                confirmText="Delete All"
+            />
+
+            {/* Clear All Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showClearAllConfirm}
+                onConfirm={confirmClearAll}
+                onCancel={() => setShowClearAllConfirm(false)}
+                title="Clear All Quotations"
+                message="Are you sure you want to delete ALL quotations? This action cannot be undone."
+                type="warning"
+                confirmText="Clear All"
+            />
         </div>
     );
 }

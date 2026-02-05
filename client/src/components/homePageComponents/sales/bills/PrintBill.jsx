@@ -24,6 +24,20 @@ const PrintBill = () => {
   const { billId } = useParams()
 
   useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (bill && e.key === "Enter") {
+        handlePrint();
+      }
+    };
+  
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [bill]);
+  
+
+  useEffect(() => {
     async function fetchBill() {
       setIsLoading(true);
       setBillType(() => billId.at(0) === 'T'? 'thermal' : 'A4')

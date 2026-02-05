@@ -15,6 +15,7 @@ import {
 import Input from '../../Input';
 import Button from '../../Button';
 import config from '../../../features/config';
+import { showErrorToast, showWarningToast, showSuccessToast } from '../../../utils/toast';
 
 const SaleReturnAgainstBill = () => {
   const dispatch = useDispatch();
@@ -54,8 +55,8 @@ const SaleReturnAgainstBill = () => {
   useEffect(() => {
     if (productSearch.trim() && bill?.billItems) {
       const filtered = bill.billItems.filter((item) =>
-        item?.productId?.productName?.toLowerCase().includes(productSearch.toLowerCase()) ||
-        item?.productId?.productCode?.toLowerCase().includes(productSearch.toLowerCase())
+        item?.productId?.productName?.toLowerCase().includes(productSearch?.toLowerCase()) ||
+        item?.productId?.productCode?.toLowerCase().includes(productSearch?.toLowerCase())
       );
       setFilteredProducts(filtered);
     } else {
@@ -76,7 +77,7 @@ const SaleReturnAgainstBill = () => {
       );
 
       if (alreadyExists) {
-        alert("This product is already added to the invoice.");
+        showWarningToast("This product is already added to the invoice.");
         return;
       }
 
@@ -211,7 +212,7 @@ const SaleReturnAgainstBill = () => {
 
   const handleSubmit = async () => {
     if (selectedItems.length === 0) {
-      alert("Please select add items for return.");
+      showWarningToast("Please add items for return.");
       return;
     }
 
@@ -246,6 +247,7 @@ const SaleReturnAgainstBill = () => {
 
       if (response) {
         setSubmitSuccess(true);
+        showSuccessToast("Sale return processed successfully!");
         dispatch(resetSaleReturn());
       }
     } catch (error) {
@@ -258,6 +260,7 @@ const SaleReturnAgainstBill = () => {
         errorMessage = preContent?.split('\n')[0] || errorMessage;
       }
       setSubmitError(errorMessage);
+      showErrorToast(errorMessage);
     } finally {
       setIsLoading(false);
     }

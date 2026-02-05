@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import config from '../../../features/config'; // Import your config
 import Button from '../../Button'; // Import your Button component
-import ErrorResponseMessage from '../../ErrorResponseMessage';
-import SuccessResponseMessage from '../../SuccessResponseMessage';
 import Loader from '../../../pages/Loader';
 import { extractErrorMessage } from '../../../utils/extractErrorMessage';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 const ExpenseEntry = () => {
     const [expenseAccounts, setExpenseAccounts] = useState([]);
@@ -72,6 +71,7 @@ const ExpenseEntry = () => {
             const response = await config.postExpense(formData); // Replace with your actual API call
             if (response.data) {
                 setSuccess("Expense recorded successfully!");
+                showSuccessToast("Expense recorded successfully!");
                 setFormData({  // Clear the form after successful submission
                     accountId: '',
                     amount: '',
@@ -79,11 +79,13 @@ const ExpenseEntry = () => {
                 });
             } else {
               setError(response.message || "Failed to record expense.");
+              showErrorToast(response.message || "Failed to record expense.");
             }
         } catch (err) {
             console.error("Error recording expense:", err);
             const errorMessage = extractErrorMessage(err);
             setError(errorMessage);
+            showErrorToast(errorMessage || "Failed to record expense");
         } finally {
             setLoading(false);
         }
@@ -94,8 +96,8 @@ const ExpenseEntry = () => {
     : (
         <div className="p-4 bg-white border rounded shadow-md">
             <h2 className="text-xl font-bold mb-4">Expense Entry</h2>
-            {error && <p className='text-red-600'>{error}</p> }
-            {success && <SuccessResponseMessage message={success} />}
+            {error && <p className='text-red-600'>{error}</p>}
+            {success && <p className='text-green-600'>{success}</p>}
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label htmlFor="accountId" className="block text-sm font-medium text-gray-700">

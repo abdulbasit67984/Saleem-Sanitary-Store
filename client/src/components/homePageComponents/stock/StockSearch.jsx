@@ -10,6 +10,8 @@ import {
     setAllProducts
 } from '../../../store/slices/products/productsSlice';
 import ButtonLoader from '../../ButtonLoader';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
+import ConfirmationModal from '../../ConfirmationModal';
 
 const StockSearch = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -23,10 +25,14 @@ const StockSearch = () => {
     const [productName, setProductName] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [deleteId, setDeleteId] = useState('');
+    const [totalInventory, setTotalInventory] = useState(0);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [productToDelete, setProductToDelete] = useState(null);
 
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 400;
+    const [vendor, setVendor] = useState('supplier');
 
     const {
         register,
@@ -42,6 +48,7 @@ const StockSearch = () => {
     const companyData = useSelector(state => state.companies.companyData);
     const categoryData = useSelector(state => state.categories.categoryData);
     const typeData = useSelector(state => state.types.typeData);
+    const supplierData = useSelector(state => state.suppliers.supplierData);
 
     const inputRef = useRef(null);
 
@@ -50,6 +57,16 @@ const StockSearch = () => {
         setIsEdit(true);
         setProductName(name);
         setProduct(product);
+        console.log(product);
+
+        // Determine vendor type based on available data
+        if (product.vendorSupplierId || (product.vendorSupplierDetails && product.vendorSupplierDetails.length > 0)) {
+            setVendor('supplier');
+        } else if (product.vendorCompanyId || (product.vendorCompanyDetails && product.vendorCompanyDetails.length > 0)) {
+            setVendor('company');
+        } else {
+            setVendor('supplier');
+        }
 
         setValue('productId', id);
         setValue('productCode', product.productCode || '');
@@ -59,9 +76,11 @@ const StockSearch = () => {
         setValue('salePrice2', product.salePriceDetails?.[0]?.salePrice2 || '');
         setValue('salePrice3', product.salePriceDetails?.[0]?.salePrice3 || '');
         setValue('salePrice4', product.salePriceDetails?.[0]?.salePrice4 || '');
-        setValue('categoryId', product.categoryDetails?.[0]?._id || '');
-        setValue('typeId', product.typeDetails?.[0]?._id || '');
-        setValue('companyId', product.companyDetails?.[0]?._id || '');
+        setValue('categoryId', product.categoryId || product.categoryDetails?.[0]?._id || '');
+        setValue('typeId', product.typeId || product.typeDetails?.[0]?._id || '');
+        setValue('companyId', product.companyId || product.companyDetails?.[0]?._id || '');
+        setValue('vendorSupplierId', product.vendorSupplierId || product.vendorSupplierDetails?.[0]?._id || '');
+        setValue('vendorCompanyId', product.vendorCompanyId || product.vendorCompanyDetails?.[0]?._id || '');
         setValue('productDiscountPercentage', product.productDiscountPercentage || '');
         setValue('productPack', product.productPack || '');
         setValue('quantityUnit', product.quantityUnit || '');
@@ -80,11 +99,13 @@ const StockSearch = () => {
 
         if (cleanedData.productId === undefined) {
             setError("No product ID found!");
+            showErrorToast("No product ID found!");
             return;
         }
 
         if (Object.keys(cleanedData).length === 0) {
             setError("No data added to update!");
+            showErrorToast("No data added to update!");
             return;
         }
 
@@ -96,6 +117,7 @@ const StockSearch = () => {
                 setIsStockUpdated(true);
                 setIsButtonLoading(false);
                 setIsEdit(false);
+                showSuccessToast(response.message || 'Product updated successfully!');
                 reset();
 
                 const allProductsBefore = await config.fetchAllProducts();
@@ -105,6 +127,7 @@ const StockSearch = () => {
             }
         } catch (error) {
             console.log("error updating Product:", error);
+            showErrorToast('Failed to update product');
         } finally {
             setIsLoading(false);
             setIsStockUpdated(true);
@@ -113,15 +136,19 @@ const StockSearch = () => {
     };
 
     const handleDelete = async (id) => {
-        setIsButtonLoading(true);
-        setDeleteId(id);
-        
-        const confirm = window.confirm('Are You sure to want to delete this product? This Action cannot be undone!')
+        setProductToDelete(id);
+        setShowDeleteConfirm(true);
+    };
 
-        if(!confirm) return
+    const confirmDelete = async () => {
+        if (!productToDelete) return;
+        
+        setIsButtonLoading(true);
+        setDeleteId(productToDelete);
+        setShowDeleteConfirm(false);
 
         try {
-            const response = await config.deleteProduct(id);
+            const response = await config.deleteProduct(productToDelete);
             if (response) {
                 setSuccessMessage(response.message);
                 setIsButtonLoading(false);
@@ -129,6 +156,7 @@ const StockSearch = () => {
                 setDeleteId('');
                 setIsLoading(false);
                 setIsStockUpdated(true);
+                showSuccessToast('Product deleted successfully!');
 
                 const allProductsBefore = await config.fetchAllProducts();
                 if (allProductsBefore.data) {
@@ -137,11 +165,13 @@ const StockSearch = () => {
             }
         } catch (error) {
             console.log("error deleting Product:", error);
+            showErrorToast('Failed to delete product');
         } finally {
             setIsLoading(false);
             setIsStockUpdated(true);
             setDeleteId('');
             setIsButtonLoading(false);
+            setProductToDelete(null);
         }
     };
 
@@ -150,11 +180,19 @@ const StockSearch = () => {
     }, []);
 
     useEffect(() => {
+        let totalValue = 0;
+        allProducts.forEach(product => {
+            totalValue += product.productPurchasePrice * (product.productTotalQuantity / product.productPack);
+        });
+        setTotalInventory(totalValue);
+    }, [allProducts]);
+
+    useEffect(() => {
         let results = allProducts;
         if (searchQuery) {
             results = allProducts?.filter(
                 (product) =>
-                    product.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    product.productName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     product.productCode?.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
@@ -168,10 +206,10 @@ const StockSearch = () => {
 
     const exportToCSV = () => {
         const headers = [
-            "Code", "Name", "Type", "Pack", "Company", "Vendor", "product Discount Percentage", "Category", "product Purchase Price", "Sale Price1", "Sale Price2", "Sale Price3", "Sale Price4", "Total Qty", "status"
+            "Code", "Name", "Type", "Pack", "Company", "Vendor", "product Discount Percentage", "Category", "Sale Price1", "Sale Price2", "Sale Price3", "Sale Price4", "Total Qty", "product Purchase Price", `Total Units`, "Purchase Price (Unit)", "Inventory Value Summation"
         ];
 
-        const rows = currentProducts.map(product => [
+        const rows = allProducts?.map(product => [
             product.productCode,
             product.productName,
             product.typeDetails[0]?.typeName,
@@ -179,14 +217,16 @@ const StockSearch = () => {
             product.companyDetails[0]?.companyName,
             product.vendorSupplierDetails[0]?.supplierName || product.vendorCompanyDetails[0]?.companyName,
             product.productDiscountPercentage,
-            product.categoryDetails[0]?.productName,
-            product.productPurchasePrice,
+            product.categoryDetails[0]?.categoryName,
             product.salePriceDetails[0]?.salePrice1,
             product.salePriceDetails[0]?.salePrice2,
             product.salePriceDetails[0]?.salePrice3,
             product.salePriceDetails[0]?.salePrice4,
-            Math.ceil(product.productTotalQuantity / product.productPack),
-            product.status
+            (product.productTotalQuantity / product.productPack).toFixed(2),
+            product.productPurchasePrice,
+            (product.productTotalQuantity)?.toFixed(2),
+            (product.productPurchasePrice / product.productPack)?.toFixed(2),
+            (product.productPurchasePrice * (product.productTotalQuantity / product.productPack)).toFixed(2)
         ]);
 
         const csvContent =
@@ -204,6 +244,18 @@ const StockSearch = () => {
 
     return !isEdit ? (
         <div className='bg-white rounded-lg'>
+            <ConfirmationModal
+                isOpen={showDeleteConfirm}
+                onConfirm={confirmDelete}
+                onCancel={() => {
+                    setShowDeleteConfirm(false);
+                    setProductToDelete(null);
+                }}
+                type="delete"
+                title="Delete Product"
+                message="Are you sure you want to delete this product? This action cannot be undone!"
+                isLoading={isButtonLoading}
+            />
             <div className="w-full px-5 py-5">
                 <h2 className="text-lg text-center pt-2 font-semibold mb-2">Search for Stock</h2>
                 <div className="text-xs text-red-500 mb-2 text-center">
@@ -221,44 +273,55 @@ const StockSearch = () => {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         ref={inputRef}
                     />
-                    <button
-                        onClick={exportToCSV}
-                        className="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded text-xs"
-                    >
-                        Export CSV
-                    </button>
+                    <div className='flex gap-2'>
+                        <div>
+                            <span>
+                                Total Inventory Value: {totalInventory.toFixed(2)}
+                            </span>
+                        </div>
+                        <button
+                            onClick={exportToCSV}
+                            className="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded text-xs"
+                        >
+                            Generate Excel File
+                        </button>
+                    </div>
                 </div>
                 {currentProducts && currentProducts.length > 0 &&
                     <div className="overflow-auto max-h-80 scrollbar-thin rounded">
                         <table className="min-w-full bg-white border text-xs">
                             <thead className="sticky -top-1 border-b shadow-sm bg-gray-300 z-10">
                                 <tr>
-                                    <th className="py-2 px-1 text-left">Code</th>
+                                    <th className="py-2 px-1 text-left">S/No.</th>
                                     <th className="py-2 px-1 text-left">Name</th>
                                     <th className="py-2 px-1 text-left">Type</th>
                                     <th className="py-2 px-1 text-left">Pack</th>
-                                    <th className="py-2 px-1 text-left">Company</th>
+                                    {/* <th className="py-2 px-1 text-left">Company</th>
                                     <th className="py-2 px-1 text-left">Vendor</th>
-                                    <th className="py-2 px-1 text-left">Category</th>
+                                    <th className="py-2 px-1 text-left">Category</th> */}
                                     <th className="py-2 px-1 text-left">Sale Price</th>
                                     <th className="py-2 px-1 text-left">Total Qty</th>
+                                    <th className="py-2 px-1 text-left">Purchase Price</th>
                                     <th className="py-2 px-1 text-left">Total Units</th>
+                                    <th className="py-2 px-1 text-left">Purchase Price (Unit)</th>
                                     <th className="py-2 px-1 text-left">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {currentProducts.map((product, index) => (
                                     <tr key={index} className="border-t hover:bg-gray-100">
-                                        <td className="px-1 py-1">{product.productCode}</td>
+                                        <td className="px-1 py-1">{index+1}</td>
                                         <td className="px-1 py-1">{product.productName}</td>
                                         <td className="px-1 py-1">{product.typeDetails[0]?.typeName}</td>
                                         <td className="px-1 py-1">{product.productPack}</td>
-                                        <td className="px-1 py-1">{product.companyDetails[0]?.companyName}</td>
+                                        {/* <td className="px-1 py-1">{product.companyDetails[0]?.companyName}</td>
                                         <td className="px-1 py-1">{product.vendorSupplierDetails[0]?.supplierName || product.vendorCompanyDetails[0]?.companyName}</td>
-                                        <td className="px-1 py-1">{product.categoryDetails[0]?.productName}</td>
+                                        <td className="px-1 py-1">{product.categoryDetails[0]?.categoryName}</td> */}
                                         <td className="px-1 py-1">{product.salePriceDetails[0]?.salePrice1}</td>
                                         <td className="px-1 py-1">{Math.ceil(product.productTotalQuantity / product.productPack)}</td>
-                                        <td className="px-1 py-1">{Math.ceil(product.productTotalQuantity)}</td>
+                                        <td className={`px-1 py-1 ${product.productPurchasePrice > product.salePriceDetails[0]?.salePrice1 && 'bg-red-400'}`}>{product.productPurchasePrice}</td>
+                                        <td className="px-1 py-1">{(product.productTotalQuantity)?.toFixed(2)}</td>
+                                        <td className="px-1 py-1">{(product.productPurchasePrice / product.productPack)?.toFixed(2)}</td>
                                         <td className="py-1 px-2 flex gap-2">
                                             <button
                                                 className="bg-red-500 hover:bg-red-700 text-white py-1 px-2 rounded-full"
@@ -300,7 +363,7 @@ const StockSearch = () => {
         </div>
     ) :
         <div className='w-full px-4 flex items-center'>
-            {isStockUpdated && (
+            {/* {isStockUpdated && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20">
                     <div className="bg-white p-6 rounded shadow-lg text-center relative">
                         <span className='absolute top-0 pt-1 right-2'>
@@ -309,7 +372,7 @@ const StockSearch = () => {
                         <h2 className="text-lg font-thin p-4">{successMessage}</h2>
                     </div>
                 </div>
-            )}
+            )} */}
             <div className="w-full px-5 max-w-lg mx-auto py-5 bg-white rounded shadow-lg">
                 <span className='absolute right-80 mr-2 top-20'>
                     <button className='hover:text-red-700' onClick={() => setIsEdit(false)}>&#10008;</button>
@@ -365,7 +428,7 @@ const StockSearch = () => {
 
                                 {/* Sale Prices */}
                                 <div className="mb-2">
-                                    <label className="block text-gray-700 text-xs">Sale Price 1</label>
+                                    <label className="block text-gray-700 text-xs">Sale Price 1 (Retail)</label>
                                     <input
                                         type="text"
                                         {...register('salePrice1')}
@@ -373,7 +436,7 @@ const StockSearch = () => {
                                     />
                                 </div>
                                 <div className="mb-2">
-                                    <label className="block text-gray-700 text-xs">Sale Price 2</label>
+                                    <label className="block text-gray-700 text-xs">Sale Price 2 (Wholesale)</label>
                                     <input
                                         type="text"
                                         {...register('salePrice2')}
@@ -393,6 +456,16 @@ const StockSearch = () => {
                                     <input
                                         type="text"
                                         {...register('salePrice4')}
+                                        className="w-full px-2 py-1 border rounded-md text-xs"
+                                    />
+                                </div>
+                                
+                                {/* Purchase Price */}
+                                <div className="mb-2">
+                                    <label className="block text-gray-700 text-xs">Purchase Price</label>
+                                    <input
+                                        type="text"
+                                        {...register('productPurchasePrice')}
                                         className="w-full px-2 py-1 border rounded-md text-xs"
                                     />
                                 </div>
@@ -442,6 +515,57 @@ const StockSearch = () => {
                                     </select>
                                 </div>
 
+                                {/* Vendor Supplier / Company */}
+                                <div className="mb-2 grid grid-cols-2 gap-2">
+                                    <div className="">
+                                        <label className="flex gap-1 text-gray-700 text-xs">
+                                            <input 
+                                                type="radio" 
+                                                name="supplier" 
+                                                checked={vendor === 'supplier'}
+                                                onChange={() => {
+                                                    setVendor('supplier');
+                                                    setValue('vendorCompanyId', '');
+                                                }}
+                                            /> Vendor Supplier:
+                                        </label>
+                                        <select
+                                            disabled={vendor !== 'supplier'}
+                                            {...register('vendorSupplierId')}
+                                            className={`border p-1 text-xs rounded w-full`}
+                                        >
+                                            <option value="">Select Supplier</option>
+                                            {supplierData?.map((supplier, index) => (
+                                                <option key={index} value={supplier._id}>{supplier.supplierName}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="items-center">
+                                        <label className="flex gap-1 text-gray-700 text-xs">
+                                            <input 
+                                                type="radio" 
+                                                name="supplier" 
+                                                checked={vendor === 'company'}
+                                                onChange={() => {
+                                                    setVendor('company');
+                                                    setValue('vendorSupplierId', '');
+                                                }}
+                                            /> Vendor Company:
+                                        </label>
+                                        <select
+                                            disabled={vendor !== 'company'}
+                                            {...register('vendorCompanyId')}
+                                            className={`border p-1 text-xs rounded w-full`}
+                                        >
+                                            <option value="">Select Company</option>
+                                            {companyData && companyData.map((company, index) => (
+                                                <option key={index} value={company._id}>{company.companyName}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
                                 {/* Discount % */}
                                 <div className="mb-2">
                                     <label className="block text-gray-700 text-xs">Discount %:</label>
@@ -474,15 +598,6 @@ const StockSearch = () => {
                                     </div>
                                 </div>
 
-                                {/* Purchase Price */}
-                                <div className="mb-2">
-                                    <label className="block text-gray-700 text-xs">Purchase Price</label>
-                                    <input
-                                        type="text"
-                                        {...register('productPurchasePrice')}
-                                        className="w-full px-2 py-1 border rounded-md text-xs"
-                                    />
-                                </div>
 
                                 {/* Total Quantity */}
                                 <div className='mb-2 grid grid-cols-2 gap-2 items-center'>

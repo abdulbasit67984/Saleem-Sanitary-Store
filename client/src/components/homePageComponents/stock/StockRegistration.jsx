@@ -6,8 +6,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   setAllProducts
 } from '../../../store/slices/products/productsSlice.js'
-import SuccessResponseMessage from '../../SuccessResponseMessage.jsx';
 import Loader from '../../../pages/Loader.jsx';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 const StockRegistrationForm = () => {
 
@@ -102,6 +102,7 @@ const StockRegistrationForm = () => {
       if (response && response.data) {
         setLoading(false)
         setSuccessMessage(true)
+        showSuccessToast('Stock registered successfully!')
         const products = await config.fetchAllProducts()
         if (products && products.data)
           dispatch(setAllProducts(products.data))
@@ -124,6 +125,7 @@ const StockRegistrationForm = () => {
     } catch (error) {
       console.log(error)
       setError(error.message)
+      showErrorToast(error.message || 'Failed to register stock')
     } finally {
       setLoading(false);
     }
@@ -150,12 +152,6 @@ const StockRegistrationForm = () => {
           {!errors.itemCode && !errors.name && !errors.type && !errors.company && !errors.purchasePrice && !errors.supplier && !errors.group && !errors.pack && errors.status && <p>{errors.status.message}</p>}
           {!errors.itemCode && !errors.name && !errors.type && !errors.company && !errors.purchasePrice && !errors.supplier && !errors.group && !errors.pack && !errors.status && errors.totalQuantity && <p>{errors.totalQuantity.message}</p>}
         </div>
-
-        <SuccessResponseMessage
-          isOpen={successMessage}
-          onClose={() => setSuccessMessage(false)}
-          message={"Stock Registered successfully!"}
-        />
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-2 gap-4">
@@ -238,7 +234,7 @@ const StockRegistrationForm = () => {
               {/* Sale Prices */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="mb-2">
-                  <label className="block text-gray-700 text-xs">Sale Price 1: <span className='text-red-500 pr-2'>*</span></label>
+                  <label className="block text-gray-700 text-xs">Sale Price 1 (Retail): <span className='text-red-500 pr-2'>*</span></label>
                   <input
                     type="text"
                     {...register('salePrice1', { required: 'Price 1 is required' })}
@@ -246,7 +242,7 @@ const StockRegistrationForm = () => {
                   />
                 </div>
                 <div className="mb-2">
-                  <label className="block text-gray-700 text-xs">Sale Price 2</label>
+                  <label className="block text-gray-700 text-xs">Sale Price 2 (Wholesale)</label>
                   <input
                     type="text"
                     {...register('salePrice2')}

@@ -166,7 +166,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[80vh] bg-white">
-        <Loader message="Analyzing Dashbaord Data..." h_w="h-16 w-16 border-4" />
+        <Loader message="Analyzing Dashboard Data..." h_w="h-16 w-16 border-4" />
       </div>
     );
   }
@@ -196,15 +196,15 @@ const Dashboard = () => {
           <div className="relative flex items-center bg-primary rounded-xl px-4 py-2 transition-colors">
             <Calendar className="w-4 h-4 text-white mr-2" />
             <select
-              className="bg-transparent text-sm font-medium focus:outline-none appearance-none cursor-pointer pr-8 text-white"
+              className="bg-transparent !bg-transparent text-sm font-medium focus:outline-none appearance-none cursor-pointer pr-8 text-white !text-white"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             >
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="6months">6 Months</option>
-              <option value="yearly">Yearly</option>
+              <option value="daily" className="bg-white text-slate-900">Daily</option>
+              <option value="weekly" className="bg-white text-slate-900">Weekly</option>
+              <option value="monthly" className="bg-white text-slate-900">Monthly</option>
+              <option value="6months" className="bg-white text-slate-900">6 Months</option>
+              <option value="yearly" className="bg-white text-slate-900">Yearly</option>
             </select>
             <ChevronDown className="w-4 h-4 text-white absolute right-3 pointer-events-none" />
           </div>

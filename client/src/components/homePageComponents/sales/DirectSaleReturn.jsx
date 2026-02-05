@@ -14,6 +14,8 @@ import {
 import Input from '../../Input';
 import Button from '../../Button';
 import config from '../../../features/config'; // Import your config file
+import ProductHistoryModal from './ProductHistoryModal';
+import { showErrorToast, showWarningToast, showSuccessToast } from '../../../utils/toast';
 
 const DirectSaleReturn = () => {
   const dispatch = useDispatch();
@@ -31,12 +33,15 @@ const DirectSaleReturn = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState([]);
 
+  const [showProductHistoryModal, setShowProductHistoryModal] = useState(false);
+  const [selectedProductForHistory, setSelectedProductForHistory] = useState(null);
+
   useEffect(() => {
     if (productSearch) {
       const results = allProducts.filter(
         (product) =>
-          product.productName.toLowerCase().includes(productSearch.toLowerCase()) ||
-          product.productCode?.toLowerCase().includes(productSearch.toLowerCase())
+          product.productName?.toLowerCase().includes(productSearch?.toLowerCase()) ||
+          product.productCode?.toLowerCase().includes(productSearch?.toLowerCase())
       );
       setFilteredProducts(results);
     } else {
@@ -108,6 +113,15 @@ const DirectSaleReturn = () => {
     dispatch(setTotalReturnAmount(total));
   };
 
+  const handleShowProductHistory = (item) => {
+    if (!customer) {
+      showWarningToast('Please select a customer first to view product history.');
+      return;
+    }
+    setSelectedProductForHistory(item);
+    setShowProductHistoryModal(true);
+  };
+
   const handleDelete = (index) => {
     const updatedItems = [...selectedItems];
         updatedItems.splice(index, 1);
@@ -116,7 +130,7 @@ const DirectSaleReturn = () => {
 
   const handleSubmit = async () => {
     if (selectedItems.length === 0) {
-      alert("Please select add items for return.");
+      showWarningToast("Please add items for return.");
       return;
     }
     console.log('first', selectedItems)
@@ -147,6 +161,7 @@ const DirectSaleReturn = () => {
         
       if (response) {
         setSubmitSuccess(true);
+        showSuccessToast("Sale return processed successfully!");
         dispatch(resetSaleReturn());
       }
     } catch (error) {
@@ -158,6 +173,7 @@ const DirectSaleReturn = () => {
         const preContent = doc.querySelector('pre')?.innerHTML.replace(/<br\s*\/?>/gi, '\n');
         // errorMessage = preContent?.split('\n')[0] || errorMessage;
         setSubmitError(preContent);
+        showErrorToast(preContent || "An error occurred.");
       }
     } finally {
       setIsLoading(false);
@@ -287,8 +303,15 @@ const DirectSaleReturn = () => {
                 <input type="number" value={item.returnPrice} className="border p-1 w-16" onChange={(e) => handlePriceChange(index, e.target.value)} />
                 </td>
                 <td className="p-2 text-left">{(item.returnPrice * (item.billItemUnit / item.productPack + item.quantity)).toFixed(2)}</td>
-                <td className="p-2 text-left">
-                  <Button onClick={handleDelete}>Remove</Button>
+                <td className="p-2 text-left flex gap-1">
+                  <button
+                    className="px-2 py-1 text-xs text-white bg-blue-500 hover:bg-blue-700 rounded-lg"
+                    onClick={() => handleShowProductHistory(item)}
+                    title="View product history for this customer"
+                  >
+                    History
+                  </button>
+                  <Button onClick={() => handleDelete(index)}>Remove</Button>
                 </td>
               </tr>
             ))}
@@ -322,6 +345,19 @@ const DirectSaleReturn = () => {
 
       {submitError && <p className="text-red-500">{submitError}</p>}
       {submitSuccess && <p className="text-green-500">Sale return submitted successfully!</p>}
+
+      {/* Product History Modal */}
+      <ProductHistoryModal
+        isOpen={showProductHistoryModal}
+        onClose={() => {
+          setShowProductHistoryModal(false);
+          setSelectedProductForHistory(null);
+        }}
+        customerId={customer}
+        productId={selectedProductForHistory?._id}
+        productName={selectedProductForHistory?.productName}
+        customerName={customerData?.find(c => c._id === customer)?.customerName}
+      />
     </div>
   );
 };

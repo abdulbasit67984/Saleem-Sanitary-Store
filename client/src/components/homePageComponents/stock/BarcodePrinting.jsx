@@ -2,7 +2,7 @@
 // BarcodePrintEnhanced.jsx
 import React, { useState, useEffect } from "react";
 import Barcode from "react-barcode";
-import Button from "../../../components/Button";
+import Button from "../../Button";
 import { useSelector } from "react-redux";
 
 const mockProducts = [
@@ -64,7 +64,7 @@ const BarcodePrinting = () => {
         <div class="label">
           <svg id="barcode-${p.productCode}"></svg>
           <div class="info">
-            <strong>${p.productName}</strong><br />
+            <strong>Parko Electric - </strong> <strong> RS ${p.salePriceDetails[0]?.salePrice1}</strong><br />
             
           </div>
         </div>`

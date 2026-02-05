@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import config from '../../../../features/config';
 import Loader from '../../../../pages/Loader';
 import Button from '../../../Button';
+import { showSuccessToast, showErrorToast } from '../../../../utils/toast';
 
 function BillPayment() {
     const { billId } = useParams();
@@ -38,7 +39,7 @@ function BillPayment() {
             console.log('Payment successful:', response);
             if (response) {
                 setBill(response.data.bill)
-                alert('Payment added Successfully');
+                showSuccessToast('Payment added successfully!');
                 // navigate('/sales/view-bills');
             }
             setAmountPaid(0)
@@ -46,7 +47,7 @@ function BillPayment() {
             setIsLoading(false);
         } catch (error) {
             console.error('Payment failed:', error);
-            alert('Payment failed');
+            showErrorToast('Payment failed');
         } finally {
             setIsLoading(false);
         }

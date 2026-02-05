@@ -321,6 +321,7 @@ function SoldItems() {
                 <th className="py-2 px-1 text-left">QTY of Items</th>
                 <th className="py-2 px-1 text-left">Description</th>
                 <th className="py-2 px-1 text-left">Total Amount</th>
+                <th className="py-2 px-1 text-left">Discount</th>
                 <th className="py-2 px-1 text-left">Bill Balance</th>
                 <th className="py-2 px-1 text-left">Customer Name</th>
                 {/* <th className="py-2 px-1 text-left">Status</th> */}
@@ -340,6 +341,7 @@ function SoldItems() {
                     <td className="py-2 px-2">{bill.totalQuantity}</td>
                     <td className="py-2 px-2">{bill.description}</td>
                     <td className="py-2 px-2">{bill.totalAmount && functions.formatAsianNumber(bill.totalAmount)}</td>
+                    <td className="py-2 px-2">{functions.formatAsianNumber(bill.flatDiscount)}</td>
                     <td className="py-2 px-2">{functions.formatAsianNumber(bill.totalAmount - bill.paidAmount - bill.flatDiscount)}</td>
                     <td className="py-2 px-2">{bill.customer?.customerName}</td>
                     {/* <td className="py-2 px-2">

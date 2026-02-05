@@ -6,6 +6,7 @@ import Button from '../../Button';
 import Loader from '../../../pages/Loader';
 import { useSelector, useDispatch } from 'react-redux';
 import { setSupplierData } from '../../../store/slices/supplier/supplierSlice';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 
 const AddSupplier = () => {
@@ -46,10 +47,12 @@ const AddSupplier = () => {
             fetchSuppliers()
             setIsLoading(false)
             setIsSupplierCreated(true)
+            showSuccessToast(response.message || 'Supplier added successfully!')
             reset()
           }
         } catch (error) {
           console.log("error adding supplier:", error)
+          showErrorToast('Failed to add supplier')
         } finally {
             setIsLoading(false)
         }

@@ -14,6 +14,7 @@ import Dashboard from "./homePageComponents/dashboard/Dashboard";
 import RegisterBusiness from "./RegisterBusiness"
 import ForgotPassword from "./ForgotPassword"
 import AddRole from "./AddRole";
+import ConfirmationModal from "./ConfirmationModal";
 
 //stock
 import StockRegistration from "./homePageComponents/stock/StockRegistration";
@@ -127,7 +128,9 @@ export {
     //users
     AddUser,
     AllUsers,
-    Rights
+    Rights,
+    //common
+    ConfirmationModal
 
 
 }

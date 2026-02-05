@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import config from '../../../features/config';
 import Button from '../../Button';
 import Input from '../../Input';
-import ErrorResponseMessage from '../../ErrorResponseMessage';
-import SuccessResponseMessage from '../../SuccessResponseMessage';
 import Loader from '../../../pages/Loader';
 import { extractErrorMessage } from '../../../utils/extractErrorMessage';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 const OpeningAndAdjustmentBalance = () => {
   const [error, setError] = useState(null);
@@ -52,9 +51,13 @@ const OpeningAndAdjustmentBalance = () => {
     setSuccess(null);
     try {
       const response = await config.openCloseAccountBalance({ endpoint, formData });
-      if (response) setSuccess(response.data.message || 'Operation successful');
+      if (response) {
+        setSuccess(response.data.message || 'Operation successful');
+        showSuccessToast(response.data.message || 'Operation successful');
+      }
     } catch (error) {
       setError(extractErrorMessage(error));
+      showErrorToast(extractErrorMessage(error) || 'Operation failed');
     } finally {
       setLoading(false);
     }
@@ -67,23 +70,8 @@ const OpeningAndAdjustmentBalance = () => {
       {/* Adjust Account Balance */}
       <div className="p-6 bg-white border rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4">Adjust Account Balance</h2>
-        {error &&
-          <ErrorResponseMessage
-            isOpen={error}
-            onClose={() => {
-              setError("")
-            }}
-            errorMessage={error} />
-        }
-        {success &&
-          <SuccessResponseMessage
-            message={success}
-            isOpen={success}
-            onClose={() => {
-              setSuccess("")
-            }}
-          />
-        }
+        {error && <p className='text-red-600'>{error}</p>}
+        {success && <p className='text-green-600'>{success}</p>}
         <form onSubmit={(e) => handleSubmit(e, 'adjust-account-balance', adjustFormData)} className="space-y-4">
           <select
             name="accountId"
@@ -97,7 +85,7 @@ const OpeningAndAdjustmentBalance = () => {
             ))}
           </select>
           <Input
-          label="Debit"
+            label="Debit"
             type='number'
             name="debit"
             placeholder="Debit"
@@ -106,7 +94,7 @@ const OpeningAndAdjustmentBalance = () => {
             className="w-full p-2 border rounded-md"
           />
           <Input
-          label="Credit"
+            label="Credit"
             type='number'
             name="credit"
             placeholder="Credit"
@@ -151,7 +139,8 @@ const OpeningAndAdjustmentBalance = () => {
 
       {/* Open Account Balance */}
       <div className="p-6 bg-white border rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Open Account Balance</h2>
+        <h2 className="text-xl font-semibold mb-2">Open Account Balance</h2>
+        <p className='text-[10px] mb-2'>Note: Supplier and Company Balance should be opened as negative value i.e. (-1000) and customer balance as positive value i.e. (1000).</p>
         <form onSubmit={(e) => handleSubmit(e, 'open-account-balance', openFormData)} className="space-y-4" >
           <select
             name="accountId"

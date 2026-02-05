@@ -4,7 +4,7 @@ import React from "react";
 export default function Button({
     children,
     type = "button",
-    bgColor = "bg-primary hover:bg-primary/60 ",
+    bgColor = "bg-primary hover:bg-primaryHover ",
     textColor = "text-white",
     className = "text-white bg-primary",
     ...props

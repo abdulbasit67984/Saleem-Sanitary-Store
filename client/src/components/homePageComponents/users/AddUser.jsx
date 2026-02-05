@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSelector, useDispatch } from 'react-redux';
-import SuccessResponseMessage from '../../SuccessResponseMessage.jsx';
 import Loader from '../../../pages/Loader.jsx';
 import Button from '../../Button.jsx';
 import authService from '../../../features/auth.js';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 import { setCurrentUser } from '../../../store/slices/auth/authSlice.js'
 
@@ -44,6 +44,7 @@ const AddUserForm = () => {
     const onSubmit = async (data) => {
         if (activeUsers >= subscription) {
             setError('User limit reached according to your subscription plan');
+            showErrorToast('User limit reached according to your subscription plan');
             return;
         }
 
@@ -57,6 +58,7 @@ const AddUserForm = () => {
             const response = await authService.addNewUser(userData)
             if (response) {
                 setSuccessMessage(true);
+                showSuccessToast('User created successfully!');
                 reset();
                 setMobileNumbers(['']);
                 setError('');
@@ -68,6 +70,7 @@ const AddUserForm = () => {
             }
         } catch (error) {
             setError(error.message || 'Failed to create user');
+            showErrorToast(error.message || 'Failed to create user');
         } finally {
             setLoading(false);
         }
@@ -98,12 +101,6 @@ const AddUserForm = () => {
                     {!error && !errors.username && !errors.firstname && !errors.password &&
                         mobileNumbers.every(num => !num.trim()) && <p>At least one valid mobile number is required</p>}
                 </div>
-
-                <SuccessResponseMessage
-                    isOpen={successMessage}
-                    onClose={() => setSuccessMessage(false)}
-                    message={"User created successfully!"}
-                />
 
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="grid grid-cols-2 gap-4">

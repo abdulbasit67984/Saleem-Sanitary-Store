@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from 'react-redux'; // Keep useSelector if n
 import { useForm, useFieldArray } from 'react-hook-form'; // Import useFieldArray and control
 import { extractErrorMessage } from '../utils/extractErrorMessage.js';
 import UpdateUserDetails from './UpdateUserDetails.jsx'; // Import the UpdateUserDetails component
+import { showSuccessToast, showErrorToast } from '../utils/toast';
 
 function Signup() {
     const navigate = useNavigate();
@@ -64,6 +65,7 @@ function Signup() {
 
             if (cleanedData.mobileno.length === 0) {
                 setError("At least one mobile number is required.");
+                showErrorToast("At least one mobile number is required.");
                 setIsLoading(false);
                 return;
             }
@@ -75,6 +77,7 @@ function Signup() {
             if (response && response.statusCode === 201) {
                 setResponseMessage(response.message || "User created successfully!");
                 setShowSuccessModal(true);
+                showSuccessToast(response.message || "User created successfully!");
                 // Optional: Auto-login and redirect
                 // if (response.data?.token && response.data?.userData) {
                 //      dispatch(login({ userData: response.data.userData, token: response.data.token }));
@@ -83,11 +86,13 @@ function Signup() {
 
             } else {
                  setError(extractErrorMessage(response) || "Failed to create account.");
+                 showErrorToast(extractErrorMessage(response) || "Failed to create account.");
             }
 
         } catch (err) {
             const errorMessage = extractErrorMessage(err);
             setError(errorMessage || "An error occurred during signup.");
+            showErrorToast(errorMessage || "An error occurred during signup.");
         } finally {
             reset();
             setIsLoading(false);

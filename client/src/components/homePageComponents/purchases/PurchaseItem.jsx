@@ -22,6 +22,8 @@ import { setAllProducts } from "../../../store/slices/products/productsSlice"
 import Input from "../../Input";
 import Button from "../../Button";
 import Loader from "../../../pages/Loader";
+import { showSuccessToast, showErrorToast } from "../../../utils/toast";
+import ConfirmationModal from "../../ConfirmationModal";
 
 const PurchaseItem = () => {
   const dispatch = useDispatch();
@@ -29,6 +31,8 @@ const PurchaseItem = () => {
   const [error, setError] = useState("");
   const [addSalePrice, setAddSalePrice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [newProduct, setNewProduct] = useState({
     productName: '',
     productCode: '',
@@ -100,45 +104,46 @@ const PurchaseItem = () => {
 
   const handleGenerateBill = async () => {
     if (!vendor || !selectedItems) {
-      alert("Please fill all the required fields.");
+      showErrorToast("Please fill all the required fields.");
       return;
     }
 
-    const userConfirmed = window.confirm(
-      "Are you sure you want to Generate the purchase invoice? This action cannot be undone."
-    );
+    setShowGenerateConfirm(true);
+  };
 
-    if (userConfirmed) {
-      setIsLoading(true)
-      try {
-        const billItems = selectedItems.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          discount: item.discount,
-          pricePerUnit: item.pricePerUnit,
-          productPack: item.productPack,
-        }))
-        console.log("billItems", billItems)
+  const confirmGenerateBill = async () => {
+    setShowGenerateConfirm(false);
+    setIsLoading(true);
+    try {
+      const billItems = selectedItems.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        discount: item.discount,
+        pricePerUnit: item.pricePerUnit,
+        productPack: item.productPack,
+      }))
+      console.log("billItems", billItems)
 
-        const isVendorCompany = companyData.find((company) => company._id === vendor);
-        const isVendorSupplier = supplierData.find((supplier) => supplier._id === vendor);
+      const isVendorCompany = companyData.find((company) => company._id === vendor);
+      const isVendorSupplier = supplierData.find((supplier) => supplier._id === vendor);
 
-        const response = await config.createPurchase({
-          billNo,
-          vendorSupplierId: isVendorSupplier ? vendor : null,
-          vendorCompanyId: isVendorCompany ? vendor : null,
-          purchaseItems: billItems,
-          flatDiscount: flatDiscount || 0,
-          purchaseDate: date,
-          paidAmount,
-        });
+      const response = await config.createPurchase({
+        billNo,
+        vendorSupplierId: isVendorSupplier ? vendor : null,
+        vendorCompanyId: isVendorCompany ? vendor : null,
+        purchaseItems: billItems,
+        flatDiscount: flatDiscount || 0,
+        purchaseDate: date,
+        paidAmount,
+      });
 
-        if (response && response.data) {
-          console.log("response: ", response.data);
-          dispatch(clearPurchaseState())
-        }
+      if (response && response.data) {
+        console.log("response: ", response.data);
+        showSuccessToast('Purchase invoice generated successfully!')
+        dispatch(clearPurchaseState())
+      }
 
-        // setIsInvoiceGenerated(true);
+      // setIsInvoiceGenerated(true);
 
       } catch (error) {
         const htmlString = error.response?.data;
@@ -153,11 +158,16 @@ const PurchaseItem = () => {
         const errorMessage = preContent.split('\n')[0]; // Get the first line
 
         setError(errorMessage)
+        showErrorToast(errorMessage || 'Failed to generate purchase invoice');
       } finally {
         setIsLoading(false)
-
       }
-    }
+  };
+
+  const confirmClearBill = () => {
+    setShowClearConfirm(false);
+    dispatch(clearPurchaseState());
+    showSuccessToast('Bill cleared successfully!');
   };
 
   // Add product from search results to invoice table
@@ -395,12 +405,7 @@ const PurchaseItem = () => {
 
             {error && <p className={`text-red-500 font-thin w-full text-sm px-4 text-center`}>{error ? error : 'Invoice generated successfully!'}</p>}
             <div className="flex w-full justify-end">
-              <Button className='p-1 px-4 text-xs ' onClick={() => {
-                const res = window.confirm('Are you sure you want to clear the invoice')
-                if (res) {
-                  dispatch(clearPurchaseState())
-                }
-              }}>Clear Bill</Button>
+              <Button className='p-1 px-4 text-xs ' onClick={() => setShowClearConfirm(true)}>Clear Bill</Button>
             </div>
           </div>
 
@@ -769,6 +774,29 @@ const PurchaseItem = () => {
           <Input label="Bill Balance:" labelClass="w-24 text-sm" className="p-1" value={totalAmount - paidAmount - flatDiscount || 0} readOnly />
         </div>
       </div>
+
+      {/* Generate Bill Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showGenerateConfirm}
+        onConfirm={confirmGenerateBill}
+        onCancel={() => setShowGenerateConfirm(false)}
+        title="Generate Purchase Bill"
+        message="Are you sure you want to generate this purchase bill? This action will create a new purchase record."
+        type="add"
+        confirmText="Generate"
+        isLoading={isLoading}
+      />
+
+      {/* Clear Bill Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showClearConfirm}
+        onConfirm={confirmClearBill}
+        onCancel={() => setShowClearConfirm(false)}
+        title="Clear Bill"
+        message="Are you sure you want to clear this bill? All entered data will be lost."
+        type="warning"
+        confirmText="Clear"
+      />
     </div>
   );
 };

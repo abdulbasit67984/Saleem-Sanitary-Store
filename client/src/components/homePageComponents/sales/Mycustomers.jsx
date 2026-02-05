@@ -6,10 +6,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import Loader from '../../../pages/Loader';
 import { useForm } from 'react-hook-form';
 import Button from '../../Button';
-import ErrorResponseMessage from '../../ErrorResponseMessage';
 import ButtonLoader from '../../ButtonLoader';
 import { extractErrorMessage } from '../../../utils/extractErrorMessage';
-import SuccessResponseMessage from '../../SuccessResponseMessage';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
+import ConfirmationModal from '../../ConfirmationModal';
 
 const ITEMS_PER_PAGE = 200; // Adjust as needed
 
@@ -33,6 +33,10 @@ function Mycustomers() {
   const [currentPage, setCurrentPage] = useState(1); // Pagination state
 
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Confirmation modal states
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
 
 
   const filteredCustomers = newCustomerData.filter((customer) => {
@@ -76,32 +80,39 @@ function Mycustomers() {
   }
 
   const handleDeleteCustomer = async (customerId, customerName) => {
+    setCustomerToDelete({ id: customerId, name: customerName });
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteCustomer = async () => {
+    if (!customerToDelete) return;
+    
+    setShowDeleteConfirm(false);
     setError('')
     setSuccessMessage('')
-    setDeleteId(customerId)
-    const message = `Are you sure you want to delete this customer? \nThis action is permanent and will also remove the customer's linked ledger account.\nThis cannot be undone.`;
-    const confirmDelete = window.confirm(message);
-
-    if (!confirmDelete) return;
+    setDeleteId(customerToDelete.id)
 
     setIsDeleteLoading(true)
 
     try {
       // console.log('customerId', customerId)
-      const data = await config.deleteCustomer(customerId)
+      const data = await config.deleteCustomer(customerToDelete.id)
       console.log('data', data)
       if (data.success) {
         fetchCustomers()
         setSuccessMessage(data?.message)
         setShowSuccessMessage(true)
+        showSuccessToast(data?.message || 'Customer deleted successfully!')
       }
       setIsDeleteLoading(false)
     } catch (error) {
       const msg = extractErrorMessage(error)
       setDeleteMessage(msg)
       setShowDeleteMessage(true)
+      showErrorToast(msg || 'Failed to delete customer')
     } finally {
       setIsDeleteLoading(false)
+      setCustomerToDelete(null)
     }
   }
 
@@ -157,10 +168,12 @@ function Mycustomers() {
         console.log("comp res: ", response.message)
         setIsLoading(false)
         setIsCustomerCreated(true)
+        showSuccessToast(response.message || 'Customer updated successfully!')
         reset()
       }
     } catch (error) {
       console.log("error updating customer:", error)
+      showErrorToast('Failed to update customer')
     }
   };
 
@@ -173,18 +186,6 @@ function Mycustomers() {
     <div className='bg-white rounded-lg'>
       <h2 className="text-lg text-center font-semibold py-4">All Customers</h2>
       {error && <p className="text-red-600 mt-2 mb-1 text-center text-sm">{error}</p>}
-
-      <ErrorResponseMessage
-        isOpen={showDeleteMessage}
-        onClose={() => setShowDeleteMessage(false)}
-        errorMessage={deleteMessage}
-      />
-
-      <SuccessResponseMessage
-        isOpen={showSuccessMessage}
-        onClose={() => setShowSuccessMessage(false)}
-        message={successMessage}
-      />
 
       <div className="flex justify-between items-center mb-3 px-4">
         <input
@@ -412,6 +413,21 @@ function Mycustomers() {
           </div>
         </form>
       </div>
+
+      {/* Delete Customer Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onConfirm={confirmDeleteCustomer}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setCustomerToDelete(null);
+        }}
+        title="Delete Customer"
+        message={`Are you sure you want to delete ${customerToDelete?.name || 'this customer'}? This action is permanent and will also remove the customer's linked ledger account. This cannot be undone.`}
+        type="delete"
+        confirmText="Delete"
+        isLoading={isDeleteLoading}
+      />
     </div>
 
 

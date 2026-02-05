@@ -4,10 +4,9 @@ import config from '../../../features/config';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import UpdateConfirmation from '../../UpdateConfirmation'
-import SuccessResponseMessage from '../../SuccessResponseMessage'
-import ErrorResponseMessage from '../../ErrorResponseMessage';
 import Button from '../../Button';
 import functions from '../../../features/functions';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 const ITEMS_PER_PAGE = 200;
 
@@ -45,10 +44,12 @@ const AccountReceivables = () => {
       const response = await config.postBill(bill.billNo);
       if (response && response.message) {
         setSuccessMessageOpen(true)
+        showSuccessToast('Bill posted successfully!')
         fetchReceivables()
       }
     } catch (error) {
       setErrorMessageOpen(true)
+      showErrorToast('An error has occurred while posting the bill')
     }
   }
 
@@ -135,23 +136,6 @@ const AccountReceivables = () => {
         message="Are you sure you want to post this Bill? This action cannot be undone."
       />
 
-      <SuccessResponseMessage
-        isOpen={isSuccessMessageOpen}
-        onClose={() => {
-          setBill(null)
-          setSuccessMessageOpen(false)
-        }}
-        message="Bill Posted successfully!"
-      />
-
-      <ErrorResponseMessage
-        isOpen={isErrorMessageOpen}
-        onClose={() => {
-          setBill(null)
-          setErrorMessageOpen(false)
-        }}
-        errorMessage="An error has occurred while posting the bill"
-      />
       <h2 className="text-xl font-bold mb-4 text-center">Account Receivables</h2>
       <div className="overflow-x-auto border rounded-lg shadow-lg max-h-72">
         <table className="min-w-full bg-white border text-xs">

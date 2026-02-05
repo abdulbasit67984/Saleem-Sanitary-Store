@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from "react";
 import config from "../../../features/config"; // adjust path if different
 import { extractErrorMessage } from "../../../utils/extractErrorMessage"; // adjust if you have this util
+import { showSuccessToast, showErrorToast } from "../../../utils/toast";
+import JournalEntrySlipModal from "./JournalEntrySlipModal";
 
-const JournalEntryModal = ({ account, onClose, onSuccess }) => {
+const JournalEntryModal = ({ account, accountBalance = 0, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     accountId: "",
     amount: "",
@@ -13,6 +15,8 @@ const JournalEntryModal = ({ account, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [showSlipModal, setShowSlipModal] = useState(false);
+  const [slipData, setSlipData] = useState(null);
 
   // console.log('account', account)
 
@@ -41,6 +45,30 @@ const JournalEntryModal = ({ account, onClose, onSuccess }) => {
     try {
       let response;
 
+      // Prepare slip data
+      // For customers: payment reduces their balance (debit to cash, credit to customer)
+      // For vendors: payment reduces our liability (debit to vendor, credit to cash)
+      const isCustomer = !!account?.customerId;
+      const amountNum = parseFloat(formData.amount) || 0;
+      const previousBalance = accountBalance;
+      // Customer payment: balance decreases (they owed us, now paid)
+      // Vendor payment: balance increases (we owed them, we paid - balance goes toward 0)
+      const remainingBalance = isCustomer 
+        ? previousBalance - amountNum 
+        : previousBalance + amountNum;
+
+      const entrySlipData = {
+        accountName: account?.individualAccountName,
+        amount: formData.amount,
+        description: formData.description,
+        details: formData.details,
+        customerId: account?.customerId,
+        supplierId: account?.supplierId,
+        companyId: account?.companyId,
+        previousBalance: previousBalance,
+        remainingBalance: remainingBalance,
+      };
+
       if (account.customerId) {
         response = await config.postCustomerJournalEntry({
           customerAccountId: formData.accountId,
@@ -51,7 +79,10 @@ const JournalEntryModal = ({ account, onClose, onSuccess }) => {
 
         if (response) {
           setSuccess("Customer journal entry recorded successfully!");
+          showSuccessToast("Customer journal entry recorded successfully!");
+          setSlipData(entrySlipData);
           if (onSuccess) onSuccess();
+          setShowSlipModal(true);
         }
 
       } else if (account.supplierId || account.companyId) {
@@ -64,7 +95,10 @@ const JournalEntryModal = ({ account, onClose, onSuccess }) => {
 
         if (response) {
           setSuccess("Vendor journal entry recorded successfully!");
+          showSuccessToast("Vendor journal entry recorded successfully!");
+          setSlipData(entrySlipData);
           if (onSuccess) onSuccess();
+          setShowSlipModal(true);
         }
 
       } else if (account.accountType === "expense") {
@@ -76,27 +110,32 @@ const JournalEntryModal = ({ account, onClose, onSuccess }) => {
 
         if (response?.data) {
           setSuccess("Expense recorded successfully!");
+          showSuccessToast("Expense recorded successfully!");
+          setSlipData(entrySlipData);
           if (onSuccess) onSuccess();
+          setShowSlipModal(true);
         }
       } else {
         setError("Unsupported account type for journal entry.");
+        showErrorToast("Unsupported account type for journal entry.");
       }
 
-      // Reset form after success
-      setFormData({
-        accountId: account._id || "",
-        amount: "",
-        description: "",
-        details: "",
-      });
+      // Don't reset form here - keep data for slip preview
 
     } catch (err) {
       console.error("Error recording journal entry:", err);
       const message = extractErrorMessage(err);
       setError(message);
+      showErrorToast(message || "Failed to record journal entry");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSlipClose = () => {
+    setShowSlipModal(false);
+    setSlipData(null);
+    onClose();
   };
 
   return (
@@ -170,6 +209,13 @@ const JournalEntryModal = ({ account, onClose, onSuccess }) => {
           </button>
         </div>
       </div>
+
+      {/* Slip Preview Modal for Thermal Printing */}
+      <JournalEntrySlipModal
+        isOpen={showSlipModal}
+        onClose={handleSlipClose}
+        entryData={slipData}
+      />
     </div>
   );
 };

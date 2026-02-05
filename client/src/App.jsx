@@ -9,6 +9,8 @@ import { Footer, Header } from './components'
 import { Outlet } from 'react-router-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import Loader from './pages/Loader'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 function App() {
   const [loading, setLoading] = useState(false)
@@ -52,6 +54,18 @@ function App() {
           <Outlet />
         </main>
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        // theme="colored"
+      />
     </div>
   ) : <Loader message="Loading User Data Please Wait...."  h_w="h-20 w-20 border-t-4 border-b-4"/>
 }

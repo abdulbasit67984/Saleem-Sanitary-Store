@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { Button, Input, Logo } from "./index"
 import authService from "../features/auth"
 import { extractErrorMessage } from '../utils/extractErrorMessage'
+import { showSuccessToast, showErrorToast } from '../utils/toast'
 
 function ForgotPassword(props) {
     const [isLoading, setIsLoading] = useState(false)
@@ -19,6 +20,7 @@ function ForgotPassword(props) {
 
         if (data.newPassword !== data.confirmPassword) {
             setError("New Password not matched")
+            showErrorToast("New Password not matched")
             setIsLoading(false)
             return
         }
@@ -32,11 +34,13 @@ function ForgotPassword(props) {
 
             if (response) {
                 setMessage(response.message);
+                showSuccessToast(response.message || 'Password changed successfully!');
                 props.data(false);
             }
         } catch (error) {
             const errorMessage = extractErrorMessage(error)
             setError(errorMessage|| "Something went wrong");
+            showErrorToast(errorMessage || "Something went wrong");
         } finally {
             setIsLoading(false)
         }

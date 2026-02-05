@@ -7,6 +7,7 @@ import Button from '../../Button';
 import config from '../../../features/config';
 import { extractErrorMessage } from '../../../utils/extractErrorMessage';
 import Loader from '../../../pages/Loader';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 // import Pagination from './../Pagination'; // Assuming you have a Pagination component
 
 const MergeBills = () => {
@@ -85,6 +86,7 @@ const MergeBills = () => {
             if (response) {
                 setParentBillId('');
                 setSubmitSuccess(true);
+                showSuccessToast("Bills merged successfully!");
                 setChildBillIds([]);
                 // Refresh bills after successful merge
                 const refreshedBills = await config.fetchAllBills();
@@ -92,6 +94,7 @@ const MergeBills = () => {
             }
         } catch (err) {
             setSubmitError(extractErrorMessage(err));
+            showErrorToast(extractErrorMessage(err));
         } finally {
             setIsLoading(false);
         }

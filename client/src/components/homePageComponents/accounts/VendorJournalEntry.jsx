@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import config from '../../../features/config'; // Import your config
 import Button from '../../Button'; // Import your Button component
-import ErrorResponseMessage from '../../ErrorResponseMessage';
-import SuccessResponseMessage from '../../SuccessResponseMessage';
 import Loader from '../../../pages/Loader';
 import { extractErrorMessage } from '../../../utils/extractErrorMessage';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 const VendorJournalEntry = () => {
     const [vendorAccounts, setVendorAccounts] = useState([]);
@@ -73,6 +72,7 @@ const VendorJournalEntry = () => {
             const response = await config.postVendorJournalEntry(formData); 
             if (response) {
                 setSuccess("Vendor journal entry recorded successfully!");
+                showSuccessToast("Vendor journal entry recorded successfully!");
                 setFormData({
                     vendorAccountId: '',
                     amount: '',
@@ -81,11 +81,13 @@ const VendorJournalEntry = () => {
                 });
             } else {
                 setError(response.message || "Failed to record vendor journal entry.");
+                showErrorToast(response.message || "Failed to record vendor journal entry.");
             }
         } catch (err) {
             console.error("Error recording vendor journal entry:", err);
             const errorMessage = extractErrorMessage(err);
             setError(errorMessage);
+            showErrorToast(errorMessage || "Failed to record vendor journal entry");
         } finally {
             setLoading(false);
         }

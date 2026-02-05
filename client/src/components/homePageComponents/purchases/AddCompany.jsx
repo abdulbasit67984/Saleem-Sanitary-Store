@@ -6,6 +6,7 @@ import Button from '../../Button';
 import Loader from '../../../pages/Loader';
 import { useSelector, useDispatch } from 'react-redux';
 import { setCompanyData } from '../../../store/slices/company/companySlice';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 const AddCompany = () => {
 
@@ -44,11 +45,15 @@ const AddCompany = () => {
                 console.log("comp res: ", response.message)
                 setIsLoading(false)
                 setIsCompanyCreated(true)
+                showSuccessToast(response.message || 'Company added successfully!')
                 fetchCompanies()
                 reset()
             }
         } catch (error) {
             console.log("error adding company:", error)
+            showErrorToast('Failed to add company')
+        } finally {
+            setIsLoading(false)
         }
     };
 
