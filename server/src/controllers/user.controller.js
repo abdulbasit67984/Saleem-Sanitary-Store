@@ -41,7 +41,7 @@ const registerUser = asyncHandler(async (req, res) => {
         !username ||
         !firstname ||
         !password ||
-        !Array.isArray(mobileno) || // Check if mobileno is an array
+        !Array.isArray(mobileno) ||  // Check if mobileno is an array
         mobileno.length === 0 ||    // Check if the array is not empty
         mobileno.every(num => typeof num !== 'string' || num.trim() === '') // Check if all elements are empty strings or not strings
     ) {

@@ -1,0 +1,13 @@
+{
+  "watch": ["src"],
+  "ext": "js,mjs,cjs,json",
+  "ignore": [
+    "whatsapp_auth/**",
+    "whatsapp_auth/*",
+    "node_modules/**",
+    "public/**",
+    "*.log"
+  ],
+  "delay": "2500",
+  "verbose": false
+}

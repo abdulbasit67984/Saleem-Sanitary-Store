@@ -169,7 +169,10 @@ ProductSchema.statics.calculatePurchasePriceForReturn = async function (productI
     // Save the updated record
     await statusRecord.save();
 
-    const product = await this.findById(productId, 'productPack');
+    const product = await this.findById(productId, 'productPack productTotalQuantity');
+
+    product.productTotalQuantity += Number(returnedQuantity);
+    await product.save();
 
     // Calculate the total purchase price for the returned quantity
     const totalCost = returnedQuantity * (parseFloat(statusRecord.newPrice)/parseFloat(product?.productPack));

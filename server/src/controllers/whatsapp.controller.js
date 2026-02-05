@@ -8,6 +8,8 @@ import {
     getQrCode,
     sendWhatsappMessage,
     checkWhatsappStatus,
+    logoutWhatsapp,
+    forceReconnect,
 } from "../services/whatsapp.service.js";
 
 export const initializeWhatsapp = async (req, res) => {
@@ -48,6 +50,28 @@ export const sendMessage = async (req, res) => {
     } catch (error) {
         console.error("Error sending message:", error);
         res.status(500).json({ error: "Failed to send WhatsApp message" });
+    }
+};
+
+export const logout = async (req, res) => {
+    try {
+        console.log("🚨 LOGOUT ENDPOINT CALLED!");
+        console.log("🚨 Request from:", req.ip, req.headers['user-agent']);
+        const result = await logoutWhatsapp();
+        res.status(200).json(result);
+    } catch (error) {
+        console.error("Error logging out WhatsApp:", error);
+        res.status(500).json({ error: "Failed to logout WhatsApp" });
+    }
+};
+
+export const reconnect = async (req, res) => {
+    try {
+        const result = await forceReconnect();
+        res.status(200).json(result);
+    } catch (error) {
+        console.error("Error reconnecting WhatsApp:", error);
+        res.status(500).json({ error: "Failed to reconnect WhatsApp" });
     }
 };
 
@@ -133,7 +157,7 @@ export const getCustomerReceivables = async (user) => {
             );
             const balance = totalDebit - totalCredit;
 
-            if (balance > 500) {
+            if (balance > 100) {
                 // Step 7: Fetch customer details using customerId
                 const customer = await Customer.findById(account.customerId).lean();
 

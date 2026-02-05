@@ -1082,7 +1082,8 @@ const mergeAccounts = asyncHandler(async (req, res) => {
                     companyId: childAccount.companyId,
                     supplierId: childAccount.supplierId,
                     customerId: childAccount.customerId,
-                    mergedInto: null
+                    mergedInto: null,
+                    isMerged: true
                 });
             }
 
@@ -1361,19 +1362,19 @@ const getTotalInventory = asyncHandler(async (req, res) => {
 
             const purchaseValue = packs * productPurchasePrice;
 
-            console.log(`
-        Product: ${productName}
-        Total Quantity: ${productTotalQuantity}
-        Pack Size: ${productPack}
-        Purchase Price (per pack): ${productPurchasePrice}
-        Packs: ${packs}
-        Purchase Value: ${purchaseValue}
-      `);
+    //         console.log(`
+    //     Product: ${productName}
+    //     Total Quantity: ${productTotalQuantity}
+    //     Pack Size: ${productPack}
+    //     Purchase Price (per pack): ${productPurchasePrice}
+    //     Packs: ${packs}
+    //     Purchase Value: ${purchaseValue}
+    //   `);
 
             totalInventoryValue += purchaseValue;
         });
 
-        console.log("TOTAL INVENTORY VALUE:", totalInventoryValue);
+        // console.log("TOTAL INVENTORY VALUE:", totalInventoryValue);
 
         res.status(200).json(
             new ApiResponse(200, { totalInventoryValue }, "Inventory details fetched successfully!")
@@ -1409,7 +1410,7 @@ const getPreviousBalance = asyncHandler(async (req, res) => {
                 throw new ApiError(404, "Individual account not found for this customer.");
             }
 
-            // Handle mergedInto recursively
+            // Handle mergedInto recursively to get the final account
             while (individualAccount.mergedInto) {
                 const mergedAccount = await IndividualAccount.findById(individualAccount.mergedInto);
 
@@ -1420,9 +1421,48 @@ const getPreviousBalance = asyncHandler(async (req, res) => {
                 individualAccount = mergedAccount;
             }
 
+            // Find the last "Opening Balance" entry
+            const lastOpeningEntry = await GeneralLedger.findOne({
+                BusinessId,
+                individualAccountId: individualAccount._id,
+                details: { $regex: /^Opening Balance/ }
+            }).sort({ createdAt: -1 });
+
+            let ledgerEntries;
+
+            if (!lastOpeningEntry) {
+                // If no opening balance entry exists, fetch all entries
+                ledgerEntries = await GeneralLedger.find({
+                    BusinessId,
+                    individualAccountId: individualAccount._id,
+                }).sort({ createdAt: 1 });
+            } else {
+                // Fetch entries from the last opening balance onwards
+                ledgerEntries = await GeneralLedger.find({
+                    BusinessId,
+                    individualAccountId: individualAccount._id,
+                    createdAt: { $gte: lastOpeningEntry.createdAt }
+                }).sort({ createdAt: 1 });
+            }
+
+            // Calculate balance from ledger entries
+            let totalDebit = 0;
+            let totalCredit = 0;
+
+            ledgerEntries.forEach(entry => {
+                if (entry.debit) {
+                    totalDebit += entry.debit;
+                }
+                if (entry.credit) {
+                    totalCredit += entry.credit;
+                }
+            });
+
+            const accountBalance = totalDebit - totalCredit;
+
             res.status(200).json(
                 new ApiResponse(200, {
-                    accountBalance: individualAccount.accountBalance
+                    accountBalance
                 }, "Previous balance retrieved successfully!")
             );
         });

@@ -544,10 +544,30 @@ const getDailyReports = asyncHandler(async (req, res) => {
 
         const totalExpenseDebit =
             cashOutExpenses.length ? cashOutExpenses[0].totalExpenseDebit : 0;
+            
 
+        // 5) CASH OUT: Direct Sale Returns (cash refunded to customers)
+        const cashOutDirectSaleReturns = await SaleReturn.aggregate([
+            {
+                $match: {
+                    BusinessId: new mongoose.Types.ObjectId(BusinessId),
+                    returnDate: dateFilter,
+                    returnType: "direct"
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalDirectReturns: { $sum: "$totalReturnAmount" }
+                }
+            }
+        ]);
+
+        const totalDirectSaleReturns =
+            cashOutDirectSaleReturns.length ? cashOutDirectSaleReturns[0].totalDirectReturns : 0;
 
         // ========== FINAL TOTAL CASH-OUT ==========
-        const cashOutTotal = totalVendorDebit + totalExpenseDebit;
+        const cashOutTotal = totalVendorDebit + totalExpenseDebit + totalDirectSaleReturns;
 
 
         // ========== NET CASH FLOW ==========
@@ -840,6 +860,7 @@ const getDailyReports = asyncHandler(async (req, res) => {
             cashInCustomerLedger: totalCustomerLedgerCredit,
             cashOutVendor: totalVendorDebit,
             cashOutExpenses: totalExpenseDebit,
+            cashOutDirectSaleReturns: totalDirectSaleReturns,
             cashInTotal,
             cashOutTotal,
             netCashFlow

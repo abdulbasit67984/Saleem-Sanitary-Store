@@ -37,6 +37,10 @@ const IndividualAccountSchema = new Schema({
         ref: "IndividualAccount",
         default: null,
     },
+    isMerged: {
+        type: Boolean,
+        default: false,
+    },
 }, {
     timestamps: true
 })

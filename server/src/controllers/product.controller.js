@@ -454,7 +454,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
 
 const updateProduct = asyncHandler(async (req, res) => {
     const {
-        productId, productCode, productName, categoryId, typeId, companyId,
+        productId, productCode, productName, categoryId, typeId, companyId, vendorCompanyId, vendorSupplierId,
         productExpiryDate, productDiscountPercentage, productPack, quantityUnit, packUnit,
         salePrice1, salePrice2, salePrice3, salePrice4,
         productPurchasePrice, productTotalQuantity
@@ -501,59 +501,76 @@ const updateProduct = asyncHandler(async (req, res) => {
             }
 
             // Update inventory individual account only if productPurchasePrice changes
+
             if (productPurchasePrice !== undefined && productPurchasePrice !== oldProduct.productPurchasePrice) {
                 const originalStatusPrice = lastStatusOfPrice.newPrice;
-                lastStatusOfPrice.newPrice = productPurchasePrice;
-
-                transaction.addOperation(
-                    async () => await lastStatusOfPrice.save(),
-                    async () => {
-                        lastStatusOfPrice.newPrice = originalStatusPrice;
-                        await lastStatusOfPrice.save();
-                    }
-                );
-
-                const oldPurchasedPrice = oldProduct.productPurchasePrice;
-
                 const originalPurchasePrice = oldProduct.productPurchasePrice;
+
+                lastStatusOfPrice.newPrice = productPurchasePrice;
                 oldProduct.productPurchasePrice = productPurchasePrice;
 
                 transaction.addOperation(
-                    async () => await oldProduct.save(),
                     async () => {
+                        await lastStatusOfPrice.save();
+                        await oldProduct.save();
+                    },
+                    async () => {
+                        lastStatusOfPrice.newPrice = originalStatusPrice;
                         oldProduct.productPurchasePrice = originalPurchasePrice;
+                        await lastStatusOfPrice.save();
                         await oldProduct.save();
                     }
                 );
-
-                // Update inventory individual account logic here
-                const inventoryAccount = await IndividualAccount.findOne({
-                    BusinessId,
-                    individualAccountName: "Inventory",
-                });
-                if (inventoryAccount) {
-                    const originalBalance = inventoryAccount.accountBalance;
-                    inventoryAccount.accountBalance += Number(productPurchasePrice) - Number(oldPurchasedPrice)
-
-                    transaction.addOperation(
-                        async () => await inventoryAccount.save(),
-                        async () => {
-                            inventoryAccount.accountBalance = originalBalance;
-                            await inventoryAccount.save();
-                        }
-                    );
-                }
             }
 
-            // Update product total quantity and status of price remaining quantity if productPack or productTotalQuantity changes
+            // Update product total quantity and StatusOfPrice.remainingQuantity if productPack or productTotalQuantity changes
             if (
                 (productTotalQuantity !== undefined && productTotalQuantity !== oldProduct.productTotalQuantity) ||
                 (productPack !== undefined && productPack !== oldProduct.productPack)
             ) {
-                const newRemainingQuantity = Number(productTotalQuantity || (oldProduct.productTotalQuantity / oldProduct.productPack)) *
-                    Number(productPack || oldProduct.productPack);
+                // Coerce existing values to numbers
+                const oldTotalQuantity = Number(oldProduct.productTotalQuantity || 0);
+                const oldPackSize = Number(oldProduct.productPack || 1);
 
-                const updatedQuantity = newRemainingQuantity - (oldProduct.productTotalQuantity - lastStatusOfPrice.remainingQuantity)
+                // Safely coerce incoming values (they may be strings, empty strings, etc.)
+                const hasNewTotalQuantity = productTotalQuantity !== undefined && productTotalQuantity !== null && productTotalQuantity !== "";
+                const hasNewPackSize = productPack !== undefined && productPack !== null && productPack !== "";
+
+                const incomingTotalQuantity = hasNewTotalQuantity ? Number(productTotalQuantity) : NaN;
+                const incomingPackSize = hasNewPackSize ? Number(productPack) : NaN;
+
+                // Derive new total quantity in base units (pieces)
+                // If total quantity is not explicitly provided, derive packs from existing total & pack size
+                const basePacks = hasNewTotalQuantity
+                    ? incomingTotalQuantity
+                    : oldPackSize !== 0
+                        ? oldTotalQuantity / oldPackSize
+                        : 0;
+
+                const effectivePackSize = hasNewPackSize ? incomingPackSize : oldPackSize;
+
+                const newRemainingQuantity = basePacks * effectivePackSize;
+
+                if (!Number.isFinite(newRemainingQuantity)) {
+                    throw new ApiError(400, "Invalid product quantity or pack value provided");
+                }
+
+                // Keep the already sold quantity constant when re-scaling stock
+                const lastRemainingRaw = Number(lastStatusOfPrice.remainingQuantity);
+                const lastRemainingQuantity = Number.isFinite(lastRemainingRaw) ? lastRemainingRaw : oldTotalQuantity;
+                const soldQuantity = Math.max(0, oldTotalQuantity - lastRemainingQuantity);
+
+                let updatedQuantity = newRemainingQuantity - soldQuantity;
+
+                if (!Number.isFinite(updatedQuantity)) {
+                    throw new ApiError(400, "Failed to calculate updated remaining quantity");
+                }
+
+                // Avoid negative remaining quantity
+                if (updatedQuantity < 0) {
+                    updatedQuantity = 0;
+                }
+
                 const originalRemainingQuantity = lastStatusOfPrice.remainingQuantity;
                 lastStatusOfPrice.remainingQuantity = updatedQuantity;
 
@@ -584,6 +601,8 @@ const updateProduct = asyncHandler(async (req, res) => {
             if (categoryId && categoryId !== oldProduct.categoryId) updatedFields.categoryId = categoryId;
             if (typeId && typeId !== oldProduct.typeId) updatedFields.typeId = typeId;
             if (companyId && companyId !== oldProduct.companyId) updatedFields.companyId = companyId;
+            if (vendorSupplierId && vendorSupplierId !== oldProduct.vendorSupplierId) updatedFields.vendorSupplierId = vendorSupplierId;
+            if (vendorCompanyId && vendorCompanyId !== oldProduct.vendorCompanyId) updatedFields.vendorCompanyId = vendorCompanyId;
             if (productExpiryDate && productExpiryDate !== oldProduct.productExpiryDate) updatedFields.productExpiryDate = productExpiryDate;
             if (productDiscountPercentage !== undefined && productDiscountPercentage !== oldProduct.productDiscountPercentage) updatedFields.productDiscountPercentage = productDiscountPercentage;
             if (productPack !== undefined && productPack !== oldProduct.productPack) updatedFields.productPack = productPack;
@@ -725,9 +744,9 @@ const getProducts = asyncHandler(async (req, res) => {
                 status: 1,
                 productTotalQuantity: 1,
                 createdAt: 1,
-                categoryDetails: { categoryName: 1, categoryDescription: 1 },
-                typeDetails: { typeName: 1, typeDescription: 1 },
-                companyDetails: { companyName: 1, email: 1, companyRegion: 1 },
+                categoryDetails: { _id: 1, categoryName: 1, categoryDescription: 1 },
+                typeDetails: { _id: 1, typeName: 1, typeDescription: 1 },
+                companyDetails: { _id: 1, companyName: 1, email: 1, companyRegion: 1 },
                 salePriceDetails: { salePrice1: 1, salePrice2: 1, salePrice3: 1, salePrice4: 1 },
                 vendorSupplierDetails: { _id: 1, supplierName: 1 },
                 vendorCompanyDetails: { _id: 1, companyName: 1 },
@@ -871,10 +890,10 @@ const getExpiryReport = asyncHandler(async (req, res) => {
                 $lte: futureDate,
             }
         })
-        .populate("typeId", "typeName")
-        .populate("companyId", "companyName")
-        .sort({ productExpiryDate: 1 })
-        .lean();
+            .populate("typeId", "typeName")
+            .populate("companyId", "companyName")
+            .sort({ productExpiryDate: 1 })
+            .lean();
 
         return res.status(200).json(
             new ApiResponse(200, expiringProducts, `Expiry report generated for next ${days} days`)
