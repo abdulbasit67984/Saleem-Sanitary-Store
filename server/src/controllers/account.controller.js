@@ -133,6 +133,45 @@ const getAccounts = asyncHandler(async (req, res) => {
                                 $expr: { $eq: ["$parentAccount", "$$subCategoryId"] },
                             },
                         },
+                        // Attach customer fields (only for customer-linked individual accounts)
+                        {
+                            $lookup: {
+                                from: "customers",
+                                localField: "customerId",
+                                foreignField: "_id",
+                                as: "customer",
+                            },
+                        },
+                        {
+                            $addFields: {
+                                customerName: {
+                                    $cond: [
+                                        { $ne: ["$customerId", null] },
+                                        { $ifNull: [{ $first: "$customer.customerName" }, ""] },
+                                        "$$REMOVE",
+                                    ],
+                                },
+                                mobileNo: {
+                                    $cond: [
+                                        { $ne: ["$customerId", null] },
+                                        { $ifNull: [{ $first: "$customer.mobileNo" }, ""] },
+                                        "$$REMOVE",
+                                    ],
+                                },
+                                customerRegion: {
+                                    $cond: [
+                                        { $ne: ["$customerId", null] },
+                                        { $ifNull: [{ $first: "$customer.customerRegion" }, ""] },
+                                        "$$REMOVE",
+                                    ],
+                                },
+                            },
+                        },
+                        {
+                            $project: {
+                                customer: 0,
+                            },
+                        },
                     ],
                     as: "subCategories.individualAccounts",
                 },
