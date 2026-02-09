@@ -93,6 +93,12 @@ function Header() {
           isAdmin: isAdmin()
         },
         {
+          name: 'Sale Return Records',
+          slug: `/${primaryPath}/sales/sale-return-list`,
+          active: isAdmin() || isOwner() || hasRight("Sale Return Records"),
+          isAdmin: isAdmin()
+        },
+        {
           name: 'Sale Report',
           slug: `/${primaryPath}/sales/sale-reports`,
           active: isAdmin() || isOwner() || hasRight("Sale Report"),

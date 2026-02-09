@@ -505,6 +505,25 @@ export class Config {
         }
     }
 
+    async getSaleReturns(queryParams = '') {
+        try {
+            const response = await this.client.get(`/saleReturn/get-saleReturns?${queryParams}`, {
+                headers: {
+                    Authorization: ` Bearer ${authService.getAccessToken()}`,
+                },
+                withCredentials: true
+            });
+            if (response) {
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error fetching sale returns:", error);
+            throw error;
+        }
+    }
+    
     async createSaleReturn({ ...props }) {
         try {
             console.log("sale return data:", props);
@@ -1464,7 +1483,7 @@ export class Config {
             throw error;
         }
     }
-    
+
     async sendWhatsappMessage(data) {
         try {
             const response = await this.client.post(`/whatsapp/send-message`,

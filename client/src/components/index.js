@@ -32,6 +32,7 @@ import ExpiryReport from "./homePageComponents/stock/ExpiryReport";
 import InvoiceComponent from "./homePageComponents/sales/InvoiceComponent";
 import SaleReturnAgainstBill from "./homePageComponents/sales/SaleReturnAgainstBill";
 import DirectSaleReturn from "./homePageComponents/sales/DirectSaleReturn";
+import SaleReturnList from "./homePageComponents/sales/SaleReturnList";
 import SoldItems from "./homePageComponents/sales/SoldItems";
 import SaleReports from "./homePageComponents/sales/SaleReports";
 import AddCustomer from "./homePageComponents/sales/AddCustomer";
@@ -88,6 +89,7 @@ export {
     InvoiceComponent,
     SaleReturnAgainstBill,
     DirectSaleReturn,
+    SaleReturnList,
     SoldItems,
     SaleReports,
     AddCustomer,

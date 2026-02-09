@@ -7,6 +7,7 @@ import {
   InvoiceComponent,
   SaleReturnAgainstBill,
   DirectSaleReturn,
+  SaleReturnList,
   SoldItems,
   SaleReports,
   AddCustomer,
@@ -78,6 +79,8 @@ function Home() {
             return <SaleReturnAgainstBill />;
           case 'direct-sale-return':
             return <DirectSaleReturn />;
+          case 'sale-return-list':
+            return <SaleReturnList />;
           case 'sold-item':
             return <SoldItems />;
           case 'sale-reports':

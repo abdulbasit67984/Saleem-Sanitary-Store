@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerSaleReturn, } from "../controllers/saleReturn.controller.js";
+import { registerSaleReturn, getSaleReturns} from "../controllers/saleReturn.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 
 const router = Router();
@@ -7,6 +7,7 @@ const router = Router();
 
 //secure routes
 router.route("/add-saleReturn").post(verifyJWT, registerSaleReturn)
+router.route("/get-saleReturns").get(verifyJWT, getSaleReturns)
 // router.route("/get-accounts").get(verifyJWT, getAccounts)
 // router.route("/update-account").patch(verifyJWT, updateAccount)
 

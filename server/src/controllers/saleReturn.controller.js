@@ -314,6 +314,7 @@ const getSaleReturns = asyncHandler(async (req, res) => {
     const saleReturns = await SaleReturn.find(query)
         .populate('customer', 'customerName')
         .populate('billId', 'billNo')
+        .populate('returnItems.productId', 'productName productCode productPack')
         .sort({ returnDate: -1 })
         .lean();
 
