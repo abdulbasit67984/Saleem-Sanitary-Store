@@ -44,6 +44,7 @@ import {
   ExpenseEntry,
   NewAccount,
   Ledger,
+  TransactionHistory,
   VendorJournalEntry,
   CustomerJournalEntry,
   IncomeStatement,
@@ -167,6 +168,8 @@ function Home() {
             return <CustomerJournalEntry />;
           case 'ledger':
             return <Ledger />;
+          case 'transaction-history':
+            return <TransactionHistory />;
           case 'journal':
             return <Journal />;
           case 'income-statement':

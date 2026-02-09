@@ -60,6 +60,7 @@ import VendorJournalEntry from "./homePageComponents/accounts/VendorJournalEntry
 import CustomerJournalEntry from "./homePageComponents/accounts/CustomerJournalEntry";
 import NewAccount from "./homePageComponents/accounts/NewAccount";
 import Ledger from "./homePageComponents/accounts/Ledger";
+import TransactionHistory from "./homePageComponents/accounts/TransactionHistory";
 import IncomeStatement from "./homePageComponents/accounts/IncomeStatement";
 import MergeAccounts from "./homePageComponents/accounts/MergeAccounts";
 
@@ -125,6 +126,7 @@ export {
     CustomerJournalEntry,
     NewAccount,
     Ledger,
+    TransactionHistory,
     IncomeStatement,
     MergeAccounts,
     //users

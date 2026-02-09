@@ -309,6 +309,12 @@ function Header() {
           isAdmin: isAdmin()
         },
         {
+          name: "Transaction History",
+          slug: `/${primaryPath}/accounts/transaction-history`,
+          active: isAdmin() || isOwner() || hasRight("Transaction History"),
+          isAdmin: isAdmin()
+        },
+        {
           name: "Merge Accounts",
           slug: `/${primaryPath}/accounts/merge-accounts`,
           active: isAdmin() || isOwner() || hasRight("Merge Accounts"),
