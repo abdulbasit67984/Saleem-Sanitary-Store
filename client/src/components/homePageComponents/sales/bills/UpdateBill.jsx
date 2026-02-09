@@ -19,11 +19,38 @@ const UpdateBill = ({ billId, setIsEditing }) => {
   const [isSavePopupOpen, setSavePopupOpen] = useState(false);
   const [itemIndex, setItemIndex] = useState(null);
 
+  // Add new product item state
+  const allProducts = useSelector((state) => state.saleItems.allProducts);
+  const [newItemSearch, setNewItemSearch] = useState("");
+  const [newItemMatches, setNewItemMatches] = useState([]);
+  const [selectedNewProduct, setSelectedNewProduct] = useState(null);
+  const [newItemQuantity, setNewItemQuantity] = useState(1);
+  const [newItemPrice, setNewItemPrice] = useState(0);
+  const [newItemDiscount, setNewItemDiscount] = useState(0);
+
   // Confirmation modal state for extra item delete
   const [showDeleteExtraConfirm, setShowDeleteExtraConfirm] = useState(false);
   const [extraItemIndexToDelete, setExtraItemIndexToDelete] = useState(null);
 
   const customerData = useSelector((state) => state.customers.customerData);
+
+  useEffect(() => {
+    const query = newItemSearch.trim().toLowerCase();
+    if (!query) {
+      setNewItemMatches([]);
+      return;
+    }
+
+    const matches = (allProducts || [])
+      .filter((p) => {
+        const name = p?.productName?.toLowerCase() || "";
+        const code = p?.productCode?.toLowerCase() || "";
+        return name.includes(query) || code.includes(query);
+      })
+      .slice(0, 12);
+
+    setNewItemMatches(matches);
+  }, [newItemSearch, allProducts]);
 
   useEffect(() => {
     const fetchBill = async () => {
@@ -57,6 +84,76 @@ const UpdateBill = ({ billId, setIsEditing }) => {
     );
 
     setBillData({ ...billData, extraItems: updatedExtras });
+  };
+
+  const handleSelectNewProduct = (product) => {
+    setSelectedNewProduct(product);
+    setNewItemSearch(product?.productName || "");
+    setNewItemMatches([]);
+    setNewItemQuantity(1);
+    const defaultPrice =
+      Number(product?.salePriceDetails?.[0]?.salePrice1) ||
+      Number(product?.salePrice1) ||
+      0;
+    setNewItemPrice(defaultPrice);
+    setNewItemDiscount(0);
+  };
+
+  const handleAddNewBillItem = () => {
+    if (!billData) return;
+    if (!selectedNewProduct?._id) {
+      showErrorToast("Please select a product to add.");
+      return;
+    }
+
+    const qty = Number(newItemQuantity) || 0;
+    const price = Number(newItemPrice) || 0;
+    const discount = Number(newItemDiscount) || 0;
+
+    if (qty <= 0) {
+      showErrorToast("Quantity must be greater than 0.");
+      return;
+    }
+
+    const existingIndex = (billData.billItems || []).findIndex((it) => {
+      const id = it?.productId?._id || it?.productId;
+      return id?.toString?.() === selectedNewProduct._id?.toString?.();
+    });
+
+    const newItem = {
+      productId: selectedNewProduct,
+      quantity: qty,
+      billItemPrice: price,
+      billItemDiscount: discount,
+      billItemPack: Number(selectedNewProduct?.productPack) || 1,
+      billItemUnit: 0,
+    };
+
+    if (existingIndex >= 0) {
+      const updatedItems = (billData.billItems || []).map((it, idx) => {
+        if (idx !== existingIndex) return it;
+        return {
+          ...it,
+          quantity: (Number(it.quantity) || 0) + qty,
+          billItemPrice: price,
+          billItemDiscount: discount,
+          billItemPack: it.billItemPack ?? newItem.billItemPack,
+          billItemUnit: it.billItemUnit ?? 0,
+        };
+      });
+      setBillData({ ...billData, billItems: updatedItems });
+      showSuccessToast("Item added (quantity updated).");
+    } else {
+      const updatedItems = [...(billData.billItems || []), newItem];
+      setBillData({ ...billData, billItems: updatedItems });
+      showSuccessToast("Item added to bill.");
+    }
+
+    setSelectedNewProduct(null);
+    setNewItemSearch("");
+    setNewItemQuantity(1);
+    setNewItemPrice(0);
+    setNewItemDiscount(0);
   };
 
   const handleDeleteItem = (index) => {
@@ -121,6 +218,9 @@ const UpdateBill = ({ billId, setIsEditing }) => {
       const totals = calculateTotals();
       const updatedBill = {
         ...billData,
+        customer: billData?.customer?._id || billData?.customer,
+        paidAmount: Number(billData?.paidAmount) || 0,
+        flatDiscount: Number(billData?.flatDiscount) || 0,
         totalAmount: Number(totals.totalAmount),
         totalDiscount: Number(totals.totalDiscount),
       };
@@ -202,7 +302,7 @@ const UpdateBill = ({ billId, setIsEditing }) => {
           <select
             className="border p-1 rounded text-xs w-44"
             onChange={(e) => setBillData({ ...billData, customer: e.target.value })}
-            value={billData.customer || ""}
+            value={billData?.customer?._id || billData?.customer || ""}
             disabled={true}
           >
             <option value="">{billData.customer?.customerName}</option>
@@ -216,6 +316,74 @@ const UpdateBill = ({ billId, setIsEditing }) => {
       </div>
 
       <div className="border-b my-3"></div>
+
+      {/* Add new item */}
+      <div className="mb-3 text-xs">
+        <h3 className="text-sm font-semibold mb-2">Add New Item</h3>
+        <div className="grid grid-cols-3 gap-2 items-end">
+          <div className="col-span-1 relative">
+            <Input
+              className="p-1"
+              label="Search Product:"
+              labelClass="w-28"
+              value={newItemSearch}
+              placeholder="Type name/code"
+              onChange={(e) => {
+                setNewItemSearch(e.target.value);
+                setSelectedNewProduct(null);
+              }}
+            />
+
+            {newItemMatches.length > 0 && (
+              <div className="absolute z-10 bg-white border rounded shadow-md w-full max-h-48 overflow-auto">
+                {newItemMatches.map((p) => (
+                  <button
+                    type="button"
+                    key={p._id}
+                    className="w-full text-left px-2 py-1 hover:bg-gray-100"
+                    onClick={() => handleSelectNewProduct(p)}
+                  >
+                    <div className="flex justify-between">
+                      <span className="truncate">{p.productName}</span>
+                      <span className="text-gray-500">{p.salePriceDetails?.[0]?.salePrice1}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Input
+            className="p-1"
+            label="Qty:"
+            labelClass="w-28"
+            type="number"
+            value={newItemQuantity}
+            onChange={(e) => setNewItemQuantity(e.target.value)}
+          />
+          <Input
+            className="p-1"
+            label="Price/Unit:"
+            labelClass="w-28"
+            type="number"
+            value={newItemPrice}
+            onChange={(e) => setNewItemPrice(e.target.value)}
+          />
+          <Input
+            className="p-1"
+            label="Discount %:"
+            labelClass="w-28"
+            type="number"
+            value={newItemDiscount}
+            onChange={(e) => setNewItemDiscount(e.target.value)}
+          />
+          <div className="col-span-2 flex justify-end">
+            <Button className="p-1 px-2" onClick={handleAddNewBillItem}>
+              Add Item
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <div className="mt-2">
         <h3 className="text-sm font-semibold mb-2">Purchase Items</h3>

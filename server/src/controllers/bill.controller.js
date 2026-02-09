@@ -102,9 +102,10 @@ const registerBill = asyncHandler(async (req, res) => {
                 if (typeof purchaseCost !== "number" || isNaN(purchaseCost)) {
                     // console.log('purchaseCost', purchaseCost)
                     console.log(typeof (purchaseCost))
-                    throw new Error(`Invalid purchase cost calculated for product ID ${productId}`);
+                    // throw new Error(`Invalid purchase cost calculated for product ID ${productId}`);
+                } else {
+                    totalPurchaseAmount += purchaseCost;
                 }
-                totalPurchaseAmount += purchaseCost;
 
                 const product = await Product.findById(productId);
                 if (!product) {
@@ -333,47 +334,9 @@ const registerBill = asyncHandler(async (req, res) => {
 
 
             if (customer && mobileNo) {
-                const netTotal = totalAmount - flatDiscount - paidAmount;
-                const formattedDueDate = dueDate ? new Date(dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
-
-                const whatsappMessage = `*BILL CONFIRMATION* 
-
-Thank you for choosing *New Saleem Sanitary Traders*!
-
-━━━━━━━━━━━━━━━━━━━━━━
-📋 *BILL DETAILS*
-━━━━━━━━━━━━━━━━━━━━━━
-
-🔖 Bill Number: \`${billNo}\`
-📅 Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-👤 Customer: ${customerDetails?.customerName || 'N/A'}
-
-━━━━━━━━━━━━━━━━━━━━━━
-*FINANCIAL SUMMARY*
-━━━━━━━━━━━━━━━━━━━━━━
-
-Total Amount: Rs. ${totalAmount}
-Flat Discount: -Rs. ${flatDiscount}
-Paid Amount: Rs. ${paidAmount}
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-*OUTSTANDING BALANCE: Rs. ${netTotal}*
-
-━━━━━━━━━━━━━━━━━━━━━━
-*ADDITIONAL INFORMATION*
-━━━━━━━━━━━━━━━━━━━━━━
-
-Bill Status: ${billStatus?.toUpperCase() || 'PENDING'}
-Due Date: ${formattedDueDate}
-Description: ${description || 'N/A'}
-
-━━━━━━━━━━━━━━━━━━━━━━
-
-✨ Your bill has been successfully created in our system.
-
-
-_Powered by PANDAS Software_`;
-
-                await sendWhatsappMessage(mobileNo, whatsappMessage);
+                await sendWhatsappMessage(mobileNo, `Thank you for choosing New Saleem Sanitary Traders! \nYour bill has been successfully created.
+                \n\n*Bill Details:*\nBill No: ${billNo}\nCustomer: ${customerDetails?.customerName}\nTotal Bill: ${totalAmount}\nFlat Discount: ${flatDiscount}\n*Paid Amount: ${paidAmount}*\n*Net Total:* ${totalAmount - flatDiscount - paidAmount}
+                \n\n_Powered by PANDAS Software_`);
             }
 
             // const test = true;
@@ -586,7 +549,9 @@ const updateBill = asyncHandler(async (req, res) => {
     try {
         await transactionManager.run(async (transaction) => {
             // Find the existing bill
-            const oldBill = await Bill.findOne({ _id, BusinessId }).populate("billItems.productId");
+            const oldBill = await Bill.findOne({ _id, BusinessId })
+                .populate("billItems.productId")
+                .populate("customer");
             if (!oldBill) {
                 throw new ApiError(404, "Bill not found!");
             }
@@ -595,9 +560,15 @@ const updateBill = asyncHandler(async (req, res) => {
             const oldBillData = JSON.parse(JSON.stringify(oldBill));
 
             // Calculate total amounts
-            const calculateTotalAmount = (items) => {
-                const billItemsTotal = items.reduce((total, item) => total + item.billItemPrice * item.quantity, 0);
-                const extraItemsTotal = extraItems?.reduce((sum, item) => sum + (Number(item?.salePrice || 0) * Number(item?.quantity || 0)), 0) || 0;
+            const calculateTotalAmount = (items, extraItemsForBill) => {
+                const billItemsTotal = (items || []).reduce(
+                    (total, item) => total + (Number(item.billItemPrice || 0) * Number(item.quantity || 0)),
+                    0
+                );
+                const extraItemsTotal = (extraItemsForBill || []).reduce(
+                    (sum, item) => sum + (Number(item?.salePrice || 0) * Number(item?.quantity || 0)),
+                    0
+                );
                 return billItemsTotal + extraItemsTotal;
             };
 
@@ -605,7 +576,7 @@ const updateBill = asyncHandler(async (req, res) => {
                 return items.reduce((total, item) => total + (item.productId.productPurchasePrice * item.quantity), 0);
             };
 
-            const oldTotalAmount = calculateTotalAmount(oldBillData.billItems);
+            const oldTotalAmount = calculateTotalAmount(oldBillData.billItems, oldBillData.extraItems);
             const oldTotalPurchaseAmount = calculateTotalPurchaseAmount(oldBillData.billItems);
 
             const newBill = {
@@ -620,7 +591,7 @@ const updateBill = asyncHandler(async (req, res) => {
                 customer: customer !== undefined ? customer : (oldBill.customer !== undefined ? oldBill.customer : null)
             };
 
-            const newTotalAmount = calculateTotalAmount(newBill.billItems);
+            const newTotalAmount = calculateTotalAmount(newBill.billItems, newBill.extraItems);
             const newTotalPurchaseAmount = calculateTotalPurchaseAmount(newBill.billItems);
 
             newBill.totalAmount = newTotalAmount;
@@ -631,10 +602,22 @@ const updateBill = asyncHandler(async (req, res) => {
 
             let changedItemsAmount = 0;
 
+            const getIdString = (value) => {
+                if (!value) return null;
+                if (typeof value === "string") return value;
+                if (value?._id) return value._id.toString();
+                if (value?.toString) return value.toString();
+                return null;
+            };
+
             // Inventory Update
             const processInventoryChanges = async (oldItems, newItems) => {
-                const oldItemsMap = new Map(oldItems.map((item) => [item.productId._id.toString(), item]));
-                const newItemsMap = new Map(newItems.map((item) => [item.productId._id.toString(), item]));
+                const oldItemsMap = new Map(
+                    (oldItems || []).map((item) => [getIdString(item?.productId), item])
+                );
+                const newItemsMap = new Map(
+                    (newItems || []).map((item) => [getIdString(item?.productId), item])
+                );
 
                 const StatusOfPrice = mongoose.model("StatusOfPrice");
 
@@ -642,10 +625,15 @@ const updateBill = asyncHandler(async (req, res) => {
 
                 // Handle all new and existing items
                 for (const [productId, newItem] of newItemsMap) {
+                    if (!productId) continue;
                     const oldItem = oldItemsMap.get(productId);
-                    const oldQuantity = oldItem ? oldItem.quantity : 0;
-                    const newQuantity = newItem.quantity;
+                    const oldQuantity = Number(oldItem?.quantity) || 0;
+                    const newQuantity = Number(newItem?.quantity) || 0;
                     const quantityDifference = oldQuantity - newQuantity;
+
+                    const oldLineAmount = oldQuantity * (Number(oldItem?.billItemPrice) || 0);
+                    const newLineAmount = newQuantity * (Number(newItem?.billItemPrice) || 0);
+                    changedItemsAmount += (oldLineAmount - newLineAmount);
 
                     if (quantityDifference !== 0) {
                         const product = await Product.findById(productId);
@@ -653,8 +641,6 @@ const updateBill = asyncHandler(async (req, res) => {
 
                         const originalProductQuantity = product.productTotalQuantity;
                         product.productTotalQuantity += (quantityDifference * product.productPack);
-
-                        changedItemsAmount += quantityDifference * oldItem.billItemPrice
 
                         if ((product.productTotalQuantity / product.productPack) < 0) {
                             throw new ApiError(400, `Insufficient stock for product: ${product.productName}`);
@@ -699,7 +685,8 @@ const updateBill = asyncHandler(async (req, res) => {
                         const originalProductQuantity = product.productTotalQuantity;
                         product.productTotalQuantity += (oldItem.quantity * product.productPack);
 
-                        changedItemsAmount += oldItem.quantity * oldItem.billItemPrice;
+                        const oldLineAmount = (Number(oldItem?.quantity) || 0) * (Number(oldItem?.billItemPrice) || 0);
+                        changedItemsAmount += oldLineAmount;
 
                         console.log('oldItem', oldItem)
 
@@ -740,8 +727,15 @@ const updateBill = asyncHandler(async (req, res) => {
             const inventoryAccount = await IndividualAccount.findOne({ BusinessId, individualAccountName: "Inventory" });
             const cashAccount = await IndividualAccount.findOne({ BusinessId, individualAccountName: "Cash" });
             const accountsReceivableAccount = await IndividualAccount.findOne({ BusinessId, individualAccountName: "Account Receivables" });
-            const oldCustomerAccount = await IndividualAccount.findOne({ BusinessId, customerId: oldBill.customer?._id });
-            const newCustomerAccount = await IndividualAccount.findOne({ BusinessId, customerId: newBill.customer });
+            const oldCustomerId = getIdString(oldBill?.customer);
+            const newCustomerId = getIdString(newBill?.customer);
+
+            const oldCustomerAccount = oldCustomerId
+                ? await IndividualAccount.findOne({ BusinessId, customerId: oldCustomerId })
+                : null;
+            const newCustomerAccount = newCustomerId
+                ? await IndividualAccount.findOne({ BusinessId, customerId: newCustomerId })
+                : null;
             const salesRevenueAccount = await IndividualAccount.findOne({ BusinessId, individualAccountName: "Sales Revenue" });
 
             const oldOutstandingAmount = oldTotalAmount - oldBillData.paidAmount - oldBillData.flatDiscount;
@@ -795,7 +789,7 @@ const updateBill = asyncHandler(async (req, res) => {
             }
             // console.log("4")
             // console.log("oldbill", oldBill.customer, "newbill", newBill.customer)
-            if (oldBill?.customer?._id.toString() !== newBill?.customer?.toString()) {
+            if (oldCustomerId && newCustomerId && oldCustomerId !== newCustomerId) {
                 if (oldCustomerAccount && oldOutstandingAmount !== 0) {
                     const originalOldCustomerBalance = oldCustomerAccount.accountBalance;
                     oldCustomerAccount.accountBalance -= oldOutstandingAmount;
@@ -844,7 +838,7 @@ const updateBill = asyncHandler(async (req, res) => {
                 await newCustomerAccount.save();
             }
 
-            if (newBill.customer && paidAmount !== oldBill.paidAmount) {
+            if (newBill.customer && paidAmount !== oldBill.paidAmount && oldCustomerAccount) {
                 await GeneralLedger.create([
                     {
                         BusinessId,
@@ -856,7 +850,7 @@ const updateBill = asyncHandler(async (req, res) => {
                 ]);
             }
 
-            if (newBill.customer && flatDiscount !== oldBill.flatDiscount) {
+            if (newBill.customer && flatDiscount !== oldBill.flatDiscount && oldCustomerAccount) {
                 await GeneralLedger.create([
                     {
                         BusinessId,
@@ -868,16 +862,21 @@ const updateBill = asyncHandler(async (req, res) => {
                 ]);
             }
 
-            if (changedItemsAmount) {
-                await GeneralLedger.create([
-                    {
-                        BusinessId,
-                        individualAccountId: oldCustomerAccount.mergedInto !== null ? oldCustomerAccount.mergedInto : oldCustomerAccount._id,
-                        details: `Bill Items Adjusted ${newBill.billNo}`,
-                        credit: changedItemsAmount,
-                        reference: oldCustomerAccount.mergedInto !== null ? oldCustomerAccount.mergedInto : oldCustomerAccount._id,
-                    },
-                ]);
+            if (changedItemsAmount && oldCustomerAccount) {
+                const entry = {
+                    BusinessId,
+                    individualAccountId: oldCustomerAccount.mergedInto !== null ? oldCustomerAccount.mergedInto : oldCustomerAccount._id,
+                    details: `Bill Items Adjusted ${newBill.billNo}`,
+                    reference: oldCustomerAccount.mergedInto !== null ? oldCustomerAccount.mergedInto : oldCustomerAccount._id,
+                };
+
+                if (changedItemsAmount > 0) {
+                    entry.credit = Math.abs(changedItemsAmount);
+                } else {
+                    entry.debit = Math.abs(changedItemsAmount);
+                }
+
+                await GeneralLedger.create([entry]);
             }
 
             // console.log("6")
@@ -1282,7 +1281,7 @@ const getProductHistoryForCustomer = asyncHandler(async (req, res) => {
             billItemPack: productItem?.billItemPack || 1,
             billItemPrice: productItem?.billItemPrice || 0,
             billItemDiscount: productItem?.billItemDiscount || 0,
-            totalAmount: ((productItem?.quantity || 0) * (productItem?.billItemPrice || 0) * 
+            totalAmount: ((productItem?.quantity || 0) * (productItem?.billItemPrice || 0) *
                 (1 - (productItem?.billItemDiscount || 0) / 100)).toFixed(2)
         };
     });
