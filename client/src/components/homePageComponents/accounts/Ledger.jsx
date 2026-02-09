@@ -105,6 +105,113 @@ const Ledger = () => {
     setSearchTerm(event.target.value);
   };
 
+  const isOpeningBalanceEntry = (entry) => {
+    const details = (entry?.details || "").toString();
+    return details.startsWith("Opening Balance");
+  };
+
+  const getLedgerEntriesFromDate = (account, allData, fromDate) => {
+    if (!account || !Array.isArray(allData)) return [];
+
+    // Filter ledger entries for the selected account
+    const filteredEntries = allData.filter(
+      (entry) =>
+        entry?.referenceAccount?._id === account._id &&
+        entry?.individualAccount?.name !== "Sales Revenue"
+    );
+
+    // Respect latest real opening balance in ledger
+    const lastOpeningIndex = [...filteredEntries]
+      .map((e) => (isOpeningBalanceEntry(e) ? 1 : 0))
+      .lastIndexOf(1);
+
+    const baseEntries =
+      lastOpeningIndex !== -1 ? filteredEntries.slice(lastOpeningIndex) : filteredEntries;
+
+    if (!fromDate) return baseEntries;
+
+    const from = new Date(fromDate);
+    if (Number.isNaN(from.getTime())) return baseEntries;
+
+    // Start of day (local)
+    from.setHours(0, 0, 0, 0);
+
+    const before = baseEntries.filter((e) => {
+      const d = new Date(e?.createdAt);
+      return !Number.isNaN(d.getTime()) && d < from;
+    });
+
+    const after = baseEntries.filter((e) => {
+      const d = new Date(e?.createdAt);
+      return !Number.isNaN(d.getTime()) && d >= from;
+    });
+
+    let openingBalance = 0;
+    for (const e of before) {
+      openingBalance += Number(e?.debit || 0);
+      openingBalance -= Number(e?.credit || 0);
+    }
+
+    const openingEntry = {
+      _id: `opening-${account._id}-${fromDate}`,
+      createdAt: from.toISOString(),
+      details: `Opening Balance (${fromDate})`,
+      description: "",
+      debit: openingBalance > 0 ? openingBalance : 0,
+      credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
+    };
+
+    return [openingEntry, ...after];
+  };
+
+  const getTodayLocalISODate = () => {
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+  };
+
+  const getEntryISODate = (entry) => {
+    const raw = entry?.createdAt;
+    if (!raw) return "";
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return "";
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+  };
+
+  const normalizeWhatsappPhone = (rawPhone) => {
+    if (!rawPhone) return "";
+    const digits = rawPhone.toString().replace(/\D/g, "");
+    if (!digits) return "";
+
+    // Common PK formats: 03xxxxxxxxx -> 92xxxxxxxxxx
+    if (digits.length === 11 && digits.startsWith("03")) {
+      return `92${digits.slice(1)}`;
+    }
+    if (digits.startsWith("0") && digits.length > 1) {
+      return digits.slice(1);
+    }
+    return digits;
+  };
+
+  const handleOpenWhatsApp = (account) => {
+    // console.log("Opening WhatsApp for account:", account);
+    const phone = normalizeWhatsappPhone(account?.mobileNo);
+    if (!phone) {
+      showErrorToast("Customer mobile number not found");
+      return;
+    }
+    
+
+    const businessName = userData?.BusinessId?.businessName || "";
+    const customerName = account?.customerName || account?.individualAccountName || "Customer";
+    const balanceValue = getComputedBalance(account);
+    const message = `Hello ${customerName}, this is ${businessName}. Your current account balance is ${balanceValue}. \n_Powered by PANDAS Software_`;
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   const filteredAccounts = accounts.flatMap(account =>
     account.subCategories.flatMap(sub =>
       sub.individualAccounts.filter(individual => {
@@ -150,25 +257,7 @@ const Ledger = () => {
   const handleSelectAccount = (account) => {
     setSelectedAccount(account);
 
-    // Filter ledger entries for the selected account
-    const filteredEntries = ledgerData.filter(
-      (entry) =>
-        entry.referenceAccount._id === account._id &&
-        entry.individualAccount.name !== "Sales Revenue"
-    );
-
-    // Find the last "Opening Balance" entry
-    const lastOpeningIndex = filteredEntries
-      .map((entry) => entry.details)
-      .lastIndexOf("Opening Balance");
-
-    // Keep only entries up to (and including) the last "Opening Balance"
-    const finalFilteredEntries =
-      lastOpeningIndex !== -1
-        ? filteredEntries.slice(lastOpeningIndex)
-        : filteredEntries;
-
-    console.log("Filtered Entries:", finalFilteredEntries);
+    const finalFilteredEntries = getLedgerEntriesFromDate(account, ledgerData, startDate);
     setSelectedLedgerData(finalFilteredEntries);
   };
 
@@ -253,21 +342,7 @@ const Ledger = () => {
   };
 
   const filterLedgerEntries = (account, allData) => {
-    const filteredEntries = allData.filter(
-      (entry) =>
-        entry.referenceAccount._id === account._id &&
-        entry.individualAccount.name !== "Sales Revenue"
-    );
-
-    const lastOpeningIndex = filteredEntries
-      .map((entry) => entry.details)
-      .lastIndexOf("Opening Balance");
-
-    const finalEntries =
-      lastOpeningIndex !== -1
-        ? filteredEntries.slice(lastOpeningIndex)
-        : filteredEntries;
-
+    const finalEntries = getLedgerEntriesFromDate(account, allData, startDate);
     setSelectedLedgerData(finalEntries);
   };
 
@@ -310,9 +385,9 @@ const Ledger = () => {
       const entries = grouped[id];
 
       // cut up to last Opening Balance
-      const lastOpeningIndex = entries
-        .map((e) => e.details)
-        .lastIndexOf("Opening Balance");
+      const lastOpeningIndex = [...entries]
+        .map((e) => (isOpeningBalanceEntry(e) ? 1 : 0))
+        .lastIndexOf(1);
 
       const filtered =
         lastOpeningIndex !== -1 ? entries.slice(lastOpeningIndex) : entries;
@@ -370,6 +445,13 @@ const Ledger = () => {
     const totalRecAndPay = totalPayablesAndReceivables()
     setTotalPayAndRec(totalRecAndPay)
   }, [ledgerData]);
+
+  // Re-filter selected account ledger when date changes
+  useEffect(() => {
+    if (selectedAccount) {
+      filterLedgerEntries(selectedAccount, ledgerData);
+    }
+  }, [startDate]);
 
 
 
@@ -618,13 +700,30 @@ const Ledger = () => {
 
       {/* General Ledger Full-Screen View */}
       {selectedAccount && (
-        <div className=" w-full h-full bg-white shadow-lg flex flex-col p-6 max-h-96 scrollbar-thin overflow-auto">
+        <div className=" w-full h-full bg-white shadow-lg flex flex-col p-6 max-h-[75vh] scrollbar-thin overflow-auto">
           {/* Close Button */}
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 text-xs">
+            <div className="flex items-center gap-2 mr-auto">
+              <label className="text-sm text-gray-600">From date:</label>
+              <input
+                type="date"
+                className="border border-gray-300 p-2 rounded text-sm focus:ring-1 focus:ring-gray-400"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              {startDate && (
+                <button
+                  onClick={() => setStartDate("")}
+                  className="text-sm text-red-600 hover:underline"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <button
               onClick={() => handleOpenModal('journal', selectedAccount)}
               className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
+              >
               Add Journal Entry
             </button>
             <button
@@ -633,6 +732,15 @@ const Ledger = () => {
             >
               Adjust Balance
             </button>
+            {!!selectedAccount?.customerId && (
+              <button
+                onClick={() => handleOpenWhatsApp(selectedAccount)}
+                className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                title="Open WhatsApp"
+              >
+                WhatsApp
+              </button>
+            )}
             <button
               onClick={handlePrint}
               className=" border border-blue-500 hover:text-white text-blue-500 px-2  py-0 rounded-md hover:bg-blue-600"
@@ -655,7 +763,9 @@ const Ledger = () => {
 
           <div className="flex flex-col py-7" ref={printRef}>
             <h1 className="font-sans font-bold">{userData.BusinessId.businessName}</h1>
-            <h2 className=" ">{selectedAccount.individualAccountName} - General Ledger</h2>
+            <h2 className=" ">
+              {selectedAccount.individualAccountName} - General Ledger (From: {startDate || getEntryISODate(selectedLedgerData?.[0]) || getTodayLocalISODate()} To: {getTodayLocalISODate()})
+            </h2>
 
             {/* Ledger Table */}
             <div className="w-full overflow-x-auto mt-6">
@@ -673,9 +783,9 @@ const Ledger = () => {
                 <tbody>
                   {selectedLedgerData.map(entry => {
                     if (entry.debit) {
-                      balance += parseInt(entry.debit || 0);
+                      balance += Number(entry.debit || 0);
                     } else if (entry.credit) {
-                      balance -= parseInt(entry.credit || 0);
+                      balance -= Number(entry.credit || 0);
                     }
 
                     // Now assign the updated balance to this row
