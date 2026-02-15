@@ -180,6 +180,8 @@ const ProductSearchModal = ({ isOpen, onClose }) => {
                       <th className="text-left p-2 font-semibold">Type</th>
                       <th className="text-right p-2 font-semibold">Pack</th>
                       <th className="text-right p-2 font-semibold">Sale Price</th>
+                      <th className="text-right p-2 font-semibold">Wholesale Price</th>
+                      <th className="text-right p-2 font-semibold">Purchase Price</th>
                       <th className="text-right p-2 font-semibold">Stock</th>
                     </tr>
                   </thead>
@@ -204,6 +206,12 @@ const ProductSearchModal = ({ isOpen, onClose }) => {
                         <td className="p-2 text-right font-medium text-green-600">
                           {product.salePriceDetails?.[0]?.salePrice1?.toFixed(2) || '-'}
                         </td>
+                        <td className="p-2 text-right font-medium text-green-600">
+                          {product.salePriceDetails?.[0]?.salePrice2?.toFixed(2) || '-'}
+                        </td>
+                        <td className="p-2 text-right font-medium text-blue-600">
+                          {product.productPurchasePrice.toFixed(2) || '-'}
+                        </td>
                         <td className={`p-2 text-right font-medium ${
                           product.productTotalQuantity <= 0 
                             ? 'text-red-500' 
@@ -213,7 +221,7 @@ const ProductSearchModal = ({ isOpen, onClose }) => {
                         }`}>
                           {Math.ceil(product.productTotalQuantity / product.productPack)} pcs
                           <span className="text-gray-400 ml-1">
-                            ({product.productTotalQuantity} {product.packUnit?.toUpperCase() || 'units'})
+                            ({product.productTotalQuantity?.toFixed(2) || 0} {product.packUnit?.toUpperCase() || 'units'})
                           </span>
                         </td>
                       </tr>

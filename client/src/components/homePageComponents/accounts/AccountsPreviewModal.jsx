@@ -53,9 +53,17 @@ const AccountsPreviewModal = ({
   // Filter accounts based on search term for custom selection
   const getFilteredCategoryAccounts = (accounts) => {
     if (!customSearchTerm.trim()) return accounts;
-    return accounts.filter((acc) =>
-      acc.individualAccountName.toLowerCase().includes(customSearchTerm.toLowerCase())
-    );
+    const term = customSearchTerm.toLowerCase();
+    return accounts.filter((acc) => {
+      const name = acc.individualAccountName
+        ? acc.individualAccountName.toLowerCase()
+        : "";
+      const region = acc.customerRegion
+        ? acc.customerRegion.toLowerCase()
+        : "";
+
+      return name.includes(term) || region.includes(term);
+    });
   };
 
   // Get accounts based on selection type
@@ -278,22 +286,47 @@ const AccountsPreviewModal = ({
                   </div>
                   {expandedCategories.customers && (
                     <div className="pl-6 pt-2 grid grid-cols-2 md:grid-cols-3 gap-1">
-                      {getFilteredCategoryAccounts(categorizedAccounts.customers).map((acc) => (
-                        <label
-                          key={acc._id}
-                          className="flex items-center gap-2 text-sm cursor-pointer hover:bg-green-50 p-1 rounded"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedAccountIds.includes(acc._id)}
-                            onChange={() => toggleAccountSelection(acc._id)}
-                            className="w-3 h-3"
-                          />
-                          <span className="truncate">
-                            {acc.individualAccountName}
-                          </span>
-                        </label>
-                      ))}
+                      {getFilteredCategoryAccounts(categorizedAccounts.customers).map(
+                        (acc) => {
+                          const balance = getComputedBalance(acc);
+                          const balanceClass =
+                            balance > 0
+                              ? "text-green-600"
+                              : balance < 0
+                              ? "text-red-600"
+                              : "text-gray-500";
+
+                          return (
+                            <label
+                              key={acc._id}
+                              className="flex items-center gap-2 text-sm cursor-pointer hover:bg-green-50 p-1 rounded"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedAccountIds.includes(acc._id)}
+                                onChange={() => toggleAccountSelection(acc._id)}
+                                className="w-3 h-3"
+                              />
+                              <span className="truncate">
+                                {acc.individualAccountName}
+                              </span>
+                              {acc.customerRegion && (
+                                <span
+                                  title={`Region: ${acc.customerRegion}`}
+                                  className="text-xs text-gray-500 ml-1"
+                                >
+                                  | {acc.customerRegion}
+                                </span>
+                              )}
+                              <span
+                                className={`ml-auto text-xs font-medium ${balanceClass}`}
+                              >
+                                {functions.formatAsianNumber(balance)}
+                              </span>
+                            </label>
+                          );
+                        }
+                      )}
                     </div>
                   )}
                 </div>
@@ -334,22 +367,39 @@ const AccountsPreviewModal = ({
                   </div>
                   {expandedCategories.suppliers && (
                     <div className="pl-6 pt-2 grid grid-cols-2 md:grid-cols-3 gap-1">
-                      {getFilteredCategoryAccounts(categorizedAccounts.suppliers).map((acc) => (
-                        <label
-                          key={acc._id}
-                          className="flex items-center gap-2 text-sm cursor-pointer hover:bg-red-50 p-1 rounded"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedAccountIds.includes(acc._id)}
-                            onChange={() => toggleAccountSelection(acc._id)}
-                            className="w-3 h-3"
-                          />
-                          <span className="truncate">
-                            {acc.individualAccountName}
-                          </span>
-                        </label>
-                      ))}
+                      {getFilteredCategoryAccounts(categorizedAccounts.suppliers).map(
+                        (acc) => {
+                          const balance = getComputedBalance(acc);
+                          const balanceClass =
+                            balance > 0
+                              ? "text-green-600"
+                              : balance < 0
+                              ? "text-red-600"
+                              : "text-gray-500";
+
+                          return (
+                            <label
+                              key={acc._id}
+                              className="flex items-center gap-2 text-sm cursor-pointer hover:bg-red-50 p-1 rounded"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedAccountIds.includes(acc._id)}
+                                onChange={() => toggleAccountSelection(acc._id)}
+                                className="w-3 h-3"
+                              />
+                              <span className="truncate">
+                                {acc.individualAccountName}
+                              </span>
+                              <span
+                                className={`ml-auto text-xs font-medium ${balanceClass}`}
+                              >
+                                {functions.formatAsianNumber(balance)}
+                              </span>
+                            </label>
+                          );
+                        }
+                      )}
                     </div>
                   )}
                 </div>
@@ -390,22 +440,39 @@ const AccountsPreviewModal = ({
                   </div>
                   {expandedCategories.companies && (
                     <div className="pl-6 pt-2 grid grid-cols-2 md:grid-cols-3 gap-1">
-                      {getFilteredCategoryAccounts(categorizedAccounts.companies).map((acc) => (
-                        <label
-                          key={acc._id}
-                          className="flex items-center gap-2 text-sm cursor-pointer hover:bg-orange-50 p-1 rounded"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedAccountIds.includes(acc._id)}
-                            onChange={() => toggleAccountSelection(acc._id)}
-                            className="w-3 h-3"
-                          />
-                          <span className="truncate">
-                            {acc.individualAccountName}
-                          </span>
-                        </label>
-                      ))}
+                      {getFilteredCategoryAccounts(categorizedAccounts.companies).map(
+                        (acc) => {
+                          const balance = getComputedBalance(acc);
+                          const balanceClass =
+                            balance > 0
+                              ? "text-green-600"
+                              : balance < 0
+                              ? "text-red-600"
+                              : "text-gray-500";
+
+                          return (
+                            <label
+                              key={acc._id}
+                              className="flex items-center gap-2 text-sm cursor-pointer hover:bg-orange-50 p-1 rounded"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedAccountIds.includes(acc._id)}
+                                onChange={() => toggleAccountSelection(acc._id)}
+                                className="w-3 h-3"
+                              />
+                              <span className="truncate">
+                                {acc.individualAccountName}
+                              </span>
+                              <span
+                                className={`ml-auto text-xs font-medium ${balanceClass}`}
+                              >
+                                {functions.formatAsianNumber(balance)}
+                              </span>
+                            </label>
+                          );
+                        }
+                      )}
                     </div>
                   )}
                 </div>
@@ -446,22 +513,39 @@ const AccountsPreviewModal = ({
                   </div>
                   {expandedCategories.others && (
                     <div className="pl-6 pt-2 grid grid-cols-2 md:grid-cols-3 gap-1">
-                      {getFilteredCategoryAccounts(categorizedAccounts.others).map((acc) => (
-                        <label
-                          key={acc._id}
-                          className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-100 p-1 rounded"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedAccountIds.includes(acc._id)}
-                            onChange={() => toggleAccountSelection(acc._id)}
-                            className="w-3 h-3"
-                          />
-                          <span className="truncate">
-                            {acc.individualAccountName}
-                          </span>
-                        </label>
-                      ))}
+                      {getFilteredCategoryAccounts(categorizedAccounts.others).map(
+                        (acc) => {
+                          const balance = getComputedBalance(acc);
+                          const balanceClass =
+                            balance > 0
+                              ? "text-green-600"
+                              : balance < 0
+                              ? "text-red-600"
+                              : "text-gray-500";
+
+                          return (
+                            <label
+                              key={acc._id}
+                              className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-100 p-1 rounded"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedAccountIds.includes(acc._id)}
+                                onChange={() => toggleAccountSelection(acc._id)}
+                                className="w-3 h-3"
+                              />
+                              <span className="truncate">
+                                {acc.individualAccountName}
+                              </span>
+                              <span
+                                className={`ml-auto text-xs font-medium ${balanceClass}`}
+                              >
+                                {functions.formatAsianNumber(balance)}
+                              </span>
+                            </label>
+                          );
+                        }
+                      )}
                     </div>
                   )}
                 </div>
@@ -474,14 +558,14 @@ const AccountsPreviewModal = ({
             <div ref={printRef} className="bg-white p-4">
               {/* Print Header */}
               <div className="text-center mb-4 border-b pb-3">
-                <h1 className="text-xl font-bold">{businessName}</h1>
-                <h2 className="text-lg text-gray-600">
+                <h1 className="text-xl text-black font-bold">{businessName}</h1>
+                <h2 className="text-lg text-gray-900">
                   {selectionType === "customers" && "Customer Accounts"}
                   {selectionType === "suppliers" && "Supplier & Company Accounts"}
                   {selectionType === "all" && "All Accounts"}
-                  {selectionType === "custom" && "Selected Accounts"}
+                  {selectionType === "custom" && "Selected Accounts Summary"}
                 </h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-700">
                   Generated on: {new Date().toLocaleDateString()}
                 </p>
               </div>
@@ -491,14 +575,16 @@ const AccountsPreviewModal = ({
                 <table className="w-full text-sm border-collapse border border-gray-300">
                   <thead>
                     <tr className="bg-gray-200">
-                      <th className="border border-gray-300 p-2 text-left">#</th>
-                      <th className="border border-gray-300 p-2 text-left">
+                      <th className="border border-gray-300 p-2 text-black text-left">#</th>
+                      <th className="border border-gray-300 text-black p-2 text-left">
                         Account Name
                       </th>
-                      <th className="border border-gray-300 p-2 text-left">Type</th>
-                      <th className="border border-gray-300 p-2 text-right">
+                      {/* <th className="border border-gray-300 p-2 text-left">Type</th> */}
+                      <th className="border border-gray-300 p-2 text-black text-left">Region</th>
+                      <th className="border border-gray-300 p-2 text-black text-right">
                         Balance
                       </th>
+                      <th className="border border-gray-300 text-black p-2 text-left">Payment</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -514,13 +600,16 @@ const AccountsPreviewModal = ({
 
                       return (
                         <tr key={acc._id} className="hover:bg-gray-50">
-                          <td className="border border-gray-300 p-2">
+                          <td className="border border-gray-300 p-2 text-black">
                             {index + 1}
                           </td>
-                          <td className="border border-gray-300 p-2">
+                          <td className="border border-gray-300 p-2 text-black">
                             {acc.individualAccountName}
                           </td>
-                          <td className="border border-gray-300 p-2">
+                          <td className="border border-gray-300 p-2 text-black">
+                            {acc.customerRegion}
+                          </td>
+                          {/* <td className="border border-gray-300 p-2">
                             <span
                               className={`px-2 py-1 rounded text-xs ${
                                 type === "Customer"
@@ -534,9 +623,9 @@ const AccountsPreviewModal = ({
                             >
                               {type}
                             </span>
-                          </td>
+                          </td> */}
                           <td
-                            className={`border border-gray-300 p-2 text-right font-medium ${
+                            className={`border border-gray-300 p-2 text-black text-right font-medium ${
                               balance > 0
                                 ? "text-green-600"
                                 : balance < 0
@@ -546,11 +635,14 @@ const AccountsPreviewModal = ({
                           >
                             {functions.formatAsianNumber(balance)}
                           </td>
+                          <td className="border-b-2 border-black p-2 text-left">
+                            
+                          </td>
                         </tr>
                       );
                     })}
                   </tbody>
-                  <tfoot>
+                  {/* <tfoot>
                     <tr className="bg-gray-100 font-bold">
                       <td
                         colSpan="3"
@@ -590,7 +682,7 @@ const AccountsPreviewModal = ({
                         {functions.formatAsianNumber(totalReceivables + totalPayables)}
                       </td>
                     </tr>
-                  </tfoot>
+                  </tfoot> */}
                 </table>
               ) : (
                 <div className="text-center text-gray-500 py-8">
